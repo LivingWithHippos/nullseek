@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="">
+    <head>
+        <meta charset="utf-8" />
+        <title></title>
+        <!--
+         https://www.magicpattern.design/tools/css-backgrounds
+         https://fonts.google.com/selection/embed
+        -->
+        <style>
+            body {
+                background-color: #f3f404;
+                margin: 0;
+                width: 100%;
+                height: 100vh;
+            }
+
+            .dots {
+                position: absolute;
+                left: 0;
+                top: 0;
+                opacity: 0.9;
+                background-image: radial-gradient(
+                    circle,
+                    #444cf7 1.2px,
+                    transparent 1.2px
+                );
+                background-size: 15px 15px;
+
+                mask-image: radial-gradient(
+                    ellipse at center,
+                    rgba(0, 0, 0, 0) 5%,
+                    rgba(0, 0, 0, 0.6) 100%
+                );
+                -webkit-mask-image: radial-gradient(
+                    ellipse at center,
+                    rgba(0, 0, 0, 0) 5%,
+                    rgba(0, 0, 0, 0.6) 100%
+                );
+                mask-size: 100% 100%;
+                -webkit-mask-size: 100% 100%;
+                mask-repeat: no-repeat;
+                -webkit-mask-repeat: no-repeat;
+
+                z-index: 0;
+                width: 100%;
+                height: 100vh;
+            }
+
+            .ibm-plex-mono-medium {
+                font-family: "IBM Plex Mono", monospace;
+                font-weight: 200;
+                font-style: normal;
+                font-size: 6em;
+                color: #242124;
+            }
+            .container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+                height: 100%;
+                z-index: 1;
+            }
+        </style>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+    <body>
+        <div class="dots"></div>
+        <div class="container">
+            <p class="ibm-plex-mono-medium">NullSeek</p>
+        </div>
+    </body>
+</html>
