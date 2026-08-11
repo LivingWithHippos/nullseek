@@ -19,13 +19,13 @@ import org.koin.plugin.module.dsl.viewModel
 import org.koin.plugin.module.dsl.create
 
 
-val viewModelModule = module {
+private val viewModelModule = module {
     // todo: decide if we should put the viewmodel in the core module or in their own modules,
     //  using the @KoinViewModel annotation
     viewModel<ProviderViewModel>()
 }
 
-fun networkModule(logLevel: String = "none") = module {
+private fun networkModule(logLevel: String = "none") = module {
     single<TorboxClient> {TorboxClient.create(
         TorboxClientConfig(
             logLevel = logLevel
@@ -34,20 +34,20 @@ fun networkModule(logLevel: String = "none") = module {
     )}
 }
 
-fun database(context: Context): NullDatabase = Room.databaseBuilder(
+private fun database(context: Context): NullDatabase = Room.databaseBuilder(
     context,
     NullDatabase::class.java,
     "null.db"
 ).build()
 
-fun providerDao(db: NullDatabase): NullProviderDao = db.provider()
-fun providerRepository(dao: NullProviderDao): NullProviderRepository = NullProviderRepositoryImpl(dao)
+private fun providerDao(db: NullDatabase): NullProviderDao = db.provider()
+private fun providerRepository(dao: NullProviderDao): NullProviderRepository = NullProviderRepositoryImpl(dao)
 
-fun datastore(context: Context): DataStore<Preferences> = PreferenceDataStoreFactory.create(
+private fun datastore(context: Context): DataStore<Preferences> = PreferenceDataStoreFactory.create(
     produceFile = { context.preferencesDataStoreFile("settings") }
 )
 
-val storageModule = module {
+private val storageModule = module {
     single { create(::datastore) }
 
     single { create(::database) }

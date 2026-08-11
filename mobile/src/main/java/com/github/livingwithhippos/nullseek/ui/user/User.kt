@@ -37,6 +37,17 @@ fun UserScreen(
 
     val context = LocalContext.current
 
+    // todo: check if back navigation needs to be managed
+    /*
+    val scope = rememberCoroutineScope()
+
+    BackHandler(enabled = navigator.canNavigateBack()) {
+        scope.launch {
+            navigator.navigateBack()
+        }
+    }
+     */
+
     UserScreen(
         modifier = modifier,
         user = uiState.user,

@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 class ProviderViewModel(
-    private val dataStore: DataStore<Preferences>,
     private val client: TorboxClient,
     val providerRepository: NullProviderRepository
 ) : ViewModel() {
