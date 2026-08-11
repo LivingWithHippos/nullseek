@@ -6,10 +6,13 @@ junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
+json = "1.11.0"
 kotlin = "2.3.21"
+ksp = "2.3.11"
 composeBom = "2026.06.01"
+composeTest = "1.11.4"
 materialAlpha = "1.5.0-alpha25"
-torbox = "0.1.2"
+torbox = "0.1.3"
 koin-bom = "4.2.2"
 koin-annotations = "2.3.1"  # Stable version
 koin-plugin = "1.1.0"
@@ -17,13 +20,20 @@ datastore = "1.2.1"
 appcompat = "1.7.1"
 tvFoundation = "1.0.0"
 tvMaterial = "1.1.0"
+navigation = "2.9.8"
 material = "1.14.0"
+room = "3.0.1"
+# these can be used as shared values in the various build.gradle.kts
 # @keep
 compileSdk = "37"
 # @keep
 minSdk = "27"
 # @keep
 targetSdk = "37"
+# @keep
+versionCode = "1"
+# @keep
+versionName = "1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -38,11 +48,20 @@ androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graph
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
-androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material3-alpha = { group = "androidx.compose.material3", name = "material3", version.ref="materialAlpha" }
+compose-navigation-adaptive = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation"}
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4", version.ref="composeTest" }
+androidx-compose-runtime = { module = "androidx.compose.runtime:runtime" }
+
+room-runtime = { group = "androidx.room3", name = "room3-runtime", version.ref="room" }
+room-compiler = { group = "androidx.room3", name = "room3-compiler", version.ref="room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+
+compose-navigation = { group = "androidx.navigation", name = "navigation-compose", version.ref="navigation" }
 
 torbox-client = { group = "io.github.livingwithhippos", name = "torbox-kmp-client", version.ref = "torbox" }
+
 
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
 koin-core = { module = "io.insert-koin:koin-core" }
@@ -50,7 +69,11 @@ koin-android = { module = "io.insert-koin:koin-android" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose" }
 koin-compose = { module = "io.insert-koin:koin-compose" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
+koin-navigation = { module = "io.insert-koin:koin-compose-navigation3" }
 koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations" }
+
+kotlin-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core"}
+kotlin-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "json" }
 
 datastore = {module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
@@ -63,4 +86,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin-plugin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 

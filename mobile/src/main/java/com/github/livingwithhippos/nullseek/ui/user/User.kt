@@ -1,80 +1,132 @@
 package com.github.livingwithhippos.nullseek.ui.user
 
+import android.content.Context
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.github.livingwithhippos.nullseek.data.NetProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.utils.mockUser
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.model.UserDataDto
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun TorboxUserPage(
+fun UserScreen(
     modifier: Modifier = Modifier,
-    user: UserDataDto,
-    token: String?,
-    onSave: (provider: String, token: String) -> Unit,
+    viewModel: UserViewModel = koinViewModel<UserViewModel>(),
 ) {
+    val userScreenUiState by viewModel.state.collectAsStateWithLifecycle()
+    val uiState = userScreenUiState
+
+    val context = LocalContext.current
+
+    UserScreen(
+        modifier = modifier,
+        user = uiState.user,
+        isLoading = uiState.isLoading,
+        error = uiState.error,
+        context = context
+    )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun UserScreen(
+    modifier: Modifier = Modifier,
+    user: UserDataDto?,
+    isLoading: Boolean,
+    error: String?,
+    context: Context = LocalContext.current,
+) {
+    if (isLoading) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) { LoadingIndicator() }
+        return
+    }
+
+    if (user == null) {
+        // todo: show various loading state and buttons
+        Text(text = "No user data available")
+        return
+    }
+
+    // todo: reload button with error message if found
 
     Column(modifier = modifier.padding(horizontal = 8.dp)) {
         Text(text = user.email)
-        // plan
-        // is subscribed
-        // expiration
-        Text(text = user.premiumExpiresAt ?: "No Premium")
-        if (token != null) {
-            // if we have a token we are setting up the service, otherwise this is the user page
-            Button(onClick = { onSave(NetProvider.Torbox().name, token) }) {
-                Text("Confirm")
+        Row {
+            IconButton(onClick = {
+                setClipboardText(context, user.userReferral)
+            }) {
+                Icon(
+                    painter = painterResource(R.drawable.icon_paste),
+                    contentDescription = "Copy"
+                )
             }
+            Text(text = user.userReferral)
         }
+        Row {
+            IconButton(onClick = {
+                setClipboardText(context, user.authId)
+            }) {
+                Icon(
+                    painter = painterResource(R.drawable.icon_paste),
+                    contentDescription = "Copy"
+                )
+            }
+            Text(text = user.authId)
+        }
+
+        if (user.premiumExpiresAt != null) {
+            Text(text = user.premiumExpiresAt.toString())
+        } else {
+            Text(text = "No Premium")
+        }
+        when (user.plan) {
+            0 -> Text(text = "Plan: Free")
+            1 -> Text(text = "Plan: Essential")
+            2 -> Text(text = "Plan: Pro")
+            3 -> Text(text = "Plan: Standard")
+            else -> Text(text = "Plan: Unknown")
+        }
+        if (user.isVendor) {
+            Text(text = "Vendor Enabled")
+        }
+
+        Text(text = user.totalDownloaded.toString())
+        Text(text = user.torrentsDownloaded.toString())
 
     }
 }
 
 @Preview
 @Composable
-fun UserPagePreview() {
+fun UserScreenPreview() {
     NullSeekTheme {
         Scaffold(
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
-            TorboxUserPage(
+            UserScreen(
                 modifier = Modifier.padding(innerPadding),
-                user = UserDataDto(
-                    id = 1,
-                    authId = "123",
-                    createdAt = "2026-05-22T10:53:44Z",
-                    updatedAt = "2026-06-11T22:18:32Z",
-                    plan = 2,
-                    totalDownloaded = 5,
-                    customer = "123",
-                    isSubscribed = true,
-                    premiumExpiresAt = "2026-08-25T12:51:51Z",
-                    cooldownUntil = "2026-06-12T22:18:31Z",
-                    email = "cool@mail.com",
-                    userReferral = "123456",
-                    baseEmail = "cool@mail.com",
-                    totalBytesDownloaded = 2201170739L,
-                    totalBytesUploaded = 0,
-                    torrentsDownloaded = 45,
-                    webDownloadsDownloaded = 4,
-                    usenetDownloadsDownloaded = 0,
-                    additionalConcurrentSlots = 0,
-                    longTermSeeding = false,
-                    longTermStorage = false,
-                    isVendor = false,
-                    vendorId = null,
-                    purchasesReferred = 0
-                ),
-                token = null,
-                onSave = { _, _ -> }
+                user = mockUser,
+                isLoading = false,
+                error = null
             )
         }
     }

@@ -20,3 +20,10 @@ fun getClipboardText(context: Context?): String? {
     }
     return null
 }
+
+fun setClipboardText(context: Context?, text: String) {
+    if (context == null) return
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clip = android.content.ClipData.newPlainText("Copied Text", text)
+    clipboard.setPrimaryClip(clip)
+}
