@@ -32,6 +32,16 @@ fun NullSeekApp(
                     withDismissAction = event.withDismissAction,
                     duration = event.duration
                 )
+
+                UiEvent.NavigateToUser -> appState.navController.navigate(Screen.User.route) {
+                    popUpTo(Screen.Home.route) { inclusive = true } // splash/start route
+                    launchSingleTop = true
+                }
+
+                UiEvent.NavigateToSetup -> appState.navController.navigate(Screen.Setup.route) {
+                    popUpTo(Screen.Home.route) { inclusive = true }
+                    launchSingleTop = true
+                }
             }
         }
     }
