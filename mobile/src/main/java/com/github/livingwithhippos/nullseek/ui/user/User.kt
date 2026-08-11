@@ -1,14 +1,17 @@
 package com.github.livingwithhippos.nullseek.ui.user
 
 import android.content.Context
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,8 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.utils.mockUser
@@ -32,6 +39,7 @@ fun UserScreen(
     modifier: Modifier = Modifier,
     viewModel: UserViewModel = koinViewModel<UserViewModel>(),
 ) {
+    // todo: add support for loading user externally and pass it here
     val userScreenUiState by viewModel.state.collectAsStateWithLifecycle()
     val uiState = userScreenUiState
 
@@ -57,6 +65,16 @@ fun UserScreen(
     )
 }
 
+private fun getPlanName(plan: Int): String {
+    return when (plan) {
+        0 -> "Free"
+        1 -> "Essential"
+        2 -> "Pro"
+        3 -> "Standard"
+        else -> "Unknown"
+    }
+}
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun UserScreen(
@@ -67,7 +85,13 @@ private fun UserScreen(
     context: Context = LocalContext.current,
 ) {
     if (isLoading) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) { LoadingIndicator() }
+        Column(
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            LoadingIndicator()
+        }
         return
     }
 
@@ -79,9 +103,24 @@ private fun UserScreen(
 
     // todo: reload button with error message if found
 
-    Column(modifier = modifier.padding(horizontal = 8.dp)) {
-        Text(text = user.email)
-        Row {
+    Column(
+        modifier = modifier.padding(horizontal = 8.dp).fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Plan: ${getPlanName(user.plan)}",
+            style = MaterialTheme.typography.titleLargeEmphasized
+        )
+
+        if (user.premiumExpiresAt != null) {
+            Text(text = user.premiumExpiresAt.toString())
+        } else {
+            Text(text = "No Premium")
+        }
+        Text(text = user.email, maxLines = 1, overflow = TextOverflow.Clip)
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             IconButton(onClick = {
                 setClipboardText(context, user.userReferral)
             }) {
@@ -92,7 +131,9 @@ private fun UserScreen(
             }
             Text(text = user.userReferral)
         }
-        Row {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             IconButton(onClick = {
                 setClipboardText(context, user.authId)
             }) {
@@ -102,19 +143,6 @@ private fun UserScreen(
                 )
             }
             Text(text = user.authId)
-        }
-
-        if (user.premiumExpiresAt != null) {
-            Text(text = user.premiumExpiresAt.toString())
-        } else {
-            Text(text = "No Premium")
-        }
-        when (user.plan) {
-            0 -> Text(text = "Plan: Free")
-            1 -> Text(text = "Plan: Essential")
-            2 -> Text(text = "Plan: Pro")
-            3 -> Text(text = "Plan: Standard")
-            else -> Text(text = "Plan: Unknown")
         }
         if (user.isVendor) {
             Text(text = "Vendor Enabled")
