@@ -8,8 +8,11 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room3.Room
 import com.github.livingwithhippos.nullseek.core.data.database.NullDatabase
 import com.github.livingwithhippos.nullseek.core.data.database.dao.NullProviderDao
+import com.github.livingwithhippos.nullseek.core.data.database.dao.TorboxUserCacheDao
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepositoryImpl
+import com.github.livingwithhippos.nullseek.core.data.repository.UserRepository
+import com.github.livingwithhippos.nullseek.core.data.repository.UserRepositoryImpl
 import com.github.livingwithhippos.nullseek.core.viewmodel.provider.ProviderViewModel
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.network.TorboxAuthState
@@ -47,7 +50,15 @@ private fun database(context: Context): NullDatabase =
 
 private fun providerDao(db: NullDatabase): NullProviderDao = db.provider()
 
+private fun userCacheDao(db: NullDatabase): TorboxUserCacheDao = db.userCache()
+
 private fun providerRepository(dao: NullProviderDao): NullProviderRepository = NullProviderRepositoryImpl(dao)
+
+private fun userRepository(
+    dao: TorboxUserCacheDao,
+    providerDao: NullProviderDao,
+    client: TorboxClient,
+): UserRepository = UserRepositoryImpl(dao, providerDao, client)
 
 private fun datastore(context: Context): DataStore<Preferences> =
     PreferenceDataStoreFactory.create(
@@ -59,8 +70,12 @@ private val storageModule =
         single { create(::datastore) }
 
         single { create(::database) }
+
         single { create(::providerDao) }
+        single { create(::userCacheDao) }
+
         single { create(::providerRepository) }
+        single { create(::userRepository) }
     }
 
 fun appModule(debug: Boolean) =

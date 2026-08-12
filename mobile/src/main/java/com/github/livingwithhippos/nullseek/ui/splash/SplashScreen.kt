@@ -20,6 +20,10 @@ import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 fun SplashScreen(
     modifier: Modifier = Modifier
 ) {
+    // https://developer.android.com/develop/ui/views/launch/splash-screen#suspend-drawing
+    // todo: make the default splash screen longer and remove this
+    //  the things to check are: token available, network available, token working
+    //  and the we decide if we need to go to no network, setup, or user screen
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -28,7 +32,7 @@ fun SplashScreen(
         Icon(
             painter = painterResource(R.drawable.logo),
             contentDescription = "Logo",
-            modifier = Modifier.width(200.dp)
+            modifier = Modifier.width(140.dp)
         )
     }
 }

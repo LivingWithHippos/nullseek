@@ -88,6 +88,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-room = { id = "androidx.room3", version.ref = "room" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin-plugin" }
 android-library = { id = "com.android.library", version.ref = "agp" }

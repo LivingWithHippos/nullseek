@@ -1,0 +1,227 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "665ff1fc26bd2ec396aaeebab4732e25",
+    "entities": [
+      {
+        "tableName": "providers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` INTEGER NOT NULL, `name` TEXT NOT NULL, `token` TEXT NOT NULL, `active` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "token",
+            "columnName": "token",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "active",
+            "columnName": "active",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "torbox_user_cache",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`provider_id` INTEGER NOT NULL, `user_id` INTEGER NOT NULL, `auth_id` TEXT NOT NULL, `created_at` TEXT NOT NULL, `updated_at` TEXT NOT NULL, `plan` INTEGER NOT NULL, `total_downloaded` INTEGER NOT NULL, `customer` TEXT NOT NULL, `is_subscribed` INTEGER NOT NULL, `premium_expires_at` TEXT, `cooldown_until` TEXT, `email` TEXT NOT NULL, `user_referral` TEXT NOT NULL, `base_email` TEXT NOT NULL, `total_bytes_downloaded` INTEGER NOT NULL, `total_bytes_uploaded` INTEGER NOT NULL, `torrents_downloaded` INTEGER NOT NULL, `web_downloads_downloaded` INTEGER NOT NULL, `usenet_downloads_downloaded` INTEGER NOT NULL, `additional_concurrent_slots` INTEGER NOT NULL, `long_term_seeding` INTEGER NOT NULL, `long_term_storage` INTEGER NOT NULL, `is_vendor` INTEGER NOT NULL, `vendor_id` INTEGER, `purchases_referred` INTEGER NOT NULL, PRIMARY KEY(`provider_id`), FOREIGN KEY(`provider_id`) REFERENCES `providers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "providerId",
+            "columnName": "provider_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "user_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "authId",
+            "columnName": "auth_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "plan",
+            "columnName": "plan",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalDownloaded",
+            "columnName": "total_downloaded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "customer",
+            "columnName": "customer",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSubscribed",
+            "columnName": "is_subscribed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "premiumExpiresAt",
+            "columnName": "premium_expires_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "cooldownUntil",
+            "columnName": "cooldown_until",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userReferral",
+            "columnName": "user_referral",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "baseEmail",
+            "columnName": "base_email",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalBytesDownloaded",
+            "columnName": "total_bytes_downloaded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalBytesUploaded",
+            "columnName": "total_bytes_uploaded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "torrentsDownloaded",
+            "columnName": "torrents_downloaded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "webDownloadsDownloaded",
+            "columnName": "web_downloads_downloaded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "usenetDownloadsDownloaded",
+            "columnName": "usenet_downloads_downloaded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "additionalConcurrentSlots",
+            "columnName": "additional_concurrent_slots",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "longTermSeeding",
+            "columnName": "long_term_seeding",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "longTermStorage",
+            "columnName": "long_term_storage",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isVendor",
+            "columnName": "is_vendor",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vendorId",
+            "columnName": "vendor_id",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "purchasesReferred",
+            "columnName": "purchases_referred",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "provider_id"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "providers",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "provider_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '665ff1fc26bd2ec396aaeebab4732e25')"
+    ]
+  }
+}

@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.github.livingwithhippos.nullseek.ui.provider.ProviderEditor
+import com.github.livingwithhippos.nullseek.ui.splash.SplashScreen
 import com.github.livingwithhippos.nullseek.ui.user.UserScreen
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -34,12 +35,12 @@ fun NullSeekApp(
                 )
 
                 UiEvent.NavigateToUser -> appState.navController.navigate(Screen.User.route) {
-                    popUpTo(Screen.Home.route) { inclusive = true } // splash/start route
+                    popUpTo(Screen.Splash.route) { inclusive = true } // splash/start route
                     launchSingleTop = true
                 }
 
                 UiEvent.NavigateToSetup -> appState.navController.navigate(Screen.Setup.route) {
-                    popUpTo(Screen.Home.route) { inclusive = true }
+                    popUpTo(Screen.Splash.route) { inclusive = true }
                     launchSingleTop = true
                 }
             }
@@ -49,8 +50,11 @@ fun NullSeekApp(
 
     NavHost(
         navController = appState.navController,
-        startDestination = Screen.Setup.route
+        startDestination = Screen.Splash.route
     ) {
+        composable(Screen.Splash.route) { backStackEntry ->
+            SplashScreen()
+        }
         composable(Screen.Setup.route) { backStackEntry ->
             ProviderEditor(
                 onMissingToken = viewmodel::onMissingToken,
@@ -62,6 +66,5 @@ fun NullSeekApp(
         composable(Screen.User.route) { backStackEntry ->
             UserScreen()
         }
-
     }
 }

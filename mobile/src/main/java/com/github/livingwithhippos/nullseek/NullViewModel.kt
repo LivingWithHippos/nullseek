@@ -4,6 +4,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
+import com.github.livingwithhippos.nullseek.core.data.repository.UserRepository
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -14,6 +15,7 @@ import org.koin.core.annotation.KoinViewModel
 class NullViewModel(
     private val client: TorboxClient,
     val providerRepository: NullProviderRepository,
+    val userRepository: UserRepository,
 ) : ViewModel() {
     private val _events = MutableSharedFlow<UiEvent>()
     val events = _events.asSharedFlow()
@@ -42,6 +44,8 @@ class NullViewModel(
             val activeProvider = providerRepository.getActive()
             if (activeProvider != null) {
                 client.updateBearerToken(activeProvider.token)
+                // refresh user data on app start to cache it
+                userRepository.refreshUserData()
                 _events.emit(UiEvent.NavigateToUser)
             } else {
                 // todo: change UI so it has a splash screen first, then we can go to the user or setup screen

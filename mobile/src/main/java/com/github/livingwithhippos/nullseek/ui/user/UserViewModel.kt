@@ -3,9 +3,8 @@ package com.github.livingwithhippos.nullseek.ui.user
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.livingwithhippos.torbox.client.TorboxClient
+import com.github.livingwithhippos.nullseek.core.data.repository.UserRepository
 import com.github.livingwithhippos.torbox.model.UserDataDto
-import com.github.livingwithhippos.torbox.network.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -13,7 +12,7 @@ import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
 class UserViewModel(
-    private val torClient: TorboxClient,
+    val userRepository: UserRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(UserScreenUiState(isLoading = true))
 
@@ -28,21 +27,21 @@ class UserViewModel(
         viewModelScope.launch {
             _state.value = UserScreenUiState(isLoading = true)
 
-            val result = torClient.user.data()
+            val user = userRepository.getUserData()
 
-            if (result is ApiResult.Success && result.value.data != null) {
+            if (user != null) {
                 _state.value =
                     UserScreenUiState(
                         isLoading = false,
-                        user = result.value.data,
+                        user = user,
                     )
             } else {
-                // todo: switch to when to handle different ApiResult types
+                // todo: show errors and retry/refresh button
                 _state.value =
                     UserScreenUiState(
                         isLoading = false,
                         user = null,
-                        error = result.toString(),
+                        error = "Failed to load user data",
                     )
             }
         }

@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.spotless) apply false
     kotlin("plugin.serialization") version "2.3.20" apply false
+    alias(libs.plugins.android.room) apply false
 }
 
 subprojects {

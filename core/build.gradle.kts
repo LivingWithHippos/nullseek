@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.koin.compiler)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.android.room)
 }
 
 android {
@@ -28,6 +29,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    room3 {
+        schemaDirectory("$projectDir/schemas")
+    }
 }
 
 dependencies {
@@ -40,6 +45,8 @@ dependencies {
     implementation(libs.datastore)
     implementation(libs.room.runtime)
     ksp(libs.room.compiler)
+
+    implementation(libs.square.logcat)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
