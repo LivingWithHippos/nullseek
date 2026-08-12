@@ -159,14 +159,14 @@ private fun UserScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = {
-                setClipboardText(context, user.userReferral)
+                setClipboardText(context, user.email)
             }) {
                 Icon(
                     painter = painterResource(R.drawable.icon_paste),
-                    contentDescription = "Copy"
+                    contentDescription = "Copy Mail"
                 )
             }
-            Text(text = user.userReferral)
+            Text(text = user.email)
         }
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -176,15 +176,21 @@ private fun UserScreen(
             }) {
                 Icon(
                     painter = painterResource(R.drawable.icon_paste),
-                    contentDescription = "Copy"
+                    contentDescription = "Copy Auth ID"
                 )
             }
             Text(text = user.authId)
         }
+
+        if (user.isSubscribed) {
+            Text(text = "Subscribed")
+        } else {
+            Text(text = "No active subscription")
+        }
+
         if (user.isVendor) {
             Text(text = "Vendor Enabled")
         }
-
 
         ElevatedCard(
             elevation = CardDefaults.cardElevation(
