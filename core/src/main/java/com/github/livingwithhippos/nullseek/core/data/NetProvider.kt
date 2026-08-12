@@ -1,6 +1,8 @@
 package com.github.livingwithhippos.nullseek.core.data
 
-enum class NullProviderType(val value: Int) {
+enum class NullProviderType(
+    val value: Int,
+) {
     TORBOX(0),
 }
 
@@ -11,15 +13,15 @@ sealed class NetProvider(
     val home: String,
     val referralLink: String,
     val referralCode: String,
-    val tokenLink: String
+    val tokenLink: String,
 ) {
-    class Torbox : NetProvider(
-        NullProviderType.TORBOX.value,
-        "TorBox",
-        "https://torbox.app",
-        "https://torbox.app/subscription?referral=dba208d7-f53e-4711-96db-97c7051799bc",
-        "dba208d7-f53e-4711-96db-97c7051799bc",
-        "https://torbox.app/settings?section=account"
-    )
-
+    class Torbox :
+        NetProvider(
+            NullProviderType.TORBOX.value,
+            "TorBox",
+            "https://torbox.app",
+            "https://torbox.app/subscription?referral=dba208d7-f53e-4711-96db-97c7051799bc",
+            "dba208d7-f53e-4711-96db-97c7051799bc",
+            "https://torbox.app/settings?section=account",
+        )
 }

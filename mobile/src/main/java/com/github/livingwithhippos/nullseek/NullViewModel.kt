@@ -3,9 +3,9 @@ package com.github.livingwithhippos.nullseek
 import androidx.compose.material3.SnackbarDuration
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
-import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -15,7 +15,7 @@ import org.koin.core.annotation.KoinViewModel
 @KoinViewModel
 class NullViewModel(
     private val client: TorboxClient,
-    val providerRepository: NullProviderRepository
+    val providerRepository: NullProviderRepository,
 ) : ViewModel() {
     private val _events = MutableSharedFlow<UiEvent>()
     val events = _events.asSharedFlow()
@@ -33,8 +33,8 @@ class NullViewModel(
                     message = "Token is required",
                     actionLabel = "Dismiss",
                     withDismissAction = true,
-                    duration = SnackbarDuration.Long
-                )
+                    duration = SnackbarDuration.Long,
+                ),
             )
         }
     }
@@ -58,8 +58,10 @@ sealed interface UiEvent {
         val message: String,
         val actionLabel: String? = null,
         val withDismissAction: Boolean = false,
-        val duration: SnackbarDuration = SnackbarDuration.Short
+        val duration: SnackbarDuration = SnackbarDuration.Short,
     ) : UiEvent
+
     data object NavigateToSetup : UiEvent
+
     data object NavigateToUser : UiEvent
 }

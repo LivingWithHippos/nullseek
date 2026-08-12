@@ -13,9 +13,8 @@ import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
 class UserViewModel(
-    private val torClient: TorboxClient
+    private val torClient: TorboxClient,
 ) : ViewModel() {
-
     private val _state = MutableStateFlow(UserScreenUiState(isLoading = true))
 
     val state: StateFlow<UserScreenUiState>
@@ -32,17 +31,19 @@ class UserViewModel(
             val result = torClient.user.data()
 
             if (result is ApiResult.Success && result.value.data != null) {
-                _state.value = UserScreenUiState(
-                    isLoading = false,
-                    user = result.value.data
-                )
+                _state.value =
+                    UserScreenUiState(
+                        isLoading = false,
+                        user = result.value.data,
+                    )
             } else {
                 // todo: switch to when to handle different ApiResult types
-                _state.value = UserScreenUiState(
-                    isLoading = false,
-                    user = null,
-                    error = result.toString()
-                )
+                _state.value =
+                    UserScreenUiState(
+                        isLoading = false,
+                        user = null,
+                        error = result.toString(),
+                    )
             }
         }
     }
@@ -52,5 +53,5 @@ class UserViewModel(
 data class UserScreenUiState(
     val isLoading: Boolean = false,
     val user: UserDataDto? = null,
-    val error: String? = null
+    val error: String? = null,
 )

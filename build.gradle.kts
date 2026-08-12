@@ -16,6 +16,16 @@ subprojects {
             target("**/*.kt")
             targetExclude("${layout.buildDirectory}/**/*.kt")
             ktlint()
+            // compose functions start with a capital letter
+            suppressLintsFor {
+                step = "ktlint"
+                shortCode = "standard:function-naming"
+            }
+            // I don't care about having a single class inside a file with a different name
+            suppressLintsFor {
+                step = "ktlint"
+                shortCode = "standard:filename"
+            }
         }
         kotlinGradle {
             target("*.gradle.kts")

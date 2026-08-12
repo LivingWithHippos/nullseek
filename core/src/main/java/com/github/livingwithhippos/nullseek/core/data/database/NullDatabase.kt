@@ -7,11 +7,11 @@ import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvide
 
 @Database(
     entities = [
-        NullProvider::class
+        NullProvider::class,
     ],
     version = 1,
     exportSchema = false,
 )
-abstract class NullDatabase: RoomDatabase() {
+abstract class NullDatabase : RoomDatabase() {
     abstract fun provider(): NullProviderDao
 }

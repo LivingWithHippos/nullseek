@@ -15,48 +15,57 @@ import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.network.TorboxAuthState
 import com.github.livingwithhippos.torbox.network.TorboxClientConfig
 import org.koin.dsl.module
-import org.koin.plugin.module.dsl.viewModel
 import org.koin.plugin.module.dsl.create
+import org.koin.plugin.module.dsl.viewModel
 
+private val viewModelModule =
+    module {
+        // todo: decide if we should put the viewmodel in the core module or in their own modules,
+        //  using the @KoinViewModel annotation
+        viewModel<ProviderViewModel>()
+    }
 
-private val viewModelModule = module {
-    // todo: decide if we should put the viewmodel in the core module or in their own modules,
-    //  using the @KoinViewModel annotation
-    viewModel<ProviderViewModel>()
-}
+private fun networkModule(logLevel: String = "none") =
+    module {
+        single<TorboxClient> {
+            TorboxClient.create(
+                TorboxClientConfig(
+                    logLevel = logLevel,
+                ),
+                TorboxAuthState(),
+            )
+        }
+    }
 
-private fun networkModule(logLevel: String = "none") = module {
-    single<TorboxClient> {TorboxClient.create(
-        TorboxClientConfig(
-            logLevel = logLevel
-        ),
-        TorboxAuthState()
-    )}
-}
-
-private fun database(context: Context): NullDatabase = Room.databaseBuilder(
-    context,
-    NullDatabase::class.java,
-    "null.db"
-).build()
+private fun database(context: Context): NullDatabase =
+    Room
+        .databaseBuilder(
+            context,
+            NullDatabase::class.java,
+            "null.db",
+        ).build()
 
 private fun providerDao(db: NullDatabase): NullProviderDao = db.provider()
+
 private fun providerRepository(dao: NullProviderDao): NullProviderRepository = NullProviderRepositoryImpl(dao)
 
-private fun datastore(context: Context): DataStore<Preferences> = PreferenceDataStoreFactory.create(
-    produceFile = { context.preferencesDataStoreFile("settings") }
-)
+private fun datastore(context: Context): DataStore<Preferences> =
+    PreferenceDataStoreFactory.create(
+        produceFile = { context.preferencesDataStoreFile("settings") },
+    )
 
-private val storageModule = module {
-    single { create(::datastore) }
+private val storageModule =
+    module {
+        single { create(::datastore) }
 
-    single { create(::database) }
-    single { create(::providerDao) }
-    single { create(::providerRepository) }
-}
+        single { create(::database) }
+        single { create(::providerDao) }
+        single { create(::providerRepository) }
+    }
 
-fun appModule(debug: Boolean) = module {
-    includes(networkModule(logLevel = if (debug) "info" else "none"))
-    includes(storageModule)
-    includes(viewModelModule)
-}
+fun appModule(debug: Boolean) =
+    module {
+        includes(networkModule(logLevel = if (debug) "info" else "none"))
+        includes(storageModule)
+        includes(viewModelModule)
+    }

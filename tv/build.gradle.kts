@@ -6,15 +6,26 @@ plugins {
 
 android {
     namespace = "com.github.livingwithhippos.nullseek.tv"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk =
+        libs.versions.compileSdk
+            .get()
+            .toInt()
 
     defaultConfig {
         applicationId = "com.github.livingwithhippos.nullseek.tv"
-        minSdk = libs.versions.minSdk.get().toInt()
-        targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = libs.versions.versionCode.get().toInt()
+        minSdk =
+            libs.versions.minSdk
+                .get()
+                .toInt()
+        targetSdk =
+            libs.versions.targetSdk
+                .get()
+                .toInt()
+        versionCode =
+            libs.versions.versionCode
+                .get()
+                .toInt()
         versionName = libs.versions.versionName.get()
-
     }
 
     buildTypes {

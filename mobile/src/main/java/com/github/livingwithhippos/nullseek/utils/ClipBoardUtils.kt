@@ -10,9 +10,9 @@ fun getClipboardText(context: Context?): String? {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     if (clipboard.hasPrimaryClip().not()) return null
     if (clipboard.primaryClipDescription?.hasMimeType(
-            MIMETYPE_TEXT_PLAIN
+            MIMETYPE_TEXT_PLAIN,
         ) == true || clipboard.primaryClipDescription?.hasMimeType(
-            MIMETYPE_TEXT_HTML
+            MIMETYPE_TEXT_HTML,
         ) == true
     ) {
         val item = clipboard.primaryClip?.getItemAt(0)
@@ -21,7 +21,10 @@ fun getClipboardText(context: Context?): String? {
     return null
 }
 
-fun setClipboardText(context: Context?, text: String) {
+fun setClipboardText(
+    context: Context?,
+    text: String,
+) {
     if (context == null) return
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     val clip = android.content.ClipData.newPlainText("Copied Text", text)

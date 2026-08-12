@@ -18,20 +18,28 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.github.livingwithhippos.torbox.model.UserDataDto
 
-sealed class Screen(val route: String) {
+sealed class Screen(
+    val route: String,
+) {
     object Home : Screen("home")
+
     object Setup : Screen("setup")
+
     object User : Screen("user")
 }
 
-
 @Composable
-fun rememberNullSeekState(navController: NavHostController = rememberNavController(), context: Context = LocalContext.current) =
-    remember(navController, context) {
-        NullSeekState(navController, context)
-    }
+fun rememberNullSeekState(
+    navController: NavHostController = rememberNavController(),
+    context: Context = LocalContext.current,
+) = remember(navController, context) {
+    NullSeekState(navController, context)
+}
 
-class NullSeekState(val navController: NavHostController, private val context: Context) {
+class NullSeekState(
+    val navController: NavHostController,
+    private val context: Context,
+) {
     var isOnline by mutableStateOf(checkIfOnline())
         private set
 
@@ -55,7 +63,7 @@ class NullSeekState(val navController: NavHostController, private val context: C
 
         val capabilities = cm?.getNetworkCapabilities(cm.activeNetwork) ?: return false
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 }
 
