@@ -3,8 +3,6 @@ package com.github.livingwithhippos.nullseek
 import androidx.compose.material3.SnackbarDuration
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.livingwithhippos.nullseek.core.data.NetProvider
-import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import kotlinx.coroutines.flow.MutableSharedFlow

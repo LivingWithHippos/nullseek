@@ -30,10 +30,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.R
-import com.github.livingwithhippos.nullseek.core.viewmodel.provider.ProviderViewModel
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.core.viewmodel.provider.ProviderAction
 import com.github.livingwithhippos.nullseek.core.viewmodel.provider.ProviderEvent
+import com.github.livingwithhippos.nullseek.core.viewmodel.provider.ProviderViewModel
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.utils.getClipboardText
 import com.github.livingwithhippos.nullseek.utils.openWebPage

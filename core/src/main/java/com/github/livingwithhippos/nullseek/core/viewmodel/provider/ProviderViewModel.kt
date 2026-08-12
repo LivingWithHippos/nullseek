@@ -1,8 +1,6 @@
 package com.github.livingwithhippos.nullseek.core.viewmodel.provider
 
 import androidx.compose.runtime.Immutable
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
