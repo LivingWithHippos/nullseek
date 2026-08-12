@@ -32,3 +32,10 @@ val Typography = Typography(
     )
     */
 )
+
+object CustomTypography {
+    val cardBoldValue =  Typography.bodyLarge.copy(
+        fontWeight = FontWeight.Bold,
+        fontSize = 20.sp,
+    )
+}

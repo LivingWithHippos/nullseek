@@ -6,10 +6,14 @@ import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 import com.github.livingwithhippos.nullseek.core.di.appModule
 import com.github.livingwithhippos.nullseek.di.mobileModule
+import logcat.AndroidLogcatLogger
+import logcat.LogPriority.VERBOSE
 
 class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+
+        AndroidLogcatLogger.installOnDebuggableApp(this, minPriority = VERBOSE)
 
         startKoin {
             androidLogger()

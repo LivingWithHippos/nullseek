@@ -51,6 +51,9 @@ dependencies {
     implementation(libs.datastore)
 
     implementation(libs.kotlin.serialization.core)
+    implementation(libs.kotlinx.datetime)
+
+    implementation(libs.square.logcat)
 
     implementation(libs.compose.navigation)
     implementation(libs.compose.navigation.adaptive)

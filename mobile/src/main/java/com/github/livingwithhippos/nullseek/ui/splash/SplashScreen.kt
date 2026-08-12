@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -11,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 
@@ -25,7 +27,8 @@ fun SplashScreen(
     ) {
         Icon(
             painter = painterResource(R.drawable.logo),
-            contentDescription = "Logo"
+            contentDescription = "Logo",
+            modifier = Modifier.width(200.dp)
         )
     }
 }

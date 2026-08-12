@@ -4,9 +4,15 @@ import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -16,23 +22,28 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshots.toInt
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.utils.MathConst
 import com.github.livingwithhippos.nullseek.core.utils.mockUser
+import com.github.livingwithhippos.nullseek.ui.theme.CustomTypography
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.model.UserDataDto
+import logcat.asLog
+import logcat.logcat
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 @Composable
 fun UserScreen(
@@ -75,6 +86,35 @@ private fun getPlanName(plan: Int): String {
     }
 }
 
+fun convertToDays(datetime: String?): String {
+    // todo: move to utils
+    // todo: manage trnalsation and no premium avilable
+    if (datetime == null) {
+        return "No Premium"
+    }
+    try {
+        val dateInstant = Instant.parse(datetime)
+        val now = Clock.System.now()
+        val days = (dateInstant - now).inWholeDays
+        if (days < 0) {
+            return "Expired"
+        }
+        return "$days days"
+    } catch (e: Exception) {
+        logcat("UserScreen") { e.asLog() }
+    }
+    return datetime
+}
+
+fun convertToSize(bytes: Long): String {
+    return when {
+        bytes < MathConst.BYTES_IN_KB -> "$bytes B"
+        bytes < MathConst.BYTES_IN_MB -> "${(bytes / MathConst.BYTES_IN_KB).toInt()} KB"
+        bytes < MathConst.BYTES_IN_GB -> "${(bytes / MathConst.BYTES_IN_MB).toInt()} MB"
+        else -> "${(bytes / MathConst.BYTES_IN_GB).toInt()} GB"
+    }
+}
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun UserScreen(
@@ -108,15 +148,15 @@ private fun UserScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Plan: ${getPlanName(user.plan)}",
-            style = MaterialTheme.typography.titleLargeEmphasized
+            text = "User Info",
+            style = MaterialTheme.typography.titleMedium
         )
 
-        if (user.premiumExpiresAt != null) {
-            Text(text = user.premiumExpiresAt.toString())
-        } else {
-            Text(text = "No Premium")
-        }
+        Text(
+            text = "Plan: ${getPlanName(user.plan)}",
+            style = MaterialTheme.typography.titleLargeEmphasized,
+        )
+        Text(text = convertToDays(user.premiumExpiresAt))
         Text(text = user.email, maxLines = 1, overflow = TextOverflow.Clip)
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -148,8 +188,68 @@ private fun UserScreen(
             Text(text = "Vendor Enabled")
         }
 
-        Text(text = user.totalDownloaded.toString())
-        Text(text = user.torrentsDownloaded.toString())
+
+        ElevatedCard(
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 6.dp
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(top = 12.dp).widthIn(min = 250.dp, max = 400.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "Files", style = MaterialTheme.typography.bodySmall)
+                    Text(text = "Downloaded", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = user.totalDownloaded.toString(),
+                        style= CustomTypography.cardBoldValue,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "Torrents", style = MaterialTheme.typography.bodySmall)
+                    Text(text = "Downloaded", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = user.torrentsDownloaded.toString(),
+                        style= CustomTypography.cardBoldValue,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.padding(vertical = 12.dp).widthIn(min = 250.dp, max = 400.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "Size", style = MaterialTheme.typography.bodySmall)
+                    Text(text = "Downloaded", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = convertToSize(user.totalBytesDownloaded),
+                        style= CustomTypography.cardBoldValue,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "Size", style = MaterialTheme.typography.bodySmall)
+                    Text(text = "Uploaded", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = convertToSize(user.totalBytesUploaded),
+                        style= CustomTypography.cardBoldValue,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+        }
+
 
     }
 }
