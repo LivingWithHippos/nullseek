@@ -17,9 +17,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
+import com.github.livingwithhippos.nullseek.ui.lists.ListsScreen
 import com.github.livingwithhippos.nullseek.ui.navigation.NavigationActions
 import com.github.livingwithhippos.nullseek.ui.navigation.NullNavigationWrapper
 import com.github.livingwithhippos.nullseek.ui.navigation.Route
+import com.github.livingwithhippos.nullseek.ui.search.SearchScreen
 import com.github.livingwithhippos.nullseek.ui.user.UserScreen
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
@@ -108,6 +110,20 @@ private fun NullNavHost(
                 navigationType = navigationType,
                 uiState = uiState,
                 checkValidToken = checkValidToken
+            )
+        }
+        composable<Route.Lists> {
+            ListsScreen(
+                contentType = contentType,
+                navigationType = navigationType,
+                uiState = uiState
+            )
+        }
+        composable<Route.Search> {
+            SearchScreen(
+                contentType = contentType,
+                navigationType = navigationType,
+                uiState = uiState
             )
         }
     }
