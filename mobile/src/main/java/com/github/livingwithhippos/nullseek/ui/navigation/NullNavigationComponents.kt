@@ -186,8 +186,8 @@ fun NullNavigationRail(
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_edit),
-                    contentDescription = stringResource(id = R.string.compose),
+                    painter = painterResource(id = R.drawable.ic_settings),
+                    contentDescription = stringResource(id = R.string.settings),
                     modifier = Modifier.size(18.dp),
                 )
             }
@@ -273,12 +273,12 @@ fun PermanentNavigationDrawerContent(
                         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_edit),
-                            contentDescription = stringResource(id = R.string.compose),
+                            painter = painterResource(id = R.drawable.ic_settings),
+                            contentDescription = stringResource(id = R.string.settings),
                             modifier = Modifier.size(24.dp),
                         )
                         Text(
-                            text = stringResource(id = R.string.compose),
+                            text = stringResource(id = R.string.settings),
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Center,
                         )
@@ -369,12 +369,12 @@ fun ModalNavigationDrawerContent(
                         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_edit),
-                            contentDescription = stringResource(id = R.string.compose),
+                            painter = painterResource(id = R.drawable.ic_settings),
+                            contentDescription = stringResource(id = R.string.settings),
                             modifier = Modifier.size(18.dp),
                         )
                         Text(
-                            text = stringResource(id = R.string.compose),
+                            text = stringResource(id = R.string.settings),
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Center,
                         )
