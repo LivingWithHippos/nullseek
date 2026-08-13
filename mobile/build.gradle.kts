@@ -61,6 +61,9 @@ dependencies {
     implementation(libs.androidx.compose.materialWindow)
     implementation(libs.accompanist.adaptive)
 
+    implementation(libs.androidx.paging)
+    implementation(libs.androidx.paging.compose)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 

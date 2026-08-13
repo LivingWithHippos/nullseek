@@ -113,14 +113,6 @@ class NullRootViewModel(
         _uiState.value = _uiState.value.copy(loading = false, error = error)
     }
 
-    fun setOnline(online: Boolean) {
-        _uiState.value = _uiState.value.copy(isOnline = online)
-    }
-
-    fun setError(error: String?) {
-        _uiState.value = _uiState.value.copy(error = error)
-    }
-
     fun setLoading(loading: Boolean) {
         _uiState.value = _uiState.value.copy(loading = loading)
     }

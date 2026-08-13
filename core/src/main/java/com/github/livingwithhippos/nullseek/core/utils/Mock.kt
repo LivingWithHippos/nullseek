@@ -1,5 +1,7 @@
 package com.github.livingwithhippos.nullseek.core.utils
 
+import com.github.livingwithhippos.torbox.model.TorrentDto
+import com.github.livingwithhippos.torbox.model.TorrentFileDto
 import com.github.livingwithhippos.torbox.model.UserDataDto
 
 val mockUser =
@@ -29,3 +31,90 @@ val mockUser =
         vendorId = null,
         purchasesReferred = 0,
     )
+
+val mockTorrent = TorrentDto(
+    id = 75418987,
+    authId = "123-456-789",
+    hash = "d3adb33f",
+    createdAt = "2026-08-12T22:09:36Z",
+    updatedAt = "2026-08-12T22:09:36Z",
+    magnet = null,
+    size = 5300108273L,
+    active = false,
+    downloadState = "cached",
+    seeds = 0,
+    peers = 0,
+    ratio = 0.0,
+    progress = 1.0,
+    downloadSpeed = 0,
+    uploadSpeed = 0,
+    name = "Totally Cool Open Source Movie x265",
+    eta = 0,
+    server = 0,
+    torrentFile = false,
+    expiresAt = null,
+    downloadPresent = true,
+    downloadFinished = true,
+    downloadPath = "d3adb33f",
+    files = listOf(
+        TorrentFileDto(
+            id = 2,
+            md5 = null,
+            hash = "d3adb33f",
+            name = "www.absolutelylegitsource.org    -    Totally Cool Open Source Movie x265/Totally Cool Open Source Movie x265.mkv",
+            size = 5300107342L,
+            zipped = false,
+            s3Path = "d3adb33f/www.absolutelylegitsource.org    -    Totally Cool Open Source Movie x265/Totally Cool Open Source Movie x265.mkv",
+            infected = false,
+            mimetype = "video/x-matroska",
+            shortName = "Totally Cool Open Source Movie x265.mkv",
+            absolutePath = "/completed/d3adb33f/www.absolutelylegitsource.org    -    Totally Cool Open Source Movie x265/Totally Cool Open Source Movie x265.mkv",
+            opensubtitlesHash = "6218572"
+        ),
+        TorrentFileDto(
+            id = 0,
+            md5 = null,
+            hash = "d3adb33f",
+            name = "www.absolutelylegitsource.org    -    Totally Cool Open Source Movie x265/Totally Cool Open Source Movie x265.mkv.nfo",
+            size = 804L,
+            zipped = false,
+            s3Path = "d3adb33f/www.absolutelylegitsource.org    -    Totally Cool Open Source Movie x265/Totally Cool Open Source Movie x265.mkv.nfo",
+            infected = false,
+            mimetype = "text/plain",
+            shortName = "Totally Cool Open Source Movie x265.mkv.nfo",
+            absolutePath = "/completed/d3adb33f/www.absolutelylegitsource.org    -    Totally Cool Open Source Movie x265/Totally Cool Open Source Movie x265.mkv.nfo",
+            opensubtitlesHash = null
+        ),
+        TorrentFileDto(
+            id = 1,
+            md5 = null,
+            hash = "d3adb33f",
+            name = "www.absolutelylegitsource.org    -    Totally Cool Open Source Movie x265/Torrent Downloaded From     absolutelylegitsource.org      .txt",
+            size = 127L,
+            zipped = false,
+            s3Path = "d3adb33f/www.absolutelylegitsource.org    -    Totally Cool Open Source Movie x265/Torrent Downloaded From     absolutelylegitsource.org      .txt",
+            infected = false,
+            mimetype = "text/plain",
+            shortName = "Torrent Downloaded From     absolutelylegitsource.org      .txt",
+            absolutePath = "/completed/d3adb33f/www.absolutelylegitsource.org    -    Totally Cool Open Source Movie x265/Torrent Downloaded From     absolutelylegitsource.org      .txt",
+            opensubtitlesHash = null
+        )
+    ),
+    availability = 0F,
+    tracker = null,
+    totalUploaded = 0L,
+    totalDownloaded = 0L,
+    cached = true,
+    owner = "987-654-321",
+    seedTorrent = false,
+    allowZipped = true,
+    longTermSeeding = false,
+    trackerMessage = null,
+    cachedAt = "2026-06-13T08:02:01Z",
+    isPrivate = false,
+    alternativeHashes = listOf(
+        "b33fd3ad",
+        "d3adb33f"
+    ),
+    tags = emptyList()
+)
