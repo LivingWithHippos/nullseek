@@ -122,6 +122,10 @@ class NullRootViewModel(
 
     // todo add a prefix for these
 
+    fun showSettings(show: Boolean) {
+        _uiState.value = _uiState.value.copy(settings = show)
+    }
+
     private fun loadingTorrentDetails() {
         _uiState.value = _uiState.value.copy(loading = true, selectedTorrent = null, error = null)
     }
@@ -166,6 +170,10 @@ data class NullRootUiState(
      * todo: check error returned by the API when it's expired/invalid
      */
     val setup: Boolean = false,
+    /**
+     * used to show the settings page
+     */
+    val settings: Boolean = false,
     /**
      * user to cache the current user data
      */

@@ -43,6 +43,7 @@ fun NullSeekApp(
     rootUiState: NullRootUiState,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
     loadTorrentDetails: (torrent: TorrentDto) -> Unit,
+    showSettings: (show: Boolean) -> Unit,
     viewmodel: NullViewModel = koinViewModel<NullViewModel>()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -88,7 +89,8 @@ fun NullSeekApp(
                 uiState = rootUiState,
                 navigationType = navSuiteType.toNullNavType(),
                 checkValidToken = checkValidToken,
-                loadTorrentDetails = loadTorrentDetails
+                loadTorrentDetails = loadTorrentDetails,
+                showSettings = showSettings
             )
         }
     }
@@ -102,6 +104,7 @@ private fun NullNavHost(
     navigationType: NullNavigationType,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
     loadTorrentDetails: (torrent: TorrentDto) -> Unit,
+    showSettings: (show: Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NavHost(
@@ -114,7 +117,8 @@ private fun NullNavHost(
                 contentType = contentType,
                 navigationType = navigationType,
                 uiState = uiState,
-                checkValidToken = checkValidToken
+                checkValidToken = checkValidToken,
+                showSettings = showSettings
             )
         }
         composable<Route.Lists> {
