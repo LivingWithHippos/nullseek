@@ -27,54 +27,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.github.livingwithhippos.nullseek.NullRootUiState
 import com.github.livingwithhippos.nullseek.R
-import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.core.utils.mockUser
-import com.github.livingwithhippos.nullseek.ui.provider.ProviderSetup
 import com.github.livingwithhippos.nullseek.ui.theme.CustomTypography
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
-import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
-import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.utils.convertToDays
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.nullseek.utils.getPlanName
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.model.UserDataDto
 
-@Composable
-fun UserScreen(
-    contentType: NullContentType,
-    uiState: NullRootUiState,
-    navigationType: NullNavigationType,
-    modifier: Modifier = Modifier,
-    checkValidToken: (provider: NetProvider, token: String) -> Unit
-) {
-    // todo: renamed this screen to something like UserManagement or whatever
-    //  since it shows both user and setup. Then separate the files
-    val context = LocalContext.current
-
-    // we have no double panel for the user info, unless we decide to put the settings one on the side
-    if (uiState.setup) {
-        ProviderSetup(
-            modifier = modifier,
-            uiState = uiState,
-            checkValidToken = checkValidToken
-        )
-    } else {
-        UserScreen(
-            modifier = modifier,
-            user = uiState.user,
-            loading = uiState.loading,
-            error = uiState.error,
-            context = context
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun UserScreen(
+fun UserScreen(
     modifier: Modifier = Modifier,
     user: UserDataDto?,
     loading: Boolean,

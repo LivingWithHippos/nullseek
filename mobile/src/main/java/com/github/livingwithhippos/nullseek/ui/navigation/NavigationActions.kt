@@ -8,15 +8,13 @@ import com.github.livingwithhippos.nullseek.R
 import kotlinx.serialization.Serializable
 
 sealed interface Route {
-    @Serializable data object Setup : Route
+    @Serializable data object Home : Route
 
-    @Serializable data object User : Route
 
     @Serializable data object Lists : Route
 
     @Serializable data object Search : Route
 
-    @Serializable data object Settings : Route
 }
 
 data class TopLevelDestination(
@@ -49,10 +47,10 @@ class NavigationActions(
 val TOP_LEVEL_DESTINATIONS =
     listOf(
         TopLevelDestination(
-            route = Route.User,
+            route = Route.Home,
             selectedIcon = R.drawable.ic_contact_page,
             unselectedIcon = R.drawable.ic_contact_page,
-            iconTextId = R.string.tab_user,
+            iconTextId = R.string.tab_home,
         ),
         TopLevelDestination(
             route = Route.Lists,

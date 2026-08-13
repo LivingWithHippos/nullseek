@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
+import com.github.livingwithhippos.nullseek.ui.home.HomeScreen
 import com.github.livingwithhippos.nullseek.ui.lists.ListsScreen
 import com.github.livingwithhippos.nullseek.ui.navigation.NavigationActions
 import com.github.livingwithhippos.nullseek.ui.navigation.NullNavigationWrapper
@@ -102,10 +103,10 @@ private fun NullNavHost(
     NavHost(
         modifier = modifier,
         navController = navController,
-        startDestination = Route.User,
+        startDestination = Route.Home,
     ) {
-        composable<Route.User> {
-            UserScreen(
+        composable<Route.Home> {
+            HomeScreen(
                 contentType = contentType,
                 navigationType = navigationType,
                 uiState = uiState,
