@@ -1,39 +1,40 @@
-flusso
+<p align="center">
+  <img width="300" src="https://raw.githubusercontent.com/LivingWithHippos/nullseek/master/extra/logo/logo.svg" alt="logo">
+</p>
 
-1. avvio
-- scelta di un servizio (solo torbox per ora)
-- se c'è già un servizio apri quello
-- se c'è più di un servizio apri l'ultimo usato
+# NullSeek
 
-sarebbe ancora meglio generalizzare tutto in modo da avere le stesse schermate per ogni servizio, e poi avere un modo di avere ad esempio in cima il servizio attivo, cambiabile con un click
+An Android application to interact with [Torbox.](https://torbox.app)
 
-quindi
+```
+!!!!!!!!!!!!!!!!!!
+UNDER CONSTRUCTION
+!!!!!!!!!!!!!!!!!!
 
-1. avvio
-- se nessuno servizio apri schermata gestione servizi
-- altrimenti avvia schermata utente con ultimo servizio usato
 
-2. schermata utente
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⡟⢻⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⠟⠀⠀⢻⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⠋⠀⠀⠀⠀⠻⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⠋⠀⠀⠀⢰⣿⣶⠙⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⢃⣴⣶⣶⣶⣾⡛⠋⠀⠘⢿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⣴⣿⡿⢁⣼⡏⣰⣿⣿⣿⡇⠀⠀⠀⠘⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⢀⣼⣿⡿⠁⠀⠉⢹⣿⣿⣏⢸⡇⠀⠀⠀⠀⠈⢿⣿⣧⡀⠀⠀⠀⠀⠀
+⠀⠀⠀⢀⣾⣿⡿⠁⠀⠀⢰⣿⠛⣿⡍⠻⢧⣀⣾⣿⣿⣷⣄⢿⣿⣷⡀⠀⠀⠀⠀
+⠀⠀⢀⣾⣿⡟⠀⠀⠀⣰⣿⠋⠀⣿⡇⠀⣴⣿⣿⣿⣿⣿⣿⣦⣻⣿⣷⡀⠀⠀⠀
+⠀⢀⣿⣿⡟⠀⠀⠀⠀⠿⠃⠀⠀⠿⠧⠾⠿⠿⠿⠿⠿⠿⠿⠿⠷⠽⣿⣿⡄⠀⠀
+⢠⣿⣿⣿⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣿⣿⣿⡄⠀
+⠈⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠁⠀
+```
 
-- a seconda del servizio mostra le informazioni
-- referral per iscriversi
+## Donate :coffee:
 
-3. schermata creazione nuove cose
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/E1E412NFX7)
 
-- link web
-- torrents
-- containers
-- altro
 
-4. schermata liste roba a disposizione
+You can use [my referral link](https://torbox.app/subscription?referral=dba208d7-f53e-4711-96db-97c7051799bc) to get Torbox premium.
 
-- web
-- torrents
-- usenet
+## Credits
 
-5. schermata ricerca
-
-- jackett
-- prowlarr
-- dht?
-- plugins? (richiede discorso repository)
+Magnet Icon From [Kenan Gundogan](https://www.svgrepo.com/svg/394265/magnet)

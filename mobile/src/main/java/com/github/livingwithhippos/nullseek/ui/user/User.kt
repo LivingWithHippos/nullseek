@@ -1,38 +1,189 @@
 package com.github.livingwithhippos.nullseek.ui.user
 
+import android.content.Context
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.github.livingwithhippos.nullseek.data.NetProvider
+import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.utils.mockUser
+import com.github.livingwithhippos.nullseek.ui.theme.CustomTypography
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.utils.convertToDays
+import com.github.livingwithhippos.nullseek.utils.convertToSize
+import com.github.livingwithhippos.nullseek.utils.getPlanName
+import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.model.UserDataDto
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun TorboxUserPage(
+fun UserScreen(
     modifier: Modifier = Modifier,
-    user: UserDataDto,
-    token: String?,
-    onSave: (provider: String, token: String) -> Unit,
+    user: UserDataDto?,
+    loading: Boolean,
+    error: String?,
+    context: Context = LocalContext.current,
 ) {
+    if (loading || user == null) {
+        // user == null should not happen
+        Column(
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            LoadingIndicator()
+        }
+        return
+    }
 
-    Column(modifier = modifier.padding(horizontal = 8.dp)) {
-        Text(text = user.email)
-        // plan
-        // is subscribed
-        // expiration
-        Text(text = user.premiumExpiresAt ?: "No Premium")
-        if (token != null) {
-            // if we have a token we are setting up the service, otherwise this is the user page
-            Button(onClick = { onSave(NetProvider.Torbox().name, token) }) {
-                Text("Confirm")
+    // todo: reload button
+
+    Column(
+        modifier = modifier
+            .padding(horizontal = 8.dp)
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "User Info",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Text(
+            text = "Plan: ${getPlanName(user.plan)}",
+            style = MaterialTheme.typography.titleLargeEmphasized,
+        )
+        Text(text = convertToDays(user.premiumExpiresAt))
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = {
+                setClipboardText(context, user.email)
+            }) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_paste),
+                    contentDescription = "Copy Mail"
+                )
             }
+            Text(text = user.email, overflow = TextOverflow.Clip)
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = {
+                setClipboardText(context, user.authId)
+            }) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_paste),
+                    contentDescription = "Copy Auth ID"
+                )
+            }
+            Text(text = user.authId, overflow = TextOverflow.Clip)
+        }
+
+        if (user.isSubscribed) {
+            Text(text = "Subscribed")
+        } else {
+            Text(text = "No active subscription")
+        }
+
+        if (user.isVendor) {
+            Text(text = "Vendor Enabled")
+        }
+
+        ElevatedCard(
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 6.dp
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .widthIn(min = 250.dp, max = 400.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "Files", style = MaterialTheme.typography.bodySmall)
+                    Text(text = "Downloaded", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = user.totalDownloaded.toString(),
+                        style= CustomTypography.cardBoldValue,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "Torrents", style = MaterialTheme.typography.bodySmall)
+                    Text(text = "Downloaded", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = user.torrentsDownloaded.toString(),
+                        style= CustomTypography.cardBoldValue,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .widthIn(min = 250.dp, max = 400.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "Size", style = MaterialTheme.typography.bodySmall)
+                    Text(text = "Downloaded", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = convertToSize(user.totalBytesDownloaded),
+                        style= CustomTypography.cardBoldValue,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "Size", style = MaterialTheme.typography.bodySmall)
+                    Text(text = "Uploaded", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = convertToSize(user.totalBytesUploaded),
+                        style= CustomTypography.cardBoldValue,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+        }
+
+        if (error != null) {
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
         }
 
     }
@@ -40,41 +191,16 @@ fun TorboxUserPage(
 
 @Preview
 @Composable
-fun UserPagePreview() {
+fun UserScreenPreview() {
     NullSeekTheme {
         Scaffold(
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
-            TorboxUserPage(
+            UserScreen(
                 modifier = Modifier.padding(innerPadding),
-                user = UserDataDto(
-                    id = 1,
-                    authId = "123",
-                    createdAt = "2026-05-22T10:53:44Z",
-                    updatedAt = "2026-06-11T22:18:32Z",
-                    plan = 2,
-                    totalDownloaded = 5,
-                    customer = "123",
-                    isSubscribed = true,
-                    premiumExpiresAt = "2026-08-25T12:51:51Z",
-                    cooldownUntil = "2026-06-12T22:18:31Z",
-                    email = "cool@mail.com",
-                    userReferral = "123456",
-                    baseEmail = "cool@mail.com",
-                    totalBytesDownloaded = 2201170739L,
-                    totalBytesUploaded = 0,
-                    torrentsDownloaded = 45,
-                    webDownloadsDownloaded = 4,
-                    usenetDownloadsDownloaded = 0,
-                    additionalConcurrentSlots = 0,
-                    longTermSeeding = false,
-                    longTermStorage = false,
-                    isVendor = false,
-                    vendorId = null,
-                    purchasesReferred = 0
-                ),
-                token = null,
-                onSave = { _, _ -> }
+                user = mockUser,
+                loading = false,
+                error = null
             )
         }
     }

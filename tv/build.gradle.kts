@@ -6,17 +6,26 @@ plugins {
 
 android {
     namespace = "com.github.livingwithhippos.nullseek.tv"
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk =
+        libs.versions.compileSdk
+            .get()
+            .toInt()
 
     defaultConfig {
         applicationId = "com.github.livingwithhippos.nullseek.tv"
-        minSdk = 27
-        targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
-
+        minSdk =
+            libs.versions.minSdk
+                .get()
+                .toInt()
+        targetSdk =
+            libs.versions.targetSdk
+                .get()
+                .toInt()
+        versionCode =
+            libs.versions.versionCode
+                .get()
+                .toInt()
+        versionName = libs.versions.versionName.get()
     }
 
     buildTypes {
@@ -27,8 +36,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         compose = true

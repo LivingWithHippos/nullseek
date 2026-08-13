@@ -2,16 +2,22 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.koin.compiler)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.android.room)
 }
 
 android {
     namespace = "com.github.livingwithhippos.nullseek.core"
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk =
+        libs.versions.compileSdk
+            .get()
+            .toInt()
 
     defaultConfig {
-        minSdk = 27
+        minSdk =
+            libs.versions.minSdk
+                .get()
+                .toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -20,19 +26,27 @@ android {
         compose = true
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
+    room3 {
+        schemaDirectory("$projectDir/schemas")
+    }
 }
 
 dependencies {
-    val composeBom = platform(libs.androidx.compose.bom)
-    implementation(composeBom)
+    implementation(platform(libs.androidx.compose.bom))
 
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
+
+    implementation(libs.datastore)
+    implementation(libs.room.runtime)
+    ksp(libs.room.compiler)
+
+    implementation(libs.square.logcat)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)

@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">NullSeek</string>
+    <string name="compose">Compose</string>
+    <string name="close_drawer">Close Drawer</string>
+    <string name="navigation_drawer">Navigation Drawer</string>
+    <string name="tab_user">User</string>
+    <string name="tab_lists">Lists</string>
+    <string name="tab_search">Search</string>
+    <string name="tab_home">Home</string>
+    <string name="settings">Settings</string>
 </resources>
