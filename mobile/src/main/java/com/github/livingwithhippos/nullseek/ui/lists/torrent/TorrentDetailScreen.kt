@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -16,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -24,6 +28,7 @@ import com.github.livingwithhippos.nullseek.core.utils.mockTorrent
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.CardStat
 import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
+import com.github.livingwithhippos.nullseek.ui.utils.IconText
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.utils.convertToSize
@@ -90,12 +95,64 @@ private fun TorrentDetailScreen(
 
             val magnet = torrent.magnet
 
-            CopyButton(
-                text = magnet,
-                description = "Copy Magnet",
-                customIcon = R.drawable.ic_magnet,
-                context = context
+            IconText(
+                text = "Magnet",
+                icon = R.drawable.ic_magnet,
             )
+
+            // todo: the magnet can be recovered with another API
+            ButtonGroup(
+                overflowIndicator = { menuState ->
+                    ButtonGroupDefaults.OverflowIndicator(menuState = menuState)
+                },
+                verticalAlignment = Alignment.Top,
+            ) {
+                clickableItem(
+                    label = "Copy",
+                    onClick = { /* Handle click */ }
+                )
+                clickableItem(
+                    label = "Share",
+                    onClick = { /* Handle click */ }
+                )
+                clickableItem(
+                    label = "Open",
+                    onClick = { /* Handle click */ }
+                )
+            }
+
+            IconText(
+                text = "File",
+                icon = R.drawable.ic_file,
+            )
+
+            ButtonGroup(
+                overflowIndicator = { menuState ->
+                    ButtonGroupDefaults.OverflowIndicator(menuState = menuState)
+                },
+                verticalAlignment = Alignment.Top,
+            ) {
+                clickableItem(
+                    label = "Download",
+                    onClick = { /* Handle click */ }
+                )
+                clickableItem(
+                    label = "Download Zip",
+                    onClick = { /* Handle click */ }
+                )
+                clickableItem(
+                    label = "Share",
+                    onClick = { /* Handle click */ }
+                )
+                clickableItem(
+                    label = "Copy",
+                    onClick = { /* Handle click */ }
+                )
+                clickableItem(
+                    label = "Delete",
+                    onClick = { /* Handle click */ }
+                )
+            }
 
             TorrentProgress(
                 progress = torrent.progress,

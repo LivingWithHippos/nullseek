@@ -3,8 +3,10 @@ package com.github.livingwithhippos.nullseek.ui.utils
 import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -15,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.R
@@ -48,7 +51,7 @@ fun CardStat(
 fun CardStatPreview() {
     NullSeekTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
-            CardStat(title = "Seeds", description = "123")
+            CardStat(titles = listOf("Seeds", "Total"), description = "123")
         }
     }
 }
@@ -70,5 +73,49 @@ fun CopyButton(
             painter = painterResource(customIcon ?: R.drawable.ic_copy),
             contentDescription = description
         )
+    }
+}
+
+@Composable
+@Preview
+fun CopyButtonPreview() {
+    NullSeekTheme {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            CopyButton(text = "Sample Text", description = "Copy Sample Text")
+        }
+    }
+}
+
+@Composable
+fun IconText(
+    text: String,
+    @DrawableRes
+    icon: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            modifier = Modifier.padding(end = 4.dp).size(24.dp)
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+@Preview
+fun IconTextPreview() {
+    NullSeekTheme {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            IconText(text = "Sample Text", icon = R.drawable.ic_magnet)
+        }
     }
 }
