@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="300" src="https://raw.githubusercontent.com/LivingWithHippos/nullseek/master/extra/logo/logo.svg" alt="logo">
+  <img width="300" src="https://raw.githubusercontent.com/LivingWithHippos/nullseek/refs/heads/master/extra/logo/logo.svg" alt="logo">
 </p>
 
 # NullSeek
