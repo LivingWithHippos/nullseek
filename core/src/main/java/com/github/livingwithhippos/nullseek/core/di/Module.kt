@@ -13,20 +13,11 @@ import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRep
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepositoryImpl
 import com.github.livingwithhippos.nullseek.core.data.repository.UserRepository
 import com.github.livingwithhippos.nullseek.core.data.repository.UserRepositoryImpl
-import com.github.livingwithhippos.nullseek.core.viewmodel.provider.ProviderViewModel
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.network.TorboxAuthState
 import com.github.livingwithhippos.torbox.network.TorboxClientConfig
 import org.koin.dsl.module
 import org.koin.plugin.module.dsl.create
-import org.koin.plugin.module.dsl.viewModel
-
-private val viewModelModule =
-    module {
-        // todo: decide if we should put the viewmodel in the core module or in their own modules,
-        //  using the @KoinViewModel annotation
-        viewModel<ProviderViewModel>()
-    }
 
 private fun networkModule(logLevel: String = "none") =
     module {
@@ -82,5 +73,4 @@ fun appModule(debug: Boolean) =
     module {
         includes(networkModule(logLevel = if (debug) "info" else "none"))
         includes(storageModule)
-        includes(viewModelModule)
     }

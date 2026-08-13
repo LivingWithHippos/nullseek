@@ -2,27 +2,45 @@ package com.github.livingwithhippos.nullseek
 
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.github.livingwithhippos.nullseek.ui.provider.ProviderEditor
-import com.github.livingwithhippos.nullseek.ui.splash.SplashScreen
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.github.livingwithhippos.nullseek.core.data.NetProvider
+import com.github.livingwithhippos.nullseek.ui.navigation.NavigationActions
+import com.github.livingwithhippos.nullseek.ui.navigation.NullNavigationWrapper
+import com.github.livingwithhippos.nullseek.ui.navigation.Route
 import com.github.livingwithhippos.nullseek.ui.user.UserScreen
+import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
+import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import org.koin.compose.viewmodel.koinViewModel
+
+private fun NavigationSuiteType.toNullNavType() = when (this) {
+    NavigationSuiteType.NavigationBar -> NullNavigationType.BOTTOM_NAVIGATION
+    NavigationSuiteType.NavigationRail -> NullNavigationType.NAVIGATION_RAIL
+    NavigationSuiteType.NavigationDrawer -> NullNavigationType.PERMANENT_NAVIGATION_DRAWER
+    else -> NullNavigationType.BOTTOM_NAVIGATION
+}
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NullSeekApp(
-    appState: NullSeekState = rememberNullSeekState(),
+    windowSize: WindowSizeClass,
+    rootUiState: NullRootUiState,
+    checkValidToken: (provider: NetProvider, token: String) -> Unit,
     viewmodel: NullViewModel = koinViewModel<NullViewModel>()
 ) {
-
-    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-
 
     LaunchedEffect(Unit) {
         viewmodel.events.collect { event ->
@@ -33,38 +51,64 @@ fun NullSeekApp(
                     withDismissAction = event.withDismissAction,
                     duration = event.duration
                 )
-
-                UiEvent.NavigateToUser -> appState.navController.navigate(Screen.User.route) {
-                    popUpTo(Screen.Splash.route) { inclusive = true } // splash/start route
-                    launchSingleTop = true
-                }
-
-                UiEvent.NavigateToSetup -> appState.navController.navigate(Screen.Setup.route) {
-                    popUpTo(Screen.Splash.route) { inclusive = true }
-                    launchSingleTop = true
-                }
             }
         }
     }
 
+    val contentType = when (windowSize.widthSizeClass) {
+        WindowWidthSizeClass.Compact -> NullContentType.SINGLE_PANE
 
-    NavHost(
-        navController = appState.navController,
-        startDestination = Screen.Splash.route
-    ) {
-        composable(Screen.Splash.route) { backStackEntry ->
-            SplashScreen()
-        }
-        composable(Screen.Setup.route) { backStackEntry ->
-            ProviderEditor(
-                onMissingToken = viewmodel::onMissingToken,
-                navigateToUser = {
-                    appState.navigateToUser(backStackEntry)
-                },
+        WindowWidthSizeClass.Medium -> NullContentType.SINGLE_PANE
+
+        WindowWidthSizeClass.Expanded -> NullContentType.DUAL_PANE
+
+        else -> NullContentType.SINGLE_PANE
+    }
+
+    val navController = rememberNavController()
+    val navigationActions = remember(navController) {
+        NavigationActions(navController)
+    }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    Surface {
+        NullNavigationWrapper(
+            currentDestination = currentDestination,
+            navigateToTopLevelDestination = navigationActions::navigateTo,
+        ) {
+            NullNavHost(
+                navController = navController,
+                contentType = contentType,
+                uiState = rootUiState,
+                navigationType = navSuiteType.toNullNavType(),
+                checkValidToken = checkValidToken
             )
         }
-        composable(Screen.User.route) { backStackEntry ->
-            UserScreen()
+    }
+}
+
+@Composable
+private fun NullNavHost(
+    navController: NavHostController,
+    contentType: NullContentType,
+    uiState: NullRootUiState,
+    navigationType: NullNavigationType,
+    checkValidToken: (provider: NetProvider, token: String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    NavHost(
+        modifier = modifier,
+        navController = navController,
+        startDestination = Route.User,
+    ) {
+        composable<Route.User> {
+            UserScreen(
+                contentType = contentType,
+                navigationType = navigationType,
+                uiState = uiState,
+                checkValidToken = checkValidToken
+            )
         }
     }
 }

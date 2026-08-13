@@ -19,6 +19,8 @@ interface NullProviderRepository {
     suspend fun delete(provider: NullProvider)
 
     suspend fun deleteAll()
+
+    suspend fun insertActive(provider: NullProvider): Long
 }
 
 class NullProviderRepositoryImpl(
@@ -39,4 +41,11 @@ class NullProviderRepositoryImpl(
     override suspend fun delete(provider: NullProvider) = nullProviderDao.delete(provider)
 
     override suspend fun deleteAll() = nullProviderDao.deleteAll()
+
+    override suspend fun insertActive(provider: NullProvider): Long {
+        val id = nullProviderDao.insert(provider)
+        // we need to call this again to be sure the others have their active flag set to false
+        nullProviderDao.setActive(id)
+        return id
+    }
 }

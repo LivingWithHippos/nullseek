@@ -3,27 +3,15 @@ package com.github.livingwithhippos.nullseek
 import androidx.compose.material3.SnackbarDuration
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
-import com.github.livingwithhippos.nullseek.core.data.repository.UserRepository
-import com.github.livingwithhippos.torbox.client.TorboxClient
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
-class NullViewModel(
-    private val client: TorboxClient,
-    val providerRepository: NullProviderRepository,
-    val userRepository: UserRepository,
-) : ViewModel() {
+class NullViewModel : ViewModel() {
     private val _events = MutableSharedFlow<UiEvent>()
     val events = _events.asSharedFlow()
-
-    init {
-        // check if there's an active token and enable it, initializing the TorboxClient with the token
-        loadActiveToken()
-    }
 
     fun onMissingToken() {
         // Emit an event to show a snackbar with a message and an action label
@@ -38,21 +26,6 @@ class NullViewModel(
             )
         }
     }
-
-    fun loadActiveToken() {
-        viewModelScope.launch {
-            val activeProvider = providerRepository.getActive()
-            if (activeProvider != null) {
-                client.updateBearerToken(activeProvider.token)
-                // refresh user data on app start to cache it
-                userRepository.refreshUserData()
-                _events.emit(UiEvent.NavigateToUser)
-            } else {
-                // todo: change UI so it has a splash screen first, then we can go to the user or setup screen
-                _events.emit(UiEvent.NavigateToSetup)
-            }
-        }
-    }
 }
 
 sealed interface UiEvent {
@@ -62,8 +35,4 @@ sealed interface UiEvent {
         val withDismissAction: Boolean = false,
         val duration: SnackbarDuration = SnackbarDuration.Short,
     ) : UiEvent
-
-    data object NavigateToSetup : UiEvent
-
-    data object NavigateToUser : UiEvent
 }

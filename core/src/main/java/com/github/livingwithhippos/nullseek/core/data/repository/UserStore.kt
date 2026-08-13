@@ -15,6 +15,12 @@ interface UserRepository {
     suspend fun refreshUserData(): UserDataDto?
 
     suspend fun clearCache()
+
+    /**
+     * Gets the active token ID from the provider DAO. Returns null if there is no active provider.
+     * Can be used to check if we need to set up a new token or to create a cached user with this as foreign key.
+     */
+    suspend fun getActiveTokenId(): Long?
 }
 
 class UserRepositoryImpl(
@@ -26,7 +32,7 @@ class UserRepositoryImpl(
 
     override suspend fun getUserData(): UserDataDto? {
         // todo: add an expiration date and a refresh button to the User screen
-        val activeId = providerDao.getActive()?.id ?: return null
+        val activeId = getActiveTokenId() ?: return null
         val cached = userCacheDao.getById(activeId)
         if (cached != null) {
             return cached.toUserDataDto()
@@ -36,7 +42,7 @@ class UserRepositoryImpl(
 
     override suspend fun refreshUserData(): UserDataDto? {
         // skip the network request if we have no active provider, since it would fail
-        val activeId = providerDao.getActive()?.id ?: return null
+        val activeId = getActiveTokenId() ?: return null
         val result = client.user.data()
 
         if (result is ApiResult.Success) {
@@ -50,4 +56,6 @@ class UserRepositoryImpl(
     override suspend fun clearCache() {
         userCacheDao.clear()
     }
+
+    override suspend fun getActiveTokenId(): Long? = providerDao.getActive()?.id
 }

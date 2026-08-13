@@ -20,7 +20,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -28,87 +27,48 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.github.livingwithhippos.nullseek.NullRootUiState
 import com.github.livingwithhippos.nullseek.R
-import com.github.livingwithhippos.nullseek.core.utils.MathConst
+import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.core.utils.mockUser
+import com.github.livingwithhippos.nullseek.ui.provider.ProviderSetup
 import com.github.livingwithhippos.nullseek.ui.theme.CustomTypography
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
+import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.utils.convertToDays
+import com.github.livingwithhippos.nullseek.utils.convertToSize
+import com.github.livingwithhippos.nullseek.utils.getPlanName
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.model.UserDataDto
-import logcat.asLog
-import logcat.logcat
-import org.koin.compose.viewmodel.koinViewModel
-import kotlin.time.Clock
-import kotlin.time.Instant
 
 @Composable
 fun UserScreen(
+    contentType: NullContentType,
+    uiState: NullRootUiState,
+    navigationType: NullNavigationType,
     modifier: Modifier = Modifier,
-    viewModel: UserViewModel = koinViewModel<UserViewModel>(),
+    checkValidToken: (provider: NetProvider, token: String) -> Unit
 ) {
-    // todo: add support for loading user externally and pass it here
-    val userScreenUiState by viewModel.state.collectAsStateWithLifecycle()
-    val uiState = userScreenUiState
-
+    // todo: renamed this screen to something like UserManagement or whatever
+    //  since it shows both user and setup. Then separate the files
     val context = LocalContext.current
 
-    // todo: check if back navigation needs to be managed
-    /*
-    val scope = rememberCoroutineScope()
-
-    BackHandler(enabled = navigator.canNavigateBack()) {
-        scope.launch {
-            navigator.navigateBack()
-        }
-    }
-     */
-
-    UserScreen(
-        modifier = modifier,
-        user = uiState.user,
-        isLoading = uiState.isLoading,
-        error = uiState.error,
-        context = context
-    )
-}
-
-private fun getPlanName(plan: Int): String {
-    return when (plan) {
-        0 -> "Free"
-        1 -> "Essential"
-        2 -> "Pro"
-        3 -> "Standard"
-        else -> "Unknown"
-    }
-}
-
-fun convertToDays(datetime: String?): String {
-    // todo: move to utils
-    // todo: manage trnalsation and no premium avilable
-    if (datetime == null) {
-        return "No Premium"
-    }
-    try {
-        val dateInstant = Instant.parse(datetime)
-        val now = Clock.System.now()
-        val days = (dateInstant - now).inWholeDays
-        if (days < 0) {
-            return "Expired"
-        }
-        return "$days days"
-    } catch (e: Exception) {
-        logcat("UserScreen") { e.asLog() }
-    }
-    return datetime
-}
-
-fun convertToSize(bytes: Long): String {
-    return when {
-        bytes < MathConst.BYTES_IN_KB -> "$bytes B"
-        bytes < MathConst.BYTES_IN_MB -> "${(bytes / MathConst.BYTES_IN_KB).toInt()} KB"
-        bytes < MathConst.BYTES_IN_GB -> "${(bytes / MathConst.BYTES_IN_MB).toInt()} MB"
-        else -> "${(bytes / MathConst.BYTES_IN_GB).toInt()} GB"
+    // we have no double panel for the user info, unless we decide to put the settings one on the side
+    if (uiState.setup) {
+        ProviderSetup(
+            modifier = modifier,
+            uiState = uiState,
+            checkValidToken = checkValidToken
+        )
+    } else {
+        UserScreen(
+            modifier = modifier,
+            user = uiState.user,
+            loading = uiState.loading,
+            error = uiState.error,
+            context = context
+        )
     }
 }
 
@@ -117,11 +77,12 @@ fun convertToSize(bytes: Long): String {
 private fun UserScreen(
     modifier: Modifier = Modifier,
     user: UserDataDto?,
-    isLoading: Boolean,
+    loading: Boolean,
     error: String?,
     context: Context = LocalContext.current,
 ) {
-    if (isLoading) {
+    if (loading || user == null) {
+        // user == null should not happen
         Column(
             modifier = modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -132,16 +93,12 @@ private fun UserScreen(
         return
     }
 
-    if (user == null) {
-        // todo: show various loading state and buttons
-        Text(text = "No user data available")
-        return
-    }
-
-    // todo: reload button with error message if found
+    // todo: reload button
 
     Column(
-        modifier = modifier.padding(horizontal = 8.dp).fillMaxWidth(),
+        modifier = modifier
+            .padding(horizontal = 8.dp)
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -198,7 +155,9 @@ private fun UserScreen(
             )
         ) {
             Row(
-                modifier = Modifier.padding(top = 12.dp).widthIn(min = 250.dp, max = 400.dp),
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .widthIn(min = 250.dp, max = 400.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -225,7 +184,9 @@ private fun UserScreen(
                 }
             }
             Row(
-                modifier = Modifier.padding(vertical = 12.dp).widthIn(min = 250.dp, max = 400.dp),
+                modifier = Modifier
+                    .padding(vertical = 12.dp)
+                    .widthIn(min = 250.dp, max = 400.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -253,6 +214,13 @@ private fun UserScreen(
             }
         }
 
+        if (error != null) {
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
 
     }
 }
@@ -267,7 +235,7 @@ fun UserScreenPreview() {
             UserScreen(
                 modifier = Modifier.padding(innerPadding),
                 user = mockUser,
-                isLoading = false,
+                loading = false,
                 error = null
             )
         }

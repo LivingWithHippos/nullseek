@@ -1,0 +1,76 @@
+package com.github.livingwithhippos.nullseek.ui.navigation
+
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import com.github.livingwithhippos.nullseek.R
+import kotlinx.serialization.Serializable
+
+sealed interface Route {
+    @Serializable data object Setup : Route
+
+    @Serializable data object User : Route
+
+    @Serializable data object Lists : Route
+
+    @Serializable data object Search : Route
+
+    @Serializable data object Settings : Route
+}
+
+data class TopLevelDestination(
+    val route: Route,
+    val selectedIcon: Int,
+    val unselectedIcon: Int,
+    val iconTextId: Int,
+)
+
+class NavigationActions(
+    private val navController: NavHostController,
+) {
+    fun navigateTo(destination: TopLevelDestination) {
+        navController.navigate(destination.route) {
+            // Pop up to the start destination of the graph to
+            // avoid building up a large stack of destinations
+            // on the back stack as users select items
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            // Avoid multiple copies of the same destination when
+            // reselecting the same item
+            launchSingleTop = true
+            // Restore state when reselecting a previously selected item
+            restoreState = true
+        }
+    }
+}
+
+val TOP_LEVEL_DESTINATIONS =
+    listOf(
+        TopLevelDestination(
+            route = Route.User,
+            selectedIcon = R.drawable.ic_contact_page,
+            unselectedIcon = R.drawable.ic_contact_page,
+            iconTextId = R.string.tab_user,
+        ),
+        TopLevelDestination(
+            route = Route.Lists,
+            selectedIcon = R.drawable.ic_list_bullet,
+            unselectedIcon = R.drawable.ic_list_bullet,
+            iconTextId = R.string.tab_lists,
+        ),
+        TopLevelDestination(
+            route = Route.Search,
+            selectedIcon = R.drawable.ic_manage_search,
+            unselectedIcon = R.drawable.ic_manage_search,
+            iconTextId = R.string.tab_search,
+        ),
+    )
+
+/**
+ * If the lifecycle is not resumed it means this NavBackStackEntry already processed a nav event.
+ *
+ * This is used to de-duplicate navigation events.
+ */
+private fun NavBackStackEntry.lifecycleIsResumed() = this.lifecycle.currentState == Lifecycle.State.RESUMED
