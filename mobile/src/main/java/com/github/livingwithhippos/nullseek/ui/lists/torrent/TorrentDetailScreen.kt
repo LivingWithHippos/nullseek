@@ -28,7 +28,6 @@ import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.torbox.model.TorrentDto
-import kotlinx.coroutines.launch
 
 @Composable
 fun TorrentDetailScreen(

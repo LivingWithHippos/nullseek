@@ -13,6 +13,7 @@ sealed interface Route {
     @Serializable data object Lists : Route
 
     @Serializable data object Search : Route
+
     @Serializable data object Settings : Route
 }
 
@@ -68,12 +69,13 @@ val TOP_LEVEL_DESTINATIONS =
 /**
  * The [TOP_LEVEL_DESTINATIONS] will be all shown in the menu bar, we want the settings page to be separated
  */
-val SETTINGS_DESTINATION = TopLevelDestination(
-    route = Route.Settings,
-    selectedIcon = R.drawable.ic_settings,
-    unselectedIcon = R.drawable.ic_settings,
-    iconTextId = R.string.settings,
-)
+val SETTINGS_DESTINATION =
+    TopLevelDestination(
+        route = Route.Settings,
+        selectedIcon = R.drawable.ic_settings,
+        unselectedIcon = R.drawable.ic_settings,
+        iconTextId = R.string.settings,
+    )
 
 /**
  * If the lifecycle is not resumed it means this NavBackStackEntry already processed a nav event.

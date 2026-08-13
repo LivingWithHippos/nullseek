@@ -121,7 +121,7 @@ class NullRootViewModel(
     }
 
     fun closeDetails() {
-        _uiState.value = _uiState.value.copy( selectedTorrent = null, selectedWeb = null, selectedUsenet = null, isDetailOnlyOpen = false)
+        _uiState.value = _uiState.value.copy(selectedTorrent = null, selectedWeb = null, selectedUsenet = null, isDetailOnlyOpen = false)
     }
 
     // helpers to update the state //
