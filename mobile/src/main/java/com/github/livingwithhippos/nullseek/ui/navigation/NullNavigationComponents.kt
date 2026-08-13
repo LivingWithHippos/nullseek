@@ -30,8 +30,7 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.PermanentDrawerSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.currentWindowSize
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldLayout
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.material3.rememberDrawerState
@@ -70,9 +69,9 @@ fun NullNavigationWrapper(
     navigateToTopLevelDestination: (TopLevelDestination) -> Unit,
     content: @Composable NullNavSuiteScope.() -> Unit,
 ) {
-    val adaptiveInfo = currentWindowAdaptiveInfo()
+    val adaptiveInfo = currentWindowAdaptiveInfoV2()
     val windowSize = with(LocalDensity.current) {
-        currentWindowSize().toSize().toDpSize()
+        LocalWindowInfo.current.containerSize.toSize().toDpSize()
     }
 
     val navLayoutType = when {
