@@ -24,13 +24,17 @@ import com.github.livingwithhippos.nullseek.utils.setClipboardText
 
 @Composable
 fun CardStat(
-    title: String,
+    titles: List<String>,
     description: String,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
     ) {
-        Text(text = title, style = MaterialTheme.typography.bodySmall)
+        titles.forEach { title ->
+            Text(text = title, style = MaterialTheme.typography.bodySmall)
+        }
         Text(
             text = description,
             style = CustomTypography.cardBoldValue,

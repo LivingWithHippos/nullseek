@@ -40,7 +40,7 @@ fun TorrentDetailScreen(
     BackHandler {
         closeDetails()
     }
-    
+
     TorrentDetailScreen(
         modifier = modifier,
         context = LocalContext.current,
@@ -130,30 +130,30 @@ fun TorrentProgress(
     Card {
         Row {
             CardStat(
-                title = "Progress",
+                titles = listOf("Progress"),
                 description = "${(progress * 100).toInt()}%"
             )
             CardStat(
-                title = "Seeds",
+                titles = listOf("Seeds"),
                 description = "$seeds"
             )
             CardStat(
-                title = "Peers",
+                titles = listOf("Peers"),
                 description = "$peers"
             )
         }
 
         Row {
             CardStat(
-                title = "ETA",
+                titles = listOf("ETA"),
                 description = "$eta s"
             )
             CardStat(
-                title = "Download Speed",
+                titles = listOf("Download Speed"),
                 description = "$downloadSpeed kB/s"
             )
             CardStat(
-                title = "Upload Speed",
+                titles = listOf("Upload Speed"),
                 description = "$uploadSpeed kB/s"
             )
         }

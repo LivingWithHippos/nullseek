@@ -31,6 +31,8 @@ import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.utils.mockUser
 import com.github.livingwithhippos.nullseek.ui.theme.CustomTypography
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.utils.CardStat
+import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
 import com.github.livingwithhippos.nullseek.utils.convertToDays
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.nullseek.utils.getPlanName
@@ -79,27 +81,21 @@ fun UserScreen(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = {
-                setClipboardText(context, user.email)
-            }) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_paste),
-                    contentDescription = "Copy Mail"
-                )
-            }
+            CopyButton(
+                text = user.email,
+                description = "Copy Mail",
+                context = context
+            )
             Text(text = user.email, overflow = TextOverflow.Clip)
         }
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = {
-                setClipboardText(context, user.authId)
-            }) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_paste),
-                    contentDescription = "Copy Auth ID"
-                )
-            }
+            CopyButton(
+                text = user.authId,
+                description = "Copy Auth ID",
+                context = context
+            )
             Text(text = user.authId, overflow = TextOverflow.Clip)
         }
 
@@ -125,27 +121,15 @@ fun UserScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = "Files", style = MaterialTheme.typography.bodySmall)
-                    Text(text = "Downloaded", style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        text = user.totalDownloaded.toString(),
-                        style= CustomTypography.cardBoldValue,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
+                CardStat(
+                    titles = listOf("Files", "Downloaded"),
+                    description = user.totalDownloaded.toString()
+                )
                 Spacer(modifier = Modifier.width(16.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Torrents", style = MaterialTheme.typography.bodySmall)
-                    Text(text = "Downloaded", style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        text = user.torrentsDownloaded.toString(),
-                        style= CustomTypography.cardBoldValue,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
+                CardStat(
+                    titles = listOf("Torrents", "Downloaded"),
+                    description = user.torrentsDownloaded.toString()
+                )
             }
             Row(
                 modifier = Modifier
@@ -154,27 +138,17 @@ fun UserScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = "Size", style = MaterialTheme.typography.bodySmall)
-                    Text(text = "Downloaded", style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        text = convertToSize(user.totalBytesDownloaded),
-                        style= CustomTypography.cardBoldValue,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
+
+                CardStat(
+                    titles = listOf("Size", "Downloaded"),
+                    description = convertToSize(user.totalBytesDownloaded)
+                )
                 Spacer(modifier = Modifier.width(16.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Size", style = MaterialTheme.typography.bodySmall)
-                    Text(text = "Uploaded", style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        text = convertToSize(user.totalBytesUploaded),
-                        style= CustomTypography.cardBoldValue,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
+
+                CardStat(
+                    titles = listOf("Size", "Uploaded"),
+                    description = convertToSize(user.totalBytesUploaded)
+                )
             }
         }
 
