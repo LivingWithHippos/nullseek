@@ -74,9 +74,9 @@ private fun TorrentsScreen(
     val lazyPagingItems = flow.collectAsLazyPagingItems()
     Box(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .padding(horizontal = 16.dp)
-        ) {
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -166,16 +166,18 @@ private fun TorrentRowPlaceholder() {
 
 @Preview
 @Composable
-fun TorrentRowPreview() {
+fun TorrentScreenPreview() {
     NullSeekTheme {
         Surface(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 600.dp)
-                    .padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .widthIn(max = 600.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 TorrentRow(
                     mockTorrent
