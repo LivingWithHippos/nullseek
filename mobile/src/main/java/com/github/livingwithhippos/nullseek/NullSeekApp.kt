@@ -22,7 +22,9 @@ import com.github.livingwithhippos.nullseek.ui.lists.ListsScreen
 import com.github.livingwithhippos.nullseek.ui.navigation.NavigationActions
 import com.github.livingwithhippos.nullseek.ui.navigation.NullNavigationWrapper
 import com.github.livingwithhippos.nullseek.ui.navigation.Route
+import com.github.livingwithhippos.nullseek.ui.navigation.SETTINGS_DESTINATION
 import com.github.livingwithhippos.nullseek.ui.search.SearchScreen
+import com.github.livingwithhippos.nullseek.ui.settings.SettingsScreen
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.torbox.model.TorrentDto
@@ -42,7 +44,6 @@ fun NullSeekApp(
     rootUiState: NullRootUiState,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
     loadTorrentDetails: (torrent: TorrentDto) -> Unit,
-    showSettings: (show: Boolean) -> Unit,
     viewmodel: NullViewModel = koinViewModel<NullViewModel>()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -80,7 +81,9 @@ fun NullSeekApp(
     Surface {
         NullNavigationWrapper(
             currentDestination = currentDestination,
-            navigateToTopLevelDestination = navigationActions::navigateTo,
+            navigateToTopLevelDestination = { destination ->
+                navigationActions.navigateTo(destination)
+            },
         ) {
             NullNavHost(
                 navController = navController,
@@ -89,7 +92,9 @@ fun NullSeekApp(
                 navigationType = navSuiteType.toNullNavType(),
                 checkValidToken = checkValidToken,
                 loadTorrentDetails = loadTorrentDetails,
-                showSettings = showSettings
+                showSettings = {
+                    navigationActions.navigateTo(SETTINGS_DESTINATION)
+                },
             )
         }
     }
@@ -103,7 +108,7 @@ private fun NullNavHost(
     navigationType: NullNavigationType,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
     loadTorrentDetails: (torrent: TorrentDto) -> Unit,
-    showSettings: (show: Boolean) -> Unit,
+    showSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NavHost(
@@ -130,9 +135,13 @@ private fun NullNavHost(
         }
         composable<Route.Search> {
             SearchScreen(
+                contentType = contentType, navigationType = navigationType, uiState = uiState
+            )
+        }
+        composable<Route.Settings> {
+            SettingsScreen(
                 contentType = contentType,
-                navigationType = navigationType,
-                uiState = uiState
+                navigationType = navigationType
             )
         }
     }

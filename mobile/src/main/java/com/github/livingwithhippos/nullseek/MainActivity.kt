@@ -40,10 +40,7 @@ class MainActivity : ComponentActivity() {
                         },
                         loadTorrentDetails = { torrent ->
                             viewModel.loadTorrentDetails(torrent, false)
-                        },
-                        showSettings = { show ->
-                            viewModel.showSettings(show)
-                        },
+                        }
                     )
                 }
             }

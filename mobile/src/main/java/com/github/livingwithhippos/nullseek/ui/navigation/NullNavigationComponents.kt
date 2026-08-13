@@ -44,6 +44,7 @@ import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -179,14 +180,14 @@ fun NullNavigationRail(
                 },
             )
             FloatingActionButton(
-                onClick = { /*TODO*/ },
+                onClick = { navigateToTopLevelDestination(SETTINGS_DESTINATION) },
                 modifier = Modifier.padding(top = 8.dp, bottom = 32.dp),
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_settings),
-                    contentDescription = stringResource(id = R.string.settings),
+                    painter = painterResource(id = SETTINGS_DESTINATION.selectedIcon),
+                    contentDescription = stringResource(id = SETTINGS_DESTINATION.iconTextId),
                     modifier = Modifier.size(18.dp),
                 )
             }
@@ -239,7 +240,7 @@ fun NullBottomNavigationBar(currentDestination: NavDestination?, navigateToTopLe
 fun PermanentNavigationDrawerContent(
     currentDestination: NavDestination?,
     navigationContentPosition: NullNavigationContentPosition,
-    navigateToTopLevelDestination: (TopLevelDestination) -> Unit,
+    navigateToTopLevelDestination: (TopLevelDestination) -> Unit
 ) {
     PermanentDrawerSheet(
         modifier = Modifier.sizeIn(minWidth = 200.dp, maxWidth = 300.dp),
@@ -264,7 +265,7 @@ fun PermanentNavigationDrawerContent(
                         color = MaterialTheme.colorScheme.primary,
                     )
                     ExtendedFloatingActionButton(
-                        onClick = { /*TODO*/ },
+                        onClick = { navigateToTopLevelDestination(SETTINGS_DESTINATION) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp, bottom = 40.dp),
@@ -272,12 +273,12 @@ fun PermanentNavigationDrawerContent(
                         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_settings),
-                            contentDescription = stringResource(id = R.string.settings),
+                            painter = painterResource(id = SETTINGS_DESTINATION.selectedIcon),
+                            contentDescription = stringResource(id = SETTINGS_DESTINATION.iconTextId),
                             modifier = Modifier.size(24.dp),
                         )
                         Text(
-                            text = stringResource(id = R.string.settings),
+                            text = stringResource(id = SETTINGS_DESTINATION.iconTextId),
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Center,
                         )
@@ -360,7 +361,7 @@ fun ModalNavigationDrawerContent(
                     }
 
                     ExtendedFloatingActionButton(
-                        onClick = { /*TODO*/ },
+                        onClick = { navigateToTopLevelDestination(SETTINGS_DESTINATION) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp, bottom = 40.dp),
@@ -368,12 +369,12 @@ fun ModalNavigationDrawerContent(
                         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_settings),
-                            contentDescription = stringResource(id = R.string.settings),
+                            painter = painterResource(id = SETTINGS_DESTINATION.selectedIcon),
+                            contentDescription = stringResource(id = SETTINGS_DESTINATION.iconTextId),
                             modifier = Modifier.size(18.dp),
                         )
                         Text(
-                            text = stringResource(id = R.string.settings),
+                            text = stringResource(id = SETTINGS_DESTINATION.iconTextId),
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Center,
                         )

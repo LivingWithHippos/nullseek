@@ -13,6 +13,7 @@ sealed interface Route {
     @Serializable data object Lists : Route
 
     @Serializable data object Search : Route
+    @Serializable data object Settings : Route
 }
 
 data class TopLevelDestination(
@@ -30,6 +31,7 @@ class NavigationActions(
             // Pop up to the start destination of the graph to
             // avoid building up a large stack of destinations
             // on the back stack as users select items
+            // todo: check if we should do something different for the settings destination
             popUpTo(navController.graph.findStartDestination().id) {
                 saveState = true
             }
@@ -63,6 +65,16 @@ val TOP_LEVEL_DESTINATIONS =
             iconTextId = R.string.tab_search,
         ),
     )
+
+/**
+ * The [TOP_LEVEL_DESTINATIONS] will be all shown in the menu bar, we want the settings page to be separated
+ */
+val SETTINGS_DESTINATION = TopLevelDestination(
+    route = Route.Settings,
+    selectedIcon = R.drawable.ic_settings,
+    unselectedIcon = R.drawable.ic_settings,
+    iconTextId = R.string.settings,
+)
 
 /**
  * If the lifecycle is not resumed it means this NavBackStackEntry already processed a nav event.

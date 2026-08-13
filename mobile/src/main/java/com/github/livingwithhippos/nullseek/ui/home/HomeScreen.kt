@@ -1,6 +1,5 @@
 package com.github.livingwithhippos.nullseek.ui.home
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -19,7 +18,6 @@ import com.github.livingwithhippos.nullseek.NullRootUiState
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.ui.provider.ProviderSetup
-import com.github.livingwithhippos.nullseek.ui.settings.SettingsScreen
 import com.github.livingwithhippos.nullseek.ui.user.UserScreen
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
@@ -30,61 +28,49 @@ fun HomeScreen(
     uiState: NullRootUiState,
     navigationType: NullNavigationType,
     modifier: Modifier = Modifier,
-    showSettings: (show: Boolean) -> Unit,
+    showSettings: () -> Unit,
     checkValidToken: (provider: NetProvider, token: String) -> Unit
 ) {
     val context = LocalContext.current
 
-    if (uiState.settings) {
-        BackHandler {
-            showSettings(false)
-        }
-    }
-
     // we have no double panel for the user info, unless we decide to put the settings one on the side
     Box(modifier = modifier.fillMaxSize()) {
-        if (uiState.settings) {
-
-            SettingsScreen(
-                navigationType = navigationType,
+        if (uiState.setup) {
+            ProviderSetup(
                 modifier = modifier,
+                uiState = uiState,
+                checkValidToken = checkValidToken
             )
-
         } else {
-            if (uiState.setup) {
-                ProviderSetup(
-                    modifier = modifier,
-                    uiState = uiState,
-                    checkValidToken = checkValidToken
-                )
-            } else {
-                UserScreen(
-                    modifier = modifier,
-                    user = uiState.user,
-                    loading = uiState.loading,
-                    error = uiState.error,
-                    context = context
-                )
-            }
+            UserScreen(
+                modifier = modifier,
+                user = uiState.user,
+                loading = uiState.loading,
+                error = uiState.error,
+                context = context
+            )
+        }
 
-            if (navigationType == NullNavigationType.BOTTOM_NAVIGATION) {
-                ExtendedFloatingActionButton(
-                    text = { Text(text = stringResource(id = R.string.settings)) },
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_settings),
-                            contentDescription = stringResource(id = R.string.settings)
-                        )
-                    },
-                    onClick = { showSettings(true) },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp),
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                    // todo: manage expanded
-                )
-            }
+        // todo: move this and the showing of the settings to another place
+        //  so it can be triggered by all screens
+
+        if (navigationType == NullNavigationType.BOTTOM_NAVIGATION) {
+            ExtendedFloatingActionButton(
+                text = { Text(text = stringResource(id = R.string.settings)) },
+                icon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_settings),
+                        contentDescription = stringResource(id = R.string.settings)
+                    )
+                },
+                onClick = { showSettings() },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                // todo: manage expanded
+            )
         }
     }
 }
