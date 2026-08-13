@@ -4,33 +4,32 @@ import com.github.livingwithhippos.torbox.model.TorrentDto
 import com.github.livingwithhippos.torbox.model.TorrentFileDto
 import com.github.livingwithhippos.torbox.model.UserDataDto
 
-val mockUser =
-    UserDataDto(
-        id = 1,
-        authId = "123",
-        createdAt = "2026-05-22T10:53:44Z",
-        updatedAt = "2026-06-11T22:18:32Z",
-        plan = 2,
-        totalDownloaded = 5,
-        customer = "123",
-        isSubscribed = true,
-        premiumExpiresAt = "2026-08-25T12:51:51Z",
-        cooldownUntil = "2026-06-12T22:18:31Z",
-        email = "cool@mail.com",
-        userReferral = "123456",
-        baseEmail = "cool@mail.com",
-        totalBytesDownloaded = 55111926106,
-        totalBytesUploaded = 288805503,
-        torrentsDownloaded = 45,
-        webDownloadsDownloaded = 4,
-        usenetDownloadsDownloaded = 0,
-        additionalConcurrentSlots = 0,
-        longTermSeeding = false,
-        longTermStorage = false,
-        isVendor = false,
-        vendorId = null,
-        purchasesReferred = 0,
-    )
+val mockUser = UserDataDto(
+    id = 1,
+    authId = "123",
+    createdAt = "2026-05-22T10:53:44Z",
+    updatedAt = "2026-06-11T22:18:32Z",
+    plan = 2,
+    totalDownloaded = 5,
+    customer = "123",
+    isSubscribed = true,
+    premiumExpiresAt = "2026-08-25T12:51:51Z",
+    cooldownUntil = "2026-06-12T22:18:31Z",
+    email = "cool@mail.com",
+    userReferral = "123456",
+    baseEmail = "cool@mail.com",
+    totalBytesDownloaded = 55111926106,
+    totalBytesUploaded = 288805503,
+    torrentsDownloaded = 45,
+    webDownloadsDownloaded = 4,
+    usenetDownloadsDownloaded = 0,
+    additionalConcurrentSlots = 0,
+    longTermSeeding = false,
+    longTermStorage = false,
+    isVendor = false,
+    vendorId = null,
+    purchasesReferred = 0,
+)
 
 val mockTorrent = TorrentDto(
     id = 75418987,
@@ -70,8 +69,7 @@ val mockTorrent = TorrentDto(
             shortName = "Totally Cool Open Source Movie x265.mkv",
             absolutePath = "/completed/d3adb33f/www.absolutelylegitsource.org    -    Totally Cool Open Source Movie x265/Totally Cool Open Source Movie x265.mkv",
             opensubtitlesHash = "6218572"
-        ),
-        TorrentFileDto(
+        ), TorrentFileDto(
             id = 0,
             md5 = null,
             hash = "d3adb33f",
@@ -84,8 +82,7 @@ val mockTorrent = TorrentDto(
             shortName = "Totally Cool Open Source Movie x265.mkv.nfo",
             absolutePath = "/completed/d3adb33f/www.absolutelylegitsource.org    -    Totally Cool Open Source Movie x265/Totally Cool Open Source Movie x265.mkv.nfo",
             opensubtitlesHash = null
-        ),
-        TorrentFileDto(
+        ), TorrentFileDto(
             id = 1,
             md5 = null,
             hash = "d3adb33f",
@@ -113,8 +110,7 @@ val mockTorrent = TorrentDto(
     cachedAt = "2026-06-13T08:02:01Z",
     isPrivate = false,
     alternativeHashes = listOf(
-        "b33fd3ad",
-        "d3adb33f"
+        "b33fd3ad", "d3adb33f"
     ),
     tags = emptyList()
 )

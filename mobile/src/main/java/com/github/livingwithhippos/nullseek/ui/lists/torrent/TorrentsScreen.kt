@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
-import com.github.livingwithhippos.nullseek.NullRootUiState
 import com.github.livingwithhippos.nullseek.core.utils.mockTorrent
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType

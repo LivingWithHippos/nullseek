@@ -10,11 +10,9 @@ import kotlinx.serialization.Serializable
 sealed interface Route {
     @Serializable data object Home : Route
 
-
     @Serializable data object Lists : Route
 
     @Serializable data object Search : Route
-
 }
 
 data class TopLevelDestination(

@@ -3,7 +3,6 @@ package com.github.livingwithhippos.nullseek
 import androidx.compose.material3.SnackbarDuration
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.livingwithhippos.torbox.model.TorrentDto
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
@@ -11,7 +10,6 @@ import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
 class NullViewModel : ViewModel() {
-
     // todo: remove if unused
     private val _events = MutableSharedFlow<UiEvent>()
     val events = _events.asSharedFlow()

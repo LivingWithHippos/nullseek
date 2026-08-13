@@ -27,6 +27,11 @@ subprojects {
                 step = "ktlint"
                 shortCode = "standard:filename"
             }
+            // 140 characters limit is stupid, what are you buying widescreens for?
+            suppressLintsFor {
+                step = "ktlint"
+                shortCode = "standard:max-line-length"
+            }
         }
         kotlinGradle {
             target("*.gradle.kts")

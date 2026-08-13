@@ -96,11 +96,14 @@ class NullRootViewModel(
         }
     }
 
-    fun loadTorrentDetails(torrent: TorrentDto, reload: Boolean = false) {
+    fun loadTorrentDetails(
+        torrent: TorrentDto,
+        reload: Boolean = false,
+    ) {
         viewModelScope.launch {
             if (reload) {
                 loadingTorrentDetails()
-                val response = client.torrent.get(id=torrent.id)
+                val response = client.torrent.get(id = torrent.id)
                 if (response is ApiResult.Success) {
                     val torrentDetails = response.value.data
                     if (torrentDetails != null) {
@@ -115,7 +118,6 @@ class NullRootViewModel(
                 loadedTorrentDetails(torrent)
             }
         }
-
     }
 
     // helpers to update the state //

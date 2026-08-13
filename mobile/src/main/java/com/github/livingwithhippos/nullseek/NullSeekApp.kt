@@ -23,7 +23,6 @@ import com.github.livingwithhippos.nullseek.ui.navigation.NavigationActions
 import com.github.livingwithhippos.nullseek.ui.navigation.NullNavigationWrapper
 import com.github.livingwithhippos.nullseek.ui.navigation.Route
 import com.github.livingwithhippos.nullseek.ui.search.SearchScreen
-import com.github.livingwithhippos.nullseek.ui.user.UserScreen
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.torbox.model.TorrentDto

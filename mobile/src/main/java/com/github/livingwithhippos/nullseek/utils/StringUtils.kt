@@ -39,7 +39,10 @@ fun convertToSize(bytes: Long): String =
     when {
         // todo: add a single digit to MB and GB
         bytes < MathConst.BYTES_IN_KB -> "$bytes B"
+
         bytes < MathConst.BYTES_IN_MB -> "${(bytes / MathConst.BYTES_IN_KB).toInt()} KB"
+
         bytes < MathConst.BYTES_IN_GB -> "${(bytes / MathConst.BYTES_IN_MB).toInt()} MB"
+
         else -> "${(bytes / MathConst.BYTES_IN_GB).toInt()} GB"
     }

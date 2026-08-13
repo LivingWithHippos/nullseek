@@ -17,15 +17,16 @@ class TorrentsViewModel(
     private val client: TorboxClient,
     val pageSize: Int = 100,
 ) : ViewModel() {
-
-    val torrentsPagingFlow: Flow<PagingData<TorrentDto>> = Pager(
-        config = PagingConfig(
-            pageSize = pageSize,
-            enablePlaceholders = true,
-        ),
-        pagingSourceFactory = {
-            // todo: inject?
-            TorrentsPagingSource(client, pageSize)
-        }
-    ).flow.cachedIn(viewModelScope)
+    val torrentsPagingFlow: Flow<PagingData<TorrentDto>> =
+        Pager(
+            config =
+                PagingConfig(
+                    pageSize = pageSize,
+                    enablePlaceholders = true,
+                ),
+            pagingSourceFactory = {
+                // todo: inject?
+                TorrentsPagingSource(client, pageSize)
+            },
+        ).flow.cachedIn(viewModelScope)
 }
