@@ -12,13 +12,12 @@ import org.koin.core.context.startKoin
 class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-
         AndroidLogcatLogger.installOnDebuggableApp(this, minPriority = VERBOSE)
 
         startKoin {
             androidLogger()
             androidContext(this@MainApplication)
-            modules(appModule(debug = true), mobileModule())
+            modules(appModule(debug = BuildConfig.DEBUG), mobileModule())
         }
     }
 }

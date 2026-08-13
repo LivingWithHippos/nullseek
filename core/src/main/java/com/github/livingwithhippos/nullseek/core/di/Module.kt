@@ -58,6 +58,6 @@ private val storageModule =
 
 fun appModule(debug: Boolean) =
     module {
-        includes(networkModule(logLevel = if (debug) "info" else "none"))
+        includes(networkModule(logLevel = if (debug) "body" else "none"))
         includes(storageModule)
     }
