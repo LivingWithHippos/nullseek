@@ -26,6 +26,7 @@ import com.github.livingwithhippos.nullseek.ui.search.SearchScreen
 import com.github.livingwithhippos.nullseek.ui.user.UserScreen
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.torbox.model.TorrentDto
 import org.koin.compose.viewmodel.koinViewModel
 
 private fun NavigationSuiteType.toNullNavType() = when (this) {
@@ -41,6 +42,7 @@ fun NullSeekApp(
     windowSize: WindowSizeClass,
     rootUiState: NullRootUiState,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
+    loadTorrentDetails: (torrent: TorrentDto) -> Unit,
     viewmodel: NullViewModel = koinViewModel<NullViewModel>()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -85,7 +87,8 @@ fun NullSeekApp(
                 contentType = contentType,
                 uiState = rootUiState,
                 navigationType = navSuiteType.toNullNavType(),
-                checkValidToken = checkValidToken
+                checkValidToken = checkValidToken,
+                loadTorrentDetails = loadTorrentDetails
             )
         }
     }
@@ -98,6 +101,7 @@ private fun NullNavHost(
     uiState: NullRootUiState,
     navigationType: NullNavigationType,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
+    loadTorrentDetails: (torrent: TorrentDto) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NavHost(
@@ -117,7 +121,8 @@ private fun NullNavHost(
             ListsScreen(
                 contentType = contentType,
                 navigationType = navigationType,
-                uiState = uiState
+                uiState = uiState,
+                loadTorrentDetails = loadTorrentDetails
             )
         }
         composable<Route.Search> {

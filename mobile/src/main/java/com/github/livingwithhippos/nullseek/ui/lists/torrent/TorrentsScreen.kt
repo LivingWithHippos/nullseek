@@ -1,29 +1,20 @@
-package com.github.livingwithhippos.nullseek.ui.lists
+package com.github.livingwithhippos.nullseek.ui.lists.torrent
 
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,15 +43,29 @@ fun TorrentsScreen(
     modifier: Modifier = Modifier,
     contentType: NullContentType,
     navigationType: NullNavigationType,
-    uiState: NullRootUiState,
+    torrent: TorrentDto?,
+    loadDetails: (torrent: TorrentDto) -> Unit,
     viewModel: TorrentsViewModel = koinViewModel()
 ) {
     val torrentFlow: Flow<PagingData<TorrentDto>> = viewModel.torrentsPagingFlow
     val context = LocalContext.current
 
-    TorrentsScreen(
-        modifier = modifier, context = context, flow = torrentFlow
-    )
+    // todo: manage showing 2 panes with the torrent details if selected
+
+    if (torrent != null) {
+        TorrentDetailScreen(
+            modifier = modifier,
+            contentType = contentType,
+            navigationType = navigationType,
+            torrent = torrent,
+            // todo: pass functions not viewmodel
+            viewModel = viewModel
+        )
+    } else {
+        TorrentsScreen(
+            modifier = modifier, context = context, flow = torrentFlow, loadDetails = loadDetails
+        )
+    }
 
     // todo: show loading and error states
 }
@@ -69,13 +74,15 @@ fun TorrentsScreen(
 private fun TorrentsScreen(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    flow: Flow<PagingData<TorrentDto>>
+    flow: Flow<PagingData<TorrentDto>>,
+    loadDetails: (torrent: TorrentDto) -> Unit
 ) {
     val lazyPagingItems = flow.collectAsLazyPagingItems()
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.TopCenter
     ) {
         LazyColumn(
             modifier = Modifier
@@ -87,7 +94,7 @@ private fun TorrentsScreen(
                 lazyPagingItems.itemCount, key = lazyPagingItems.itemKey { it.id }) { index ->
                 val torrent = lazyPagingItems[index]
                 if (torrent != null) {
-                    TorrentRow(torrent)
+                    TorrentRow(torrent, loadDetails = loadDetails)
                 } else {
                     TorrentRowPlaceholder()
                 }
@@ -100,12 +107,13 @@ private fun TorrentsScreen(
 private fun TorrentRow(
     torrent: TorrentDto,
     modifier: Modifier = Modifier,
+    loadDetails: (torrent: TorrentDto) -> Unit
 ) {
-    // todo: add to placeholder when completed
     ElevatedCard(
         elevation = CardDefaults.cardElevation(
             defaultElevation = 6.dp
-        ), modifier = modifier
+        ), modifier = modifier,
+        onClick = { loadDetails(torrent) }
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -180,10 +188,12 @@ fun TorrentScreenPreview() {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 TorrentRow(
-                    mockTorrent
+                    mockTorrent,
+                    loadDetails = {}
                 )
                 TorrentRow(
-                    mockTorrent
+                    mockTorrent,
+                    loadDetails = {}
                 )
             }
         }

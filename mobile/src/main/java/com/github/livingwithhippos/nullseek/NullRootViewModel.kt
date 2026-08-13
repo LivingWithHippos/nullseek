@@ -7,6 +7,7 @@ import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
 import com.github.livingwithhippos.torbox.client.TorboxClient
+import com.github.livingwithhippos.torbox.model.TorrentDto
 import com.github.livingwithhippos.torbox.model.UserDataDto
 import com.github.livingwithhippos.torbox.network.ApiResult
 import com.github.livingwithhippos.torbox.network.TorboxClientConfig
@@ -95,25 +96,57 @@ class NullRootViewModel(
         }
     }
 
+    fun loadTorrentDetails(torrent: TorrentDto, reload: Boolean = false) {
+        viewModelScope.launch {
+            if (reload) {
+                loadingTorrentDetails()
+                val response = client.torrent.get(id=torrent.id)
+                if (response is ApiResult.Success) {
+                    val torrentDetails = response.value.data
+                    if (torrentDetails != null) {
+                        loadedTorrentDetails(torrentDetails)
+                    } else {
+                        setupInvalid("Failed to load torrent details")
+                    }
+                } else {
+                    setupInvalid("Failed to load torrent details")
+                }
+            } else {
+                loadedTorrentDetails(torrent)
+            }
+        }
+
+    }
+
     // helpers to update the state //
 
-    fun activeTokenLoaded(user: UserDataDto) {
+    // todo add a prefix for these
+
+    private fun loadingTorrentDetails() {
+        _uiState.value = _uiState.value.copy(loading = true, selectedTorrent = null, error = null)
+    }
+
+    private fun loadedTorrentDetails(torrent: TorrentDto) {
+        _uiState.value = _uiState.value.copy(loading = false, selectedTorrent = torrent, error = null)
+    }
+
+    private fun activeTokenLoaded(user: UserDataDto) {
         _uiState.value = _uiState.value.copy(loading = false, setup = false, user = user, error = null)
     }
 
-    fun setupNeeded() {
+    private fun setupNeeded() {
         _uiState.value = _uiState.value.copy(loading = false, setup = true, user = null)
     }
 
-    fun setupCompleted(user: UserDataDto) {
+    private fun setupCompleted(user: UserDataDto) {
         _uiState.value = _uiState.value.copy(loading = false, setup = false, user = user, error = null)
     }
 
-    fun setupInvalid(error: String) {
+    private fun setupInvalid(error: String) {
         _uiState.value = _uiState.value.copy(loading = false, error = error)
     }
 
-    fun setLoading(loading: Boolean) {
+    private fun setLoading(loading: Boolean) {
         _uiState.value = _uiState.value.copy(loading = loading)
     }
 }
@@ -140,7 +173,7 @@ data class NullRootUiState(
     /**
      * currently selected a torrent, to show its details page
      */
-    val selectedTorrent: Int? = null,
+    val selectedTorrent: TorrentDto? = null,
     /**
      * currently selected a web download, to show its details page
      */

@@ -1,4 +1,4 @@
-package com.github.livingwithhippos.nullseek.ui.lists
+package com.github.livingwithhippos.nullseek.ui.lists.torrent
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,7 +11,6 @@ import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import kotlinx.coroutines.flow.Flow
 import org.koin.core.annotation.KoinViewModel
-
 
 @KoinViewModel
 class TorrentsViewModel(

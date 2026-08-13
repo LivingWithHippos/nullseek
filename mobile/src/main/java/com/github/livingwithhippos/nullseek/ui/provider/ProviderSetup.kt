@@ -89,7 +89,7 @@ private fun ProviderSetup(
                         }
                     }) {
                         Icon(
-                            painter = painterResource(R.drawable.icon_paste),
+                            painter = painterResource(R.drawable.ic_paste),
                             contentDescription = "Paste"
                         )
                     }

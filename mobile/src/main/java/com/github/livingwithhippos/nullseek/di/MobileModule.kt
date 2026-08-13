@@ -2,7 +2,7 @@ package com.github.livingwithhippos.nullseek.di
 
 import com.github.livingwithhippos.nullseek.NullRootViewModel
 import com.github.livingwithhippos.nullseek.NullViewModel
-import com.github.livingwithhippos.nullseek.ui.lists.TorrentsViewModel
+import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentsViewModel
 import org.koin.dsl.module
 import org.koin.plugin.module.dsl.viewModel
 

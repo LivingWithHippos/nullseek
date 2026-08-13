@@ -38,6 +38,9 @@ class MainActivity : ComponentActivity() {
                         checkValidToken = { provider, token ->
                             viewModel.checkValidToken(provider, token)
                         },
+                        loadTorrentDetails = { torrent ->
+                            viewModel.loadTorrentDetails(torrent, false)
+                        }
                     )
                 }
             }

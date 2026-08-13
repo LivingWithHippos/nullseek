@@ -76,7 +76,6 @@ fun UserScreen(
             style = MaterialTheme.typography.titleLargeEmphasized,
         )
         Text(text = convertToDays(user.premiumExpiresAt))
-        Text(text = user.email, maxLines = 1, overflow = TextOverflow.Clip)
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -84,11 +83,11 @@ fun UserScreen(
                 setClipboardText(context, user.email)
             }) {
                 Icon(
-                    painter = painterResource(R.drawable.icon_paste),
+                    painter = painterResource(R.drawable.ic_paste),
                     contentDescription = "Copy Mail"
                 )
             }
-            Text(text = user.email)
+            Text(text = user.email, overflow = TextOverflow.Clip)
         }
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -97,11 +96,11 @@ fun UserScreen(
                 setClipboardText(context, user.authId)
             }) {
                 Icon(
-                    painter = painterResource(R.drawable.icon_paste),
+                    painter = painterResource(R.drawable.ic_paste),
                     contentDescription = "Copy Auth ID"
                 )
             }
-            Text(text = user.authId)
+            Text(text = user.authId, overflow = TextOverflow.Clip)
         }
 
         if (user.isSubscribed) {
