@@ -17,6 +17,7 @@ fun ListsScreen(
     contentType: NullContentType,
     navigationType: NullNavigationType,
     loadTorrentDetails: (torrent: TorrentDto) -> Unit,
+    closeDetails: () -> Unit,
     uiState: NullRootUiState
 ) {
 
@@ -31,6 +32,7 @@ fun ListsScreen(
             contentType = contentType,
             navigationType = navigationType,
             loadDetails = loadTorrentDetails,
+            closeDetails = closeDetails,
             torrent = uiState.selectedTorrent
         )
     }
@@ -43,6 +45,7 @@ fun ListsScreenPreview() {
         contentType = NullContentType.SINGLE_PANE,
         uiState = NullRootUiState(),
         navigationType = NullNavigationType.BOTTOM_NAVIGATION,
-        loadTorrentDetails = {}
+        loadTorrentDetails = {},
+        closeDetails = {}
     )
 }

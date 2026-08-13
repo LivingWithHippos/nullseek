@@ -31,7 +31,6 @@ class NavigationActions(
             // Pop up to the start destination of the graph to
             // avoid building up a large stack of destinations
             // on the back stack as users select items
-            // todo: check if we should do something different for the settings destination
             popUpTo(navController.graph.findStartDestination().id) {
                 saveState = true
             }

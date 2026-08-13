@@ -40,6 +40,9 @@ class MainActivity : ComponentActivity() {
                         },
                         loadTorrentDetails = { torrent ->
                             viewModel.loadTorrentDetails(torrent, false)
+                        },
+                        closeDetails = {
+                            viewModel.closeDetails()
                         }
                     )
                 }

@@ -120,6 +120,10 @@ class NullRootViewModel(
         }
     }
 
+    fun closeDetails() {
+        _uiState.value = _uiState.value.copy( selectedTorrent = null, selectedWeb = null, selectedUsenet = null, isDetailOnlyOpen = false)
+    }
+
     // helpers to update the state //
 
     // todo add a prefix for these
@@ -180,9 +184,7 @@ data class NullRootUiState(
      * currently selected a web download, to show its details page
      */
     val selectedWeb: Int? = null,
-    /**
-     *
-     */
+    val selectedUsenet: Int? = null,
     val isDetailOnlyOpen: Boolean = false,
     val error: String? = null,
     val isOnline: Boolean = true,

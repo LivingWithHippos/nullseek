@@ -1,6 +1,7 @@
 package com.github.livingwithhippos.nullseek.ui.lists.torrent
 
 import android.content.Context
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.torbox.model.TorrentDto
+import kotlinx.coroutines.launch
 
 @Composable
 fun TorrentDetailScreen(
@@ -34,8 +36,12 @@ fun TorrentDetailScreen(
     contentType: NullContentType,
     navigationType: NullNavigationType,
     torrent: TorrentDto,
-    viewModel: TorrentsViewModel
+    closeDetails: () -> Unit,
 ) {
+    BackHandler {
+        closeDetails()
+    }
+    
     TorrentDetailScreen(
         modifier = modifier,
         context = LocalContext.current,

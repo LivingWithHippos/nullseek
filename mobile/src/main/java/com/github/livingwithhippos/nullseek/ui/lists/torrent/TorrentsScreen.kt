@@ -44,6 +44,7 @@ fun TorrentsScreen(
     navigationType: NullNavigationType,
     torrent: TorrentDto?,
     loadDetails: (torrent: TorrentDto) -> Unit,
+    closeDetails: () -> Unit,
     viewModel: TorrentsViewModel = koinViewModel()
 ) {
     val torrentFlow: Flow<PagingData<TorrentDto>> = viewModel.torrentsPagingFlow
@@ -57,8 +58,7 @@ fun TorrentsScreen(
             contentType = contentType,
             navigationType = navigationType,
             torrent = torrent,
-            // todo: pass functions not viewmodel
-            viewModel = viewModel
+            closeDetails = closeDetails,
         )
     } else {
         TorrentsScreen(
