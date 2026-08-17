@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -23,20 +21,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.utils.mockUser
-import com.github.livingwithhippos.nullseek.ui.theme.CustomTypography
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.CardStat
 import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
 import com.github.livingwithhippos.nullseek.utils.convertToDays
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.nullseek.utils.getPlanName
-import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.model.UserDataDto
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

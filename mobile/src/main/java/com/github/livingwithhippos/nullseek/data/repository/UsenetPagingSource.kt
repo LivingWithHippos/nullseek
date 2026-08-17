@@ -9,11 +9,9 @@ import logcat.logcat
 
 class UsenetPagingSource(
     val client: TorboxClient,
-    val pageSize: Int = 100
+    val pageSize: Int = 100,
 ) : PagingSource<Int, UsenetDownloadDto>() {
-    override suspend fun load(
-        params: LoadParams<Int>
-    ): LoadResult<Int, UsenetDownloadDto> {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, UsenetDownloadDto> {
         try {
             // Start refresh at page 0 if undefined.
             val nextPageNumber = params.key ?: 0
@@ -26,7 +24,7 @@ class UsenetPagingSource(
                 return LoadResult.Page(
                     data = items,
                     prevKey = null, // Only paging forward.
-                    nextKey = if (isEndOfList) null else nextPageNumber + 1
+                    nextKey = if (isEndOfList) null else nextPageNumber + 1,
                 )
             } else {
                 logcat { "Failed to load usenet: $response" }
@@ -38,10 +36,9 @@ class UsenetPagingSource(
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, UsenetDownloadDto>): Int? {
-        return state.anchorPosition?.let { anchorPosition ->
+    override fun getRefreshKey(state: PagingState<Int, UsenetDownloadDto>): Int? =
+        state.anchorPosition?.let { anchorPosition ->
             val anchorPage = state.closestPageToPosition(anchorPosition)
             anchorPage?.prevKey?.plus(1) ?: anchorPage?.nextKey?.minus(1)
         }
-    }
 }

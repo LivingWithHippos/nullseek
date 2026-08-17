@@ -9,11 +9,9 @@ import logcat.logcat
 
 class WebPagingSource(
     val client: TorboxClient,
-    val pageSize: Int = 100
+    val pageSize: Int = 100,
 ) : PagingSource<Int, WebDownloadDto>() {
-    override suspend fun load(
-        params: LoadParams<Int>
-    ): LoadResult<Int, WebDownloadDto> {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, WebDownloadDto> {
         try {
             // Start refresh at page 0 if undefined.
             val nextPageNumber = params.key ?: 0
@@ -27,7 +25,7 @@ class WebPagingSource(
                     data = items,
                     //  prevKey = if (nextPageNumber == 0) null else nextPageNumber - 1,
                     prevKey = null, // Only paging forward.
-                    nextKey = if (isEndOfList) null else nextPageNumber + 1
+                    nextKey = if (isEndOfList) null else nextPageNumber + 1,
                 )
             } else {
                 logcat { "Failed to load web: $response" }
@@ -39,10 +37,9 @@ class WebPagingSource(
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, WebDownloadDto>): Int? {
-        return state.anchorPosition?.let { anchorPosition ->
+    override fun getRefreshKey(state: PagingState<Int, WebDownloadDto>): Int? =
+        state.anchorPosition?.let { anchorPosition ->
             val anchorPage = state.closestPageToPosition(anchorPosition)
             anchorPage?.prevKey?.plus(1) ?: anchorPage?.nextKey?.minus(1)
         }
-    }
 }

@@ -17,6 +17,7 @@ class TorrentsViewModel(
     private val client: TorboxClient,
     val pageSize: Int = 100,
 ) : ViewModel() {
+    // / todo: delete if unused
     val torrentsPagingFlow: Flow<PagingData<TorrentDto>> =
         Pager(
             config =
