@@ -3,6 +3,8 @@ package com.github.livingwithhippos.nullseek.core.utils
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import com.github.livingwithhippos.torbox.model.TorrentFileDto
 import com.github.livingwithhippos.torbox.model.UserDataDto
+import com.github.livingwithhippos.torbox.model.WebDownloadDto
+import com.github.livingwithhippos.torbox.model.WebDownloadFileDto
 
 val mockUser = UserDataDto(
     id = 1,
@@ -113,4 +115,50 @@ val mockTorrent = TorrentDto(
         "b33fd3ad", "d3adb33f"
     ),
     tags = emptyList()
+)
+
+val mockWebDownload: WebDownloadDto =  WebDownloadDto(
+    id = 101,
+    createdAt = "2026-05-22T14:19:46Z",
+    updatedAt = "2026-07-29T01:08:18Z",
+    authId = "123-456-789",
+    name = "7zip.rar",
+    hash = "76529d837695741",
+    downloadState = "expired",
+    downloadSpeed = 0,
+    originalUrl = "https://downloadzz.net/file/76529d837695741/7zip.rar.html",
+    eta = 0,
+    progress = 1.0,
+    size = 2205617365L,
+    downloadId = null,
+    files = listOf(
+        WebDownloadFileDto(
+            id = 0,
+            md5 = null,
+            hash = "76529d837695741",
+            name = "7zip/7zip.rar",
+            size = 2205617365L,
+            zipped = false,
+            s3Path = "76529d837695741/7zip/7zip.rar",
+            infected = false,
+            mimetype = "application/x-rar",
+            shortName = "7zip.rar",
+            absolutePath = "/app/downloads/76529d837695741/7zip/7zip.rar",
+            opensubtitlesHash = null
+        )
+    ),
+    active = false,
+    cached = false,
+    downloadPresent = false,
+    downloadFinished = true,
+    expiresAt = "2026-06-21T14:20:56Z",
+    error = null,
+    cachedAt = "2026-05-22T14:20:56Z",
+    server = 50,
+    alternativeHashes = listOf(
+        "9a54d765c70f8dea",
+        "2d19d0f03e54efda",
+        "d1e1f702922e0c14"
+    ),
+    tags = listOf("test")
 )

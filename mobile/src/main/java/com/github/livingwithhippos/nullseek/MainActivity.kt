@@ -41,6 +41,12 @@ class MainActivity : ComponentActivity() {
                         loadTorrentDetails = { torrent ->
                             viewModel.loadTorrentDetails(torrent, false)
                         },
+                        loadWebDetails = { webDownload ->
+                            viewModel.loadWebDetails(webDownload, false)
+                        },
+                        loadUsenetDetails = { usenetDownload ->
+                            viewModel.loadUsenetDetails(usenetDownload, false)
+                        },
                         closeDetails = {
                             viewModel.closeDetails()
                         },

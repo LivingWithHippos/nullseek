@@ -28,6 +28,8 @@ import com.github.livingwithhippos.nullseek.ui.settings.SettingsScreen
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.torbox.model.TorrentDto
+import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
+import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import org.koin.compose.viewmodel.koinViewModel
 
 private fun NavigationSuiteType.toNullNavType() = when (this) {
@@ -44,6 +46,8 @@ fun NullSeekApp(
     rootUiState: NullRootUiState,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
     loadTorrentDetails: (torrent: TorrentDto) -> Unit,
+    loadWebDetails: (webDownload: WebDownloadDto) -> Unit,
+    loadUsenetDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
     closeDetails: () -> Unit,
     viewmodel: NullViewModel = koinViewModel<NullViewModel>()
 ) {
@@ -93,6 +97,8 @@ fun NullSeekApp(
                 navigationType = navSuiteType.toNullNavType(),
                 checkValidToken = checkValidToken,
                 loadTorrentDetails = loadTorrentDetails,
+                loadWebDetails = loadWebDetails,
+                loadUsenetDetails = loadUsenetDetails,
                 showSettings = {
                     navigationActions.navigateTo(SETTINGS_DESTINATION)
                 },
@@ -110,6 +116,8 @@ private fun NullNavHost(
     navigationType: NullNavigationType,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
     loadTorrentDetails: (torrent: TorrentDto) -> Unit,
+    loadWebDetails: (webDownload: WebDownloadDto) -> Unit,
+    loadUsenetDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
     showSettings: () -> Unit,
     closeDetails: () -> Unit,
     modifier: Modifier = Modifier,
@@ -134,6 +142,8 @@ private fun NullNavHost(
                 navigationType = navigationType,
                 uiState = uiState,
                 loadTorrentDetails = loadTorrentDetails,
+                loadWebDetails = loadWebDetails,
+                loadUsenetDetails = loadUsenetDetails,
                 closeDetails = closeDetails
             )
         }

@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -35,7 +37,6 @@ import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import kotlinx.coroutines.flow.Flow
-import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun TorrentsScreen(
@@ -43,11 +44,10 @@ fun TorrentsScreen(
     contentType: NullContentType,
     navigationType: NullNavigationType,
     torrent: TorrentDto?,
+    flow: Flow<PagingData<TorrentDto>>,
     loadDetails: (torrent: TorrentDto) -> Unit,
-    closeDetails: () -> Unit,
-    viewModel: TorrentsViewModel = koinViewModel()
+    closeDetails: () -> Unit
 ) {
-    val torrentFlow: Flow<PagingData<TorrentDto>> = viewModel.torrentsPagingFlow
     val context = LocalContext.current
 
     // todo: manage showing 2 panes with the torrent details if selected
@@ -62,11 +62,9 @@ fun TorrentsScreen(
         )
     } else {
         TorrentsScreen(
-            modifier = modifier, context = context, flow = torrentFlow, loadDetails = loadDetails
+            modifier = modifier, context = context, flow = flow, loadDetails = loadDetails
         )
     }
-
-    // todo: show loading and error states
 }
 
 @Composable
@@ -76,6 +74,8 @@ private fun TorrentsScreen(
     flow: Flow<PagingData<TorrentDto>>,
     loadDetails: (torrent: TorrentDto) -> Unit
 ) {
+    val listState: LazyListState = rememberLazyListState()
+    // todo: show loading or error states, see lazyPagingItems.itemCount and lazyPagingItems.loadState
     val lazyPagingItems = flow.collectAsLazyPagingItems()
     Box(
         modifier = Modifier
@@ -84,6 +84,7 @@ private fun TorrentsScreen(
         contentAlignment = Alignment.TopCenter
     ) {
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = 600.dp),
