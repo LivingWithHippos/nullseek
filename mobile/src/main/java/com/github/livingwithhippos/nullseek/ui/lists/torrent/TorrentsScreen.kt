@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -57,7 +58,7 @@ fun TorrentsScreen(
             modifier = modifier,
             contentType = contentType,
             navigationType = navigationType,
-            torrent = torrent,
+            item = torrent,
             closeDetails = closeDetails,
         )
     } else {
@@ -88,7 +89,8 @@ private fun TorrentsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = 600.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(
                 lazyPagingItems.itemCount, key = lazyPagingItems.itemKey { it.id }) { index ->
@@ -105,7 +107,7 @@ private fun TorrentsScreen(
 
 @Composable
 private fun TorrentRow(
-    torrent: TorrentDto,
+    item: TorrentDto,
     modifier: Modifier = Modifier,
     loadDetails: (torrent: TorrentDto) -> Unit
 ) {
@@ -113,14 +115,14 @@ private fun TorrentRow(
         elevation = CardDefaults.cardElevation(
             defaultElevation = 6.dp
         ), modifier = modifier,
-        onClick = { loadDetails(torrent) }
+        onClick = { loadDetails(item) }
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
         ) {
 
             Text(
-                text = torrent.name,
+                text = item.name,
                 textAlign = TextAlign.Start,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
@@ -141,11 +143,11 @@ private fun TorrentRow(
 
                 item {
                     AssistChip(onClick = { }, label = {
-                        Text(text = torrent.downloadState)
+                        Text(text = item.downloadState)
                     })
                 }
 
-                if (torrent.downloadFinished) {
+                if (item.downloadFinished) {
                     item {
                         AssistChip(onClick = { }, label = {
                             Text(text = "Download Ready")
@@ -155,7 +157,7 @@ private fun TorrentRow(
             }
 
             Text(
-                text = "Total Size: ${convertToSize(torrent.size)}",
+                text = "Total Size: ${convertToSize(item.size)}",
                 style = MaterialTheme.typography.bodyMedium
             )
         }

@@ -2,8 +2,10 @@ package com.github.livingwithhippos.nullseek.ui.lists
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,14 +20,18 @@ import androidx.compose.ui.unit.dp
 import androidx.paging.PagingData
 import com.github.livingwithhippos.nullseek.NullRootUiState
 import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.utils.mockTorrent
 import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentsScreen
+import com.github.livingwithhippos.nullseek.ui.lists.usenet.UsenetScreen
 import com.github.livingwithhippos.nullseek.ui.lists.web.WebScreen
+import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
 import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import org.koin.androidx.compose.koinViewModel
 
 enum class Destination(
@@ -105,22 +111,61 @@ fun ListsScreen(
             }
 
             Destination.USENET -> {
-                // UsenetScreen()
+                UsenetScreen(
+                    modifier = modifier,
+                    contentType = contentType,
+                    navigationType = navigationType,
+                    loadDetails = loadUsenetDetails,
+                    closeDetails = closeDetails,
+                    usenet = uiState.selectedUsenet,
+                    flow = usenetFlow
+                )
             }
         }
     }
 }
 
+private fun torrentPreviewFlow() = flowOf(
+    PagingData.from(
+        listOf(
+            mockTorrent
+        )
+    )
+)
+
 @Preview
 @Composable
-fun ListsScreenPreview() {
-    ListsScreen(
-        contentType = NullContentType.SINGLE_PANE,
-        uiState = NullRootUiState(),
-        navigationType = NullNavigationType.BOTTOM_NAVIGATION,
-        loadTorrentDetails = {},
-        loadWebDetails = {},
-        loadUsenetDetails = {},
-        closeDetails = {}
-    )
+fun ListsScreenPreview(
+    modifier: Modifier = Modifier,) {
+    val selectedDestination = 0
+
+    NullSeekTheme {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+        Column(modifier = modifier) {
+            PrimaryTabRow(selectedTabIndex = selectedDestination, modifier = Modifier.padding(10.dp)) {
+                Destination.entries.forEachIndexed { index, destination ->
+                    Tab(
+                        selected = selectedDestination == index, onClick = {
+                        }, text = {
+                            Text(
+                                text = destination.label, maxLines = 2, overflow = TextOverflow.Ellipsis
+                            )
+                        })
+                }
+            }
+            TorrentsScreen(
+                modifier = modifier,
+                contentType = NullContentType.SINGLE_PANE,
+                navigationType = NullNavigationType.BOTTOM_NAVIGATION,
+                loadDetails = {},
+                closeDetails = {},
+                torrent = null,
+                flow = torrentPreviewFlow()
+            )
+        }
+        }
+    }
 }

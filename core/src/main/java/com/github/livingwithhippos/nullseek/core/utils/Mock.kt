@@ -2,6 +2,8 @@ package com.github.livingwithhippos.nullseek.core.utils
 
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import com.github.livingwithhippos.torbox.model.TorrentFileDto
+import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
+import com.github.livingwithhippos.torbox.model.UsenetDownloadFileDto
 import com.github.livingwithhippos.torbox.model.UserDataDto
 import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import com.github.livingwithhippos.torbox.model.WebDownloadFileDto
@@ -161,4 +163,66 @@ val mockWebDownload: WebDownloadDto =  WebDownloadDto(
         "d1e1f702922e0c14"
     ),
     tags = listOf("test")
+)
+
+val mockUsenetDownload = UsenetDownloadDto(
+    id = 123,
+    createdAt = "2026-08-17T10:00:00Z",
+    updatedAt = "2026-08-17T10:05:00Z",
+    authId = "auth_abc123",
+    name = "Example Usenet Download",
+    hash = "f1d2d2f924e986ac86fdf7b36c94bcdf32beec15",
+    downloadState = "downloading",
+    downloadSpeed = 5_242_880L,
+    originalUrl = "https://example.com/nzb/example-download.nzb",
+    eta = 360,
+    progress = 42.5,
+    size = 15_728_640_000L,
+    downloadId = "dl_987654",
+    files = listOf(
+        UsenetDownloadFileDto(
+            id = 1,
+            md5 = "098f6bcd4621d373cade4e832627b4f6",
+            hash = "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+            name = "movie.part1.rar",
+            size = 1_073_741_824L,
+            zipped = true,
+            s3Path = "/usenet/files/movie.part1.rar",
+            infected = false,
+            mimetype = "application/vnd.rar",
+            shortName = "movie.part1.rar",
+            absolutePath = "/downloads/movie.part1.rar",
+            opensubtitlesHash = null,
+        ),
+        UsenetDownloadFileDto(
+            id = 2,
+            md5 = null,
+            hash = "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12",
+            name = "movie.srt",
+            size = 98_304L,
+            zipped = false,
+            s3Path = "/usenet/files/movie.srt",
+            infected = false,
+            mimetype = "application/x-subrip",
+            shortName = "movie.srt",
+            absolutePath = "/downloads/movie.srt",
+            opensubtitlesHash = "abcdef1234567890",
+        ),
+    ),
+    active = true,
+    cached = false,
+    downloadPresent = true,
+    downloadFinished = false,
+    expiresAt = "2026-08-24T10:00:00Z",
+    server = 1,
+    cachedAt = null,
+    alternativeHashes = listOf(
+        "alt-hash-1",
+        "alt-hash-2",
+    ),
+    tags = listOf(
+        "movies",
+        "hd",
+        "test",
+    ),
 )

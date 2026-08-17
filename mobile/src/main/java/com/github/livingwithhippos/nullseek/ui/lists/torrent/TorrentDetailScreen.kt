@@ -36,7 +36,7 @@ fun TorrentDetailScreen(
     modifier: Modifier = Modifier,
     contentType: NullContentType,
     navigationType: NullNavigationType,
-    torrent: TorrentDto,
+    item: TorrentDto,
     closeDetails: () -> Unit,
 ) {
     BackHandler {
@@ -46,7 +46,7 @@ fun TorrentDetailScreen(
     TorrentDetailScreen(
         modifier = modifier,
         context = LocalContext.current,
-        torrent = torrent
+        item = item
     )
 }
 
@@ -54,7 +54,7 @@ fun TorrentDetailScreen(
 private fun TorrentDetailScreen(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    torrent: TorrentDto,
+    item: TorrentDto,
 ) {
 
     // todo:
@@ -69,7 +69,7 @@ private fun TorrentDetailScreen(
     ) {
         Column {
             Text(
-                text = torrent.name,
+                text = item.name,
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(vertical = 8.dp),
                 maxLines = 3,
@@ -77,20 +77,20 @@ private fun TorrentDetailScreen(
             )
 
             Text(
-                text = "Size: ${convertToSize(torrent.size)}",
+                text = "Size: ${convertToSize(item.size)}",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(vertical = 4.dp)
             )
 
-            if (torrent.active) {
+            if (item.active) {
                 AssistChip(onClick = { }, label = { Text("active") })
             }
 
-            if (torrent.cached) {
+            if (item.cached) {
                 AssistChip(onClick = { }, label = { Text("cached") })
             }
 
-            val magnet = torrent.magnet
+            val magnet = item.magnet
 
             IconText(
                 text = "Magnet",
@@ -152,15 +152,15 @@ private fun TorrentDetailScreen(
             }
 
             TorrentProgress(
-                progress = torrent.progress,
-                completed = torrent.downloadFinished,
+                progress = item.progress,
+                completed = item.downloadFinished,
                 // todo: check speeds type
-                downloadSpeed = torrent.downloadSpeed,
-                uploadSpeed = torrent.uploadSpeed,
+                downloadSpeed = item.downloadSpeed,
+                uploadSpeed = item.uploadSpeed,
                 // todo: check eta type
-                eta = torrent.eta,
-                seeds = torrent.seeds,
-                peers = torrent.peers
+                eta = item.eta,
+                seeds = item.seeds,
+                peers = item.peers
             )
         }
     }
@@ -226,7 +226,7 @@ fun TorrentDetailScreenPreview() {
                 .padding(horizontal = 16.dp)
         ) {
             TorrentDetailScreen(
-                torrent = mockTorrent
+                item = mockTorrent
             )
         }
     }

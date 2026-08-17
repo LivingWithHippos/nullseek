@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -86,7 +87,8 @@ private fun WebDownloadsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = 600.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(
                 lazyPagingItems.itemCount, key = lazyPagingItems.itemKey { it.id }) { index ->
@@ -103,7 +105,7 @@ private fun WebDownloadsScreen(
 
 @Composable
 private fun WebDownloadRow(
-    webDownload: WebDownloadDto,
+    item: WebDownloadDto,
     modifier: Modifier = Modifier,
     loadDetails: (webDownload: WebDownloadDto) -> Unit
 ) {
@@ -113,14 +115,14 @@ private fun WebDownloadRow(
         elevation = CardDefaults.cardElevation(
             defaultElevation = 6.dp
         ), modifier = modifier,
-        onClick = { loadDetails(webDownload) }
+        onClick = { loadDetails(item) }
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
         ) {
 
             Text(
-                text = webDownload.name,
+                text = item.name,
                 textAlign = TextAlign.Start,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
@@ -137,7 +139,7 @@ private fun WebDownloadRow(
                     AssistChip(onClick = { }, label = { Text("web") })
                 }
 
-                if (webDownload.error !== null) {
+                if (item.error !== null) {
                     // todo: color
                     item {
                         AssistChip(onClick = { }, label = {
@@ -148,13 +150,13 @@ private fun WebDownloadRow(
 
                 item {
                     AssistChip(onClick = { }, label = {
-                        Text(text = webDownload.downloadState)
+                        Text(text = item.downloadState)
                     })
                 }
             }
 
             Text(
-                text = "Total Size: ${convertToSize(webDownload.size)}",
+                text = "Total Size: ${convertToSize(item.size)}",
                 style = MaterialTheme.typography.bodyMedium
             )
         }

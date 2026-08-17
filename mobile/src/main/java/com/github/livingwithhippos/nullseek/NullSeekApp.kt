@@ -87,6 +87,7 @@ fun NullSeekApp(
         NullNavigationWrapper(
             currentDestination = currentDestination,
             navigateToTopLevelDestination = { destination ->
+                // todo: if the user is missing lock the lists tab and grey it out
                 navigationActions.navigateTo(destination)
             },
         ) {
