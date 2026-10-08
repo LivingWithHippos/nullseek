@@ -32,6 +32,11 @@ import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.koin.compose.viewmodel.koinViewModel
+
+
 fun Context.getFileName(uri: Uri): String {
     var name = "Unknown file"
     if (uri.scheme == "content") {
@@ -59,8 +64,9 @@ fun isValidDownloadLink(link: String): Boolean {
 fun NewDownloadScreen(
     contentType: NullContentType,
     navigationType: NullNavigationType,
+    modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit = {},
-    modifier: Modifier = Modifier
+    viewModel: NewDownloadViewModel = koinViewModel()
 ) {
     var linkText by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -100,7 +106,54 @@ fun NewDownloadScreen(
 
     var allowZipped by rememberSaveable { mutableStateOf(true) }
 
+    val uploadState by viewModel.uploadState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    LaunchedEffect(uploadState) {
+        if (uploadState is UploadState.Finished) {
+            val state = uploadState as UploadState.Finished
+            if (state.failed == 0) {
+                snackbarHostState.showSnackbar("Successfully queued ${state.successful} items")
+                linkText = ""
+                selectedFiles = emptyList()
+                password = ""
+                viewModel.resetState()
+            } else if (state.successful == 0) {
+                snackbarHostState.showSnackbar("Failed to queue items: ${state.errors.firstOrNull()}")
+            } else {
+                snackbarHostState.showSnackbar("Queued ${state.successful} items. Failed ${state.failed} items.")
+            }
+        }
+    }
+
+    if (uploadState is UploadState.Finished && (uploadState as UploadState.Finished).failed > 0) {
+        val state = uploadState as UploadState.Finished
+        AlertDialog(
+            onDismissRequest = { viewModel.resetState() },
+            title = { Text("Upload Report") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text("Successfully queued: ${state.successful}")
+                    Text("Failed to queue: ${state.failed}", color = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    state.errors.forEach { err ->
+                        Text(err, style = MaterialTheme.typography.bodySmall)
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.resetState() }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier.fillMaxSize(),
         bottomBar = {
             Surface(
@@ -119,10 +172,49 @@ fun NewDownloadScreen(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(
-                        onClick = { /* TODO: Submit action */ },
-                        enabled = totalDownloads > 0
+                        onClick = {
+                            val validLinks = linkText.split("\\s+".toRegex()).filter { isValidDownloadLink(it) }
+                            val passwordValue = password.takeIf { it.isNotBlank() }
+                            val seedingInt = when (selectedSeedingOption) {
+                                R.string.seeding_seed -> 2
+                                R.string.seeding_dont_seed -> 3
+                                else -> 1
+                            }
+                            val usenetInt = when (selectedUsenetOption) {
+                                R.string.usenet_none -> 0
+                                R.string.usenet_repair -> 1
+                                R.string.usenet_repair_unpack -> 2
+                                R.string.usenet_repair_unpack_delete -> 3
+                                else -> -1
+                            }
+                            
+                            coroutineScope.launch(Dispatchers.IO) {
+                                val fileData = selectedFiles.mapNotNull { uri ->
+                                    val name = context.getFileName(uri)
+                                    val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                                    if (bytes != null) name to bytes else null
+                                }
+                                viewModel.queueDownloads(
+                                    links = validLinks,
+                                    files = fileData,
+                                    password = passwordValue,
+                                    seedingOption = seedingInt,
+                                    usenetOption = usenetInt,
+                                    allowZipped = allowZipped
+                                )
+                            }
+                        },
+                        enabled = totalDownloads > 0 && uploadState !is UploadState.Uploading
                     ) {
-                        Text("Add Downloads ($totalDownloads)")
+                        if (uploadState is UploadState.Uploading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Add Downloads ($totalDownloads)")
+                        }
                     }
                 }
             }
