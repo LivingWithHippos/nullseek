@@ -168,7 +168,8 @@ private fun NullNavHost(
         composable<Route.NewDownload> {
             NewDownloadScreen(
                 contentType = contentType,
-                navigationType = navigationType
+                navigationType = navigationType,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

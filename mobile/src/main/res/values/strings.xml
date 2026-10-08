@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">NullSeek</string>
     <string name="compose">Compose</string>
@@ -9,4 +10,26 @@
     <string name="tab_home">Home</string>
     <string name="settings">Settings</string>
     <string name="new_download">New Download</string>
+    <string name="link_label">Link</string>
+    <string name="link_hint">magnet:?xt=urn:btih:
+https://
+http://</string>
+    <string name="file_label">File</string>
+    <string name="file_hint">Tap to select a file</string>
+    <string name="password_label">Password</string>
+    <string name="optional_label">(Optional)</string>
+    <string name="advanced_settings">Advanced Settings</string>
+    <string name="seeding_settings">Seeding Settings</string>
+    <string name="seeding_auto">Auto</string>
+    <string name="seeding_seed">Seed torrent</string>
+    <string name="seeding_dont_seed">Don\'t seed torrent</string>
+    <string name="usenet_post_processing">Usenet Post-Processing</string>
+    <string name="usenet_default">Default</string>
+    <string name="usenet_none">None</string>
+    <string name="usenet_repair">Repair</string>
+    <string name="usenet_repair_unpack">Repair and Unpack</string>
+    <string name="usenet_repair_unpack_delete">Repair, Unpack, Delete</string>
+    <string name="allow_zipped_downloads">Allow downloads to be zipped if necessary</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_add_downloads">Add Downloads (0)</string>
 </resources>
