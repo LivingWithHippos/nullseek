@@ -25,6 +25,7 @@ import com.github.livingwithhippos.nullseek.ui.navigation.Route
 import com.github.livingwithhippos.nullseek.ui.navigation.SETTINGS_DESTINATION
 import com.github.livingwithhippos.nullseek.ui.search.SearchScreen
 import com.github.livingwithhippos.nullseek.ui.settings.SettingsScreen
+import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadScreen
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.torbox.model.TorrentDto
@@ -103,6 +104,9 @@ fun NullSeekApp(
                 showSettings = {
                     navigationActions.navigateTo(SETTINGS_DESTINATION)
                 },
+                showNewDownload = {
+                    navigationActions.navigateTo(com.github.livingwithhippos.nullseek.ui.navigation.NEW_DOWNLOAD_DESTINATION)
+                },
                 closeDetails = closeDetails
             )
         }
@@ -120,6 +124,7 @@ private fun NullNavHost(
     loadWebDetails: (webDownload: WebDownloadDto) -> Unit,
     loadUsenetDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
     showSettings: () -> Unit,
+    showNewDownload: () -> Unit,
     closeDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -134,7 +139,8 @@ private fun NullNavHost(
                 navigationType = navigationType,
                 uiState = uiState,
                 checkValidToken = checkValidToken,
-                showSettings = showSettings
+                showSettings = showSettings,
+                onNewDownload = showNewDownload
             )
         }
         composable<Route.Lists> {
@@ -155,6 +161,12 @@ private fun NullNavHost(
         }
         composable<Route.Settings> {
             SettingsScreen(
+                contentType = contentType,
+                navigationType = navigationType
+            )
+        }
+        composable<Route.NewDownload> {
+            NewDownloadScreen(
                 contentType = contentType,
                 navigationType = navigationType
             )

@@ -34,6 +34,7 @@ fun HomeScreen(
     navigationType: NullNavigationType,
     modifier: Modifier = Modifier,
     showSettings: () -> Unit,
+    onNewDownload: () -> Unit,
     checkValidToken: (provider: NetProvider, token: String) -> Unit
 ) {
     val context = LocalContext.current
@@ -83,7 +84,7 @@ fun HomeScreen(
                 FloatingActionButtonMenuItem(
                     onClick = {
                         expanded = false
-                        // TODO: Implement new download action
+                        onNewDownload()
                     },
                     icon = { Icon(painter = painterResource(id = R.drawable.ic_add), contentDescription = "New Download") },
                     text = { Text("New Download") }

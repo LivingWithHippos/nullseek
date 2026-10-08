@@ -15,6 +15,8 @@ sealed interface Route {
     @Serializable data object Search : Route
 
     @Serializable data object Settings : Route
+
+    @Serializable data object NewDownload : Route
 }
 
 data class TopLevelDestination(
@@ -75,6 +77,14 @@ val SETTINGS_DESTINATION =
         selectedIcon = R.drawable.ic_settings,
         unselectedIcon = R.drawable.ic_settings,
         iconTextId = R.string.settings,
+    )
+
+val NEW_DOWNLOAD_DESTINATION =
+    TopLevelDestination(
+        route = Route.NewDownload,
+        selectedIcon = R.drawable.ic_add,
+        unselectedIcon = R.drawable.ic_add,
+        iconTextId = R.string.new_download,
     )
 
 /**
