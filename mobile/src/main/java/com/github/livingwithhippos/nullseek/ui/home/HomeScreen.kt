@@ -3,11 +3,16 @@ package com.github.livingwithhippos.nullseek.ui.home
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonMenu
+import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -55,22 +60,48 @@ fun HomeScreen(
         //  so it can be triggered by all screens
 
         if (navigationType == NullNavigationType.BOTTOM_NAVIGATION) {
-            ExtendedFloatingActionButton(
-                text = { Text(text = stringResource(id = R.string.settings)) },
-                icon = {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = stringResource(id = R.string.settings)
-                    )
+            var expanded by rememberSaveable { mutableStateOf(false) }
+
+            FloatingActionButtonMenu(
+                expanded = expanded,
+                button = {
+                    ToggleFloatingActionButton(
+                        checked = expanded,
+                        onCheckedChange = { expanded = it }
+                    ) {
+                        Icon(
+
+                            painter = painterResource(id = R.drawable.ic_add),
+                            contentDescription = "Expand menu"
+                        )
+                    }
                 },
-                onClick = { showSettings() },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                // todo: manage expanded
-            )
+                    .padding(16.dp)
+            ) {
+                FloatingActionButtonMenuItem(
+                    onClick = {
+                        expanded = false
+                        // TODO: Implement new download action
+                    },
+                    icon = { Icon(painter = painterResource(id = R.drawable.ic_add), contentDescription = "New Download") },
+                    text = { Text("New Download") }
+                )
+                FloatingActionButtonMenuItem(
+                    onClick = {
+                        expanded = false
+                        showSettings()
+                    },
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_settings),
+                            contentDescription = stringResource(id = R.string.settings)
+                        )
+                    },
+                    text = { Text(stringResource(id = R.string.settings)) }
+                )
+            }
         }
     }
 }
