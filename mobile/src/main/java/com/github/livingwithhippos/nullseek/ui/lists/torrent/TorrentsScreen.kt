@@ -35,6 +35,8 @@ import com.github.livingwithhippos.nullseek.core.utils.mockTorrent
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.ui.lists.utils.PagingRefreshState
+import com.github.livingwithhippos.nullseek.ui.lists.utils.pagingAppendState
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import kotlinx.coroutines.flow.Flow
@@ -76,7 +78,6 @@ private fun TorrentsScreen(
     loadDetails: (torrent: TorrentDto) -> Unit
 ) {
     val listState: LazyListState = rememberLazyListState()
-    // todo: show loading or error states, see lazyPagingItems.itemCount and lazyPagingItems.loadState
     val lazyPagingItems = flow.collectAsLazyPagingItems()
     Box(
         modifier = Modifier
@@ -101,7 +102,9 @@ private fun TorrentsScreen(
                     TorrentRowPlaceholder()
                 }
             }
+            pagingAppendState(lazyPagingItems.loadState.append, lazyPagingItems::retry)
         }
+        PagingRefreshState(lazyPagingItems.loadState.refresh, lazyPagingItems::retry)
     }
 }
 

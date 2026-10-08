@@ -35,6 +35,8 @@ import com.github.livingwithhippos.nullseek.core.utils.mockUsenetDownload
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.ui.lists.utils.PagingRefreshState
+import com.github.livingwithhippos.nullseek.ui.lists.utils.pagingAppendState
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
 import kotlinx.coroutines.flow.Flow
@@ -98,7 +100,9 @@ private fun UsenetScreen(
                     UsenetRowPlaceholder()
                 }
             }
+            pagingAppendState(lazyPagingItems.loadState.append, lazyPagingItems::retry)
         }
+        PagingRefreshState(lazyPagingItems.loadState.refresh, lazyPagingItems::retry)
     }
 }
 

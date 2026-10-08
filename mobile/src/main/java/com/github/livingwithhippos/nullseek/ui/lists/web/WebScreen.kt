@@ -35,6 +35,8 @@ import com.github.livingwithhippos.nullseek.core.utils.mockWebDownload
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.ui.lists.utils.PagingRefreshState
+import com.github.livingwithhippos.nullseek.ui.lists.utils.pagingAppendState
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import kotlinx.coroutines.flow.Flow
@@ -74,7 +76,6 @@ private fun WebDownloadsScreen(
     loadDetails: (webDownload: WebDownloadDto) -> Unit
 ) {
     val listState: LazyListState = rememberLazyListState()
-    // todo: show loading or error states, see lazyPagingItems.itemCount and lazyPagingItems.loadState
     val lazyPagingItems = flow.collectAsLazyPagingItems()
     Box(
         modifier = Modifier
@@ -99,7 +100,9 @@ private fun WebDownloadsScreen(
                     WebDownloadRowPlaceholder()
                 }
             }
+            pagingAppendState(lazyPagingItems.loadState.append, lazyPagingItems::retry)
         }
+        PagingRefreshState(lazyPagingItems.loadState.refresh, lazyPagingItems::retry)
     }
 }
 
