@@ -20,36 +20,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PagingRefreshState(
     loadState: LoadState,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    when (loadState) {
-        is LoadState.Loading -> {
-            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                LoadingIndicator()
+    if (loadState is LoadState.Error) {
+        Column(
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = loadState.error.localizedMessage ?: "Unknown error",
+                color = MaterialTheme.colorScheme.error
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(onClick = onRetry) {
+                Text("Retry")
             }
         }
-        is LoadState.Error -> {
-            Column(
-                modifier = modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = loadState.error.localizedMessage ?: "Unknown error",
-                    color = MaterialTheme.colorScheme.error
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = onRetry) {
-                    Text("Retry")
-                }
-            }
-        }
-        else -> {}
     }
 }
 

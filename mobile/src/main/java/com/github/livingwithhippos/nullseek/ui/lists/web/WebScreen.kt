@@ -31,6 +31,11 @@ import androidx.compose.ui.unit.dp
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.paging.LoadState
+
 import com.github.livingwithhippos.nullseek.core.utils.mockWebDownload
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -68,6 +73,7 @@ fun WebScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WebDownloadsScreen(
     modifier: Modifier = Modifier,
@@ -77,7 +83,9 @@ private fun WebDownloadsScreen(
 ) {
     val listState: LazyListState = rememberLazyListState()
     val lazyPagingItems = flow.collectAsLazyPagingItems()
-    Box(
+    PullToRefreshBox(
+        isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading,
+        onRefresh = { lazyPagingItems.refresh() },
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),

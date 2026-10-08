@@ -31,6 +31,11 @@ import androidx.compose.ui.unit.dp
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.paging.LoadState
+
 import com.github.livingwithhippos.nullseek.core.utils.mockTorrent
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -79,7 +84,10 @@ private fun TorrentsScreen(
 ) {
     val listState: LazyListState = rememberLazyListState()
     val lazyPagingItems = flow.collectAsLazyPagingItems()
-    Box(
+    
+    PullToRefreshBox(
+        isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading,
+        onRefresh = { lazyPagingItems.refresh() },
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
