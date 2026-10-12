@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.paging.PagingData
 import com.github.livingwithhippos.nullseek.NullRootUiState
 import com.github.livingwithhippos.nullseek.R
-import com.github.livingwithhippos.nullseek.core.utils.mockTorrent
+import com.github.livingwithhippos.nullseek.core.utils.mockTorrents
 import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentsScreen
 import com.github.livingwithhippos.nullseek.ui.lists.usenet.UsenetScreen
 import com.github.livingwithhippos.nullseek.ui.lists.web.WebScreen
@@ -39,9 +39,7 @@ enum class Destination(
 ) {
     // todo: update icons
     TORRENTS("Torrents", R.drawable.ic_magnet, "Torrents"), WEB(
-        "Web",
-        R.drawable.ic_file,
-        "Web"
+        "Web", R.drawable.ic_file, "Web"
     ),
     USENET("Usenet", R.drawable.ic_edit, "Usenet")
 }
@@ -127,45 +125,45 @@ fun ListsScreen(
 
 private fun torrentPreviewFlow() = flowOf(
     PagingData.from(
-        listOf(
-            mockTorrent
-        )
+        mockTorrents
     )
 )
 
 @Preview
 @Composable
 fun ListsScreenPreview(
-    modifier: Modifier = Modifier,) {
+    modifier: Modifier = Modifier,
+) {
     val selectedDestination = 0
 
     NullSeekTheme {
         Surface(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
-        Column(modifier = modifier) {
-            PrimaryTabRow(selectedTabIndex = selectedDestination, modifier = Modifier.padding(10.dp)) {
-                Destination.entries.forEachIndexed { index, destination ->
-                    Tab(
-                        selected = selectedDestination == index, onClick = {
-                        }, text = {
+            Column(modifier = modifier) {
+                PrimaryTabRow(
+                    selectedTabIndex = selectedDestination, modifier = Modifier.padding(10.dp)
+                ) {
+                    Destination.entries.forEachIndexed { index, destination ->
+                        Tab(selected = selectedDestination == index, onClick = {}, text = {
                             Text(
-                                text = destination.label, maxLines = 2, overflow = TextOverflow.Ellipsis
+                                text = destination.label,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                         })
+                    }
                 }
+                TorrentsScreen(
+                    modifier = modifier,
+                    contentType = NullContentType.SINGLE_PANE,
+                    navigationType = NullNavigationType.BOTTOM_NAVIGATION,
+                    loadDetails = {},
+                    closeDetails = {},
+                    torrent = null,
+                    flow = torrentPreviewFlow()
+                )
             }
-            TorrentsScreen(
-                modifier = modifier,
-                contentType = NullContentType.SINGLE_PANE,
-                navigationType = NullNavigationType.BOTTOM_NAVIGATION,
-                loadDetails = {},
-                closeDetails = {},
-                torrent = null,
-                flow = torrentPreviewFlow()
-            )
-        }
         }
     }
 }

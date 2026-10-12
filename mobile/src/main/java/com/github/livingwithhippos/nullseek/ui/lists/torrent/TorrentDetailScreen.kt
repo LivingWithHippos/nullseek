@@ -37,7 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.R
-import com.github.livingwithhippos.nullseek.core.utils.mockTorrent
+import com.github.livingwithhippos.nullseek.core.utils.mockTorrents
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -581,7 +581,7 @@ fun TorrentDetailScreenPreview() {
                     .padding(horizontal = 16.dp),
         ) {
             TorrentDetailScreen(
-                item = mockTorrent,
+                item = mockTorrents.first(),
             )
         }
     }

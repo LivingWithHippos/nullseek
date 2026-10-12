@@ -14,15 +14,22 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -36,7 +43,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.paging.LoadState
 
-import com.github.livingwithhippos.nullseek.core.utils.mockTorrent
+import com.github.livingwithhippos.nullseek.core.utils.mockTorrents
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
@@ -120,67 +127,128 @@ private fun TorrentsScreen(
 private fun TorrentRow(
     item: TorrentDto,
     modifier: Modifier = Modifier,
-    loadDetails: (torrent: TorrentDto) -> Unit
+    loadDetails: (torrent: TorrentDto) -> Unit,
 ) {
-    ElevatedCard(
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 6.dp
-        ), modifier = modifier,
-        onClick = { loadDetails(item) }
+    OutlinedCard(
+        onClick = { loadDetails(item) },
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-
-            Text(
-                text = item.name,
-                textAlign = TextAlign.Start,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Header: Name and Status Badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
             ) {
-                // todo: pick colors for different states
-                item {
-                    // todo: remove this if we don't merge the list with web and usenet
-                    AssistChip(onClick = { }, label = { Text("torrent") })
-                }
+                Text(
+                    text = item.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
 
-                item {
-                    AssistChip(onClick = { }, label = {
-                        Text(text = item.downloadState)
-                    })
-                }
+                Spacer(modifier = Modifier.width(8.dp))
 
-                if (item.downloadFinished) {
-                    item {
-                        AssistChip(onClick = { }, label = {
-                            Text(text = "Download Ready")
-                        })
+                val isDone = item.downloadFinished || item.progress >= 1.0
+                val badgeContainerColor =
+                    when {
+                        isDone -> MaterialTheme.colorScheme.primaryContainer
+                        item.cached -> MaterialTheme.colorScheme.secondaryContainer
+                        else -> MaterialTheme.colorScheme.surfaceVariant
                     }
+                val badgeContentColor =
+                    when {
+                        isDone -> MaterialTheme.colorScheme.onPrimaryContainer
+                        item.cached -> MaterialTheme.colorScheme.onSecondaryContainer
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                val badgeText =
+                    when {
+                        isDone -> "Ready"
+                        item.cached -> "Cached"
+                        item.downloadState.isNotBlank() -> item.downloadState.replaceFirstChar { it.uppercase() }
+                        else -> "${(item.progress * 100).toInt()}%"
+                    }
+
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = badgeContainerColor,
+                ) {
+                    Text(
+                        text = badgeText,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = badgeContentColor,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
                 }
             }
 
-            Text(
-                text = "Total Size: ${convertToSize(item.size)}",
-                style = MaterialTheme.typography.bodyMedium
-            )
+            // Slim progress bar for in-progress downloads
+            val isDownloading = !item.downloadFinished && item.progress < 1.0
+            if (isDownloading) {
+                LinearProgressIndicator(
+                    progress = { item.progress.toFloat().coerceIn(0f, 1f) },
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(4.dp),
+                )
+            }
+
+            // Bottom Metadata Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = convertToSize(item.size),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (item.seeds > 0) {
+                        Text(
+                            text = " • ${item.seeds} seeds",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                if (isDownloading && item.downloadSpeed > 0) {
+                    Text(
+                        text = "${item.downloadSpeed} kB/s",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                } else if (!isDownloading) {
+                    Text(
+                        text = if (item.active) "Active" else "Inactive",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
 private fun TorrentRowPlaceholder() {
-    ElevatedCard(
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 6.dp
-        ), modifier = Modifier.height(100.dp)
+    OutlinedCard(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(96.dp),
     ) {}
 }
 
@@ -200,14 +268,9 @@ fun TorrentScreenPreview() {
                     .widthIn(max = 600.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TorrentRow(
-                    mockTorrent,
-                    loadDetails = {}
-                )
-                TorrentRow(
-                    mockTorrent,
-                    loadDetails = {}
-                )
+                mockTorrents.forEach {
+                    TorrentRow(it) { }
+                }
             }
         }
     }
