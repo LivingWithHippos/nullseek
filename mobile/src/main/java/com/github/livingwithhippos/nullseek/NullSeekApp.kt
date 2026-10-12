@@ -87,8 +87,11 @@ fun NullSeekApp(
     Surface {
         NullNavigationWrapper(
             currentDestination = currentDestination,
+            isUserLoaded = rootUiState.user != null,
             navigateToTopLevelDestination = { destination ->
-                // todo: if the user is missing lock the lists tab and grey it out
+                if (destination.route == Route.Lists && rootUiState.user == null) {
+                    return@NullNavigationWrapper
+                }
                 navigationActions.navigateTo(destination)
             },
         ) {

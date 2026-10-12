@@ -67,6 +67,7 @@ class NullNavSuiteScope(val navSuiteType: NavigationSuiteType)
 @Composable
 fun NullNavigationWrapper(
     currentDestination: NavDestination?,
+    isUserLoaded: Boolean,
     navigateToTopLevelDestination: (TopLevelDestination) -> Unit,
     content: @Composable NullNavSuiteScope.() -> Unit,
 ) {
@@ -110,6 +111,7 @@ fun NullNavigationWrapper(
         drawerContent = {
             ModalNavigationDrawerContent(
                 currentDestination = currentDestination,
+                isUserLoaded = isUserLoaded,
                 navigationContentPosition = navContentPosition,
                 navigateToTopLevelDestination = navigateToTopLevelDestination,
                 onDrawerClicked = {
@@ -126,11 +128,13 @@ fun NullNavigationWrapper(
                 when (navLayoutType) {
                     NavigationSuiteType.NavigationBar -> NullBottomNavigationBar(
                         currentDestination = currentDestination,
+                        isUserLoaded = isUserLoaded,
                         navigateToTopLevelDestination = navigateToTopLevelDestination,
                     )
 
                     NavigationSuiteType.NavigationRail -> NullNavigationRail(
                         currentDestination = currentDestination,
+                        isUserLoaded = isUserLoaded,
                         navigationContentPosition = navContentPosition,
                         navigateToTopLevelDestination = navigateToTopLevelDestination,
                         onDrawerClicked = {
@@ -142,6 +146,7 @@ fun NullNavigationWrapper(
 
                     NavigationSuiteType.NavigationDrawer -> PermanentNavigationDrawerContent(
                         currentDestination = currentDestination,
+                        isUserLoaded = isUserLoaded,
                         navigationContentPosition = navContentPosition,
                         navigateToTopLevelDestination = navigateToTopLevelDestination,
                     )
@@ -156,6 +161,7 @@ fun NullNavigationWrapper(
 @Composable
 fun NullNavigationRail(
     currentDestination: NavDestination?,
+    isUserLoaded: Boolean,
     navigationContentPosition: NullNavigationContentPosition,
     navigateToTopLevelDestination: (TopLevelDestination) -> Unit,
     onDrawerClicked: () -> Unit = {},
@@ -213,9 +219,15 @@ fun NullNavigationRail(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             TOP_LEVEL_DESTINATIONS.forEach { nullDestination ->
+                val isItemEnabled = if (nullDestination.route == Route.Lists) isUserLoaded else true
                 NavigationRailItem(
                     selected = currentDestination.hasRoute(nullDestination),
-                    onClick = { navigateToTopLevelDestination(nullDestination) },
+                    enabled = isItemEnabled,
+                    onClick = {
+                        if (isItemEnabled) {
+                            navigateToTopLevelDestination(nullDestination)
+                        }
+                    },
                     icon = {
                         Icon(
                             painter = painterResource(id = nullDestination.selectedIcon),
@@ -231,12 +243,22 @@ fun NullNavigationRail(
 }
 
 @Composable
-fun NullBottomNavigationBar(currentDestination: NavDestination?, navigateToTopLevelDestination: (TopLevelDestination) -> Unit) {
+fun NullBottomNavigationBar(
+    currentDestination: NavDestination?,
+    isUserLoaded: Boolean,
+    navigateToTopLevelDestination: (TopLevelDestination) -> Unit
+) {
     NavigationBar(modifier = Modifier.fillMaxWidth()) {
         TOP_LEVEL_DESTINATIONS.forEach { nullDestination ->
+            val isItemEnabled = if (nullDestination.route == Route.Lists) isUserLoaded else true
             NavigationBarItem(
                 selected = currentDestination.hasRoute(nullDestination),
-                onClick = { navigateToTopLevelDestination(nullDestination) },
+                enabled = isItemEnabled,
+                onClick = {
+                    if (isItemEnabled) {
+                        navigateToTopLevelDestination(nullDestination)
+                    }
+                },
                 icon = {
                     Icon(
                         painter = painterResource(id = nullDestination.selectedIcon),
@@ -251,6 +273,7 @@ fun NullBottomNavigationBar(currentDestination: NavDestination?, navigateToTopLe
 @Composable
 fun PermanentNavigationDrawerContent(
     currentDestination: NavDestination?,
+    isUserLoaded: Boolean,
     navigationContentPosition: NullNavigationContentPosition,
     navigateToTopLevelDestination: (TopLevelDestination) -> Unit
 ) {
@@ -323,6 +346,7 @@ fun PermanentNavigationDrawerContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     TOP_LEVEL_DESTINATIONS.forEach { nullDestination ->
+                        val isItemEnabled = nullDestination.route != Route.Lists || isUserLoaded
                         NavigationDrawerItem(
                             selected = currentDestination.hasRoute(nullDestination),
                             label = {
@@ -342,7 +366,11 @@ fun PermanentNavigationDrawerContent(
                             colors = NavigationDrawerItemDefaults.colors(
                                 unselectedContainerColor = Color.Transparent,
                             ),
-                            onClick = { navigateToTopLevelDestination(nullDestination) },
+                            onClick = {
+                                if (isItemEnabled) {
+                                    navigateToTopLevelDestination(nullDestination)
+                                }
+                            },
                         )
                     }
                 }
@@ -355,6 +383,7 @@ fun PermanentNavigationDrawerContent(
 @Composable
 fun ModalNavigationDrawerContent(
     currentDestination: NavDestination?,
+    isUserLoaded: Boolean,
     navigationContentPosition: NullNavigationContentPosition,
     navigateToTopLevelDestination: (TopLevelDestination) -> Unit,
     onDrawerClicked: () -> Unit = {},
@@ -438,6 +467,7 @@ fun ModalNavigationDrawerContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     TOP_LEVEL_DESTINATIONS.forEach { nullDestination ->
+                        val isItemEnabled = if (nullDestination.route == Route.Lists) isUserLoaded else true
                         NavigationDrawerItem(
                             selected = currentDestination.hasRoute(nullDestination),
                             label = {
@@ -457,7 +487,11 @@ fun ModalNavigationDrawerContent(
                             colors = NavigationDrawerItemDefaults.colors(
                                 unselectedContainerColor = Color.Transparent,
                             ),
-                            onClick = { navigateToTopLevelDestination(nullDestination) },
+                            onClick = {
+                                if (isItemEnabled) {
+                                    navigateToTopLevelDestination(nullDestination)
+                                }
+                            },
                         )
                     }
                 }
