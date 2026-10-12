@@ -7,9 +7,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,22 +60,32 @@ fun CardStatPreview() {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CopyButton(
     text: String?,
     description: String,
+    modifier: Modifier = Modifier,
     @DrawableRes
     customIcon: Int? = null,
     context: Context = LocalContext.current,
 ) {
     if (text == null) return
 
-    IconButton(onClick = {
-        setClipboardText(context, text)
-    }) {
+    OutlinedIconButton(
+        onClick = {
+            setClipboardText(context, text)
+        },
+        modifier = modifier,
+        border = ButtonDefaults.outlinedButtonBorder(),
+        colors =
+            IconButtonDefaults.outlinedIconButtonVibrantColors(
+                contentColor = MaterialTheme.colorScheme.primary,
+            ),
+    ) {
         Icon(
             painter = painterResource(customIcon ?: R.drawable.ic_copy),
-            contentDescription = description
+            contentDescription = description,
         )
     }
 }
@@ -100,7 +114,9 @@ fun IconText(
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
-            modifier = Modifier.padding(end = 4.dp).size(24.dp)
+            modifier = Modifier
+                .padding(end = 4.dp)
+                .size(24.dp)
         )
         Text(
             text = text,
