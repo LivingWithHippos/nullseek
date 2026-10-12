@@ -94,4 +94,8 @@
     <string name="action_share">Share</string>
     <string name="action_delete">Delete</string>
     <string name="torrent_files_title">Files</string>
+    <string name="usenet_overview">Usenet Overview</string>
+    <string name="web_overview">Web Download Overview</string>
+    <string name="source_link_title">Source Link</string>
+    <string name="copy_source_link">Copy Source Link</string>
 </resources>
