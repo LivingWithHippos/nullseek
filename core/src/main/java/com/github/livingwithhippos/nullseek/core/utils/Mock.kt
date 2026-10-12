@@ -20,7 +20,7 @@ val mockUser = UserDataDto(
     premiumExpiresAt = "2026-08-25T12:51:51Z",
     cooldownUntil = "2026-06-12T22:18:31Z",
     email = "cool@mail.com",
-    userReferral = "123456",
+    userReferral = "dba208d7-f53e-4711-96db-97c7051799bc",
     baseEmail = "cool@mail.com",
     totalBytesDownloaded = 55111926106,
     totalBytesUploaded = 288805503,
@@ -32,7 +32,7 @@ val mockUser = UserDataDto(
     longTermStorage = false,
     isVendor = false,
     vendorId = null,
-    purchasesReferred = 0,
+    purchasesReferred = 2,
 )
 
 val mockTorrent = TorrentDto(
