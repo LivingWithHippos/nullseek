@@ -230,6 +230,7 @@ private fun AccountOverviewAndActionsCard(
             ) {
                 Text(
                     text = "Email",
+                    modifier = Modifier.padding(end = 8.dp),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Row(

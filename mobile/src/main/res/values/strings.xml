@@ -60,4 +60,17 @@ http://</string>
     <string name="referral_support_active">Referral support active</string>
     <string name="referral_support_inactive">Referral support off</string>
     <string name="change_referral_choice">Change</string>
+    <string name="setup_title">Connect Your Account</string>
+    <string name="setup_provider_description">NullSeek connects to your TorBox account to stream, download, and manage your cloud debrid files, torrents, and Usenet downloads.</string>
+    <string name="setup_signup_title">New to TorBox?</string>
+    <string name="setup_signup_description">Don\'t have an account yet? Create an account on TorBox to get started with free or premium cloud features.</string>
+    <string name="setup_signup_button">Create a TorBox Account</string>
+    <string name="setup_key_title">API Key Configuration</string>
+    <string name="setup_key_description">Retrieve your API Key from your TorBox Account Settings and paste it below to link your account.</string>
+    <string name="setup_get_key_button">Get API Key from TorBox</string>
+    <string name="api_key">API Key</string>
+    <string name="paste_api_key_placeholder">Paste your API Key here</string>
+    <string name="setup_connect_button">Connect Account</string>
+    <string name="paste_from_clipboard">Paste from Clipboard</string>
+    <string name="setup_dialog_message">Would you like to include our referral code when signing up on TorBox? Your choice will be saved for future runs.</string>
 </resources>
