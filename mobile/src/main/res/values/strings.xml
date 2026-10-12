@@ -73,4 +73,5 @@ http://</string>
     <string name="setup_connect_button">Connect Account</string>
     <string name="paste_from_clipboard">Paste from Clipboard</string>
     <string name="setup_dialog_message">Would you like to include our referral code when signing up on TorBox? Your choice will be saved for future runs.</string>
+    <string name="copy_referral">Copy Referral Code</string>
 </resources>

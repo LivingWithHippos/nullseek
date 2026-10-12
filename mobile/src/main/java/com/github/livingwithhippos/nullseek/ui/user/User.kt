@@ -52,7 +52,10 @@ import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
 import com.github.livingwithhippos.nullseek.utils.convertToDays
 import com.github.livingwithhippos.nullseek.utils.convertToSize
+import com.github.livingwithhippos.nullseek.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.utils.getPlanName
+import com.github.livingwithhippos.nullseek.utils.isDateNotInPast
+import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.model.UserDataDto
 import logcat.asLog
 import logcat.logcat
@@ -161,7 +164,6 @@ fun UserScreenContent(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Merged Account Overview & Browser Actions Card
             AccountOverviewAndActionsCard(
                 user = user,
                 onOpenSettingsClick = onOpenSettingsClick,
@@ -169,14 +171,12 @@ fun UserScreenContent(
                 context = context,
             )
 
-            // Features & Account Limits Card
+            UserStatsCard(user = user)
+
             AccountFeaturesCard(user = user)
 
-            // Referral Card
             UserReferralCard(user = user, context = context)
 
-            // Activity & Download Stats
-            UserStatsCard(user = user)
 
             // Error Notice (if any)
             if (error != null) {
@@ -475,7 +475,7 @@ private fun AccountFeaturesCard(
                 }
             }
 
-            if (coolDown != null) {
+            if (coolDown != null && isDateNotInPast(coolDown)) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 Row(
@@ -489,7 +489,7 @@ private fun AccountFeaturesCard(
                         color = MaterialTheme.colorScheme.error,
                     )
                     Text(
-                        text = coolDown,
+                        text = formatToLocalDate(coolDown),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.error,
@@ -519,35 +519,22 @@ private fun UserReferralCard(
                 fontWeight = FontWeight.Bold,
             )
 
-            Row(
+            OutlinedButton(
+                onClick = {
+                    setClipboardText(context, user.userReferral)
+                },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                colors =
+                    ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ),
             ) {
-                Text(
-                    modifier = Modifier.padding(end = 8.dp),
-                    text = stringResource(id = R.string.referral_code),
-                    style = MaterialTheme.typography.bodyMedium,
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_copy),
+                    contentDescription = null,
                 )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f, fill = false),
-                ) {
-                    Text(
-                        text = user.userReferral,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    CopyButton(
-                        text = user.userReferral,
-                        description = "Copy Referral Code",
-                        context = context,
-                    )
-                }
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = stringResource(id = R.string.copy_referral))
             }
 
             if (user.purchasesReferred > 0) {
