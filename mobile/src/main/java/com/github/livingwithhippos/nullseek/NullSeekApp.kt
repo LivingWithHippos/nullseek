@@ -154,7 +154,9 @@ private fun NullNavHost(
                 loadTorrentDetails = loadTorrentDetails,
                 loadWebDetails = loadWebDetails,
                 loadUsenetDetails = loadUsenetDetails,
-                closeDetails = closeDetails
+                closeDetails = closeDetails,
+                onNewDownload = showNewDownload,
+                showSettings = showSettings,
             )
         }
         composable<Route.Search> {

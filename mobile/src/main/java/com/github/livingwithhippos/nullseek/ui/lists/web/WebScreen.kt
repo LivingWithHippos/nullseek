@@ -103,7 +103,7 @@ private fun WebDownloadsScreen(
                 .fillMaxWidth()
                 .widthIn(max = 600.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            contentPadding = PaddingValues(top = 8.dp, bottom = 88.dp)
         ) {
             items(
                 lazyPagingItems.itemCount, key = lazyPagingItems.itemKey { it.id }) { index ->

@@ -155,4 +155,5 @@
     <string name="download_zip_preference_uncompressed">Always uncompressed</string>
     <string name="settings_title">Settings</string>
     <string name="settings_downloads_section">Downloads</string>
+    <string name="expand_menu">Expand menu</string>
 </resources>

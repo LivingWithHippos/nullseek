@@ -1,6 +1,7 @@
 package com.github.livingwithhippos.nullseek.ui.lists
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -13,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,6 +27,7 @@ import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentsScreen
 import com.github.livingwithhippos.nullseek.ui.lists.usenet.UsenetScreen
 import com.github.livingwithhippos.nullseek.ui.lists.web.WebScreen
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.utils.ExtendableFabMenu
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.torbox.model.TorrentDto
@@ -54,6 +57,8 @@ fun ListsScreen(
     loadUsenetDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
     closeDetails: () -> Unit,
     uiState: NullRootUiState,
+    onNewDownload: () -> Unit = {},
+    showSettings: () -> Unit = {},
     viewModel: ListsViewModel = koinViewModel()
 ) {
     val torrentFlow: Flow<PagingData<TorrentDto>> = viewModel.torrentsPagingFlow
@@ -68,57 +73,67 @@ fun ListsScreen(
     val startDestination = Destination.TORRENTS
     var selectedDestination by rememberSaveable { mutableIntStateOf(startDestination.ordinal) }
 
-    Column(modifier = modifier) {
-        PrimaryTabRow(selectedTabIndex = selectedDestination, modifier = Modifier.padding(10.dp)) {
-            Destination.entries.forEachIndexed { index, destination ->
-                Tab(
-                    // todo: add icon to see if it's better
-                    selected = selectedDestination == index, onClick = {
-                        selectedDestination = index
-                    }, text = {
-                        Text(
-                            text = destination.label, maxLines = 2, overflow = TextOverflow.Ellipsis
-                        )
-                    })
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            PrimaryTabRow(selectedTabIndex = selectedDestination, modifier = Modifier.padding(10.dp)) {
+                Destination.entries.forEachIndexed { index, destination ->
+                    Tab(
+                        // todo: add icon to see if it's better
+                        selected = selectedDestination == index, onClick = {
+                            selectedDestination = index
+                        }, text = {
+                            Text(
+                                text = destination.label, maxLines = 2, overflow = TextOverflow.Ellipsis
+                            )
+                        })
+                }
+            }
+            // todo: decide if we should use a single viewModel and pass the functions/lists down
+            when (Destination.entries[selectedDestination]) {
+                Destination.TORRENTS -> {
+                    TorrentsScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        contentType = contentType,
+                        navigationType = navigationType,
+                        loadDetails = loadTorrentDetails,
+                        closeDetails = closeDetails,
+                        torrent = uiState.selectedTorrent,
+                        flow = torrentFlow
+                    )
+                }
+
+                Destination.WEB -> {
+                    WebScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        contentType = contentType,
+                        navigationType = navigationType,
+                        loadDetails = loadWebDetails,
+                        closeDetails = closeDetails,
+                        webDownload = uiState.selectedWeb,
+                        flow = webFlow
+                    )
+                }
+
+                Destination.USENET -> {
+                    UsenetScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        contentType = contentType,
+                        navigationType = navigationType,
+                        loadDetails = loadUsenetDetails,
+                        closeDetails = closeDetails,
+                        usenet = uiState.selectedUsenet,
+                        flow = usenetFlow
+                    )
+                }
             }
         }
-        // todo: decide if we should use a single viewModel and pass the functions/lists down
-        when (Destination.entries[selectedDestination]) {
-            Destination.TORRENTS -> {
-                TorrentsScreen(
-                    modifier = modifier,
-                    contentType = contentType,
-                    navigationType = navigationType,
-                    loadDetails = loadTorrentDetails,
-                    closeDetails = closeDetails,
-                    torrent = uiState.selectedTorrent,
-                    flow = torrentFlow
-                )
-            }
 
-            Destination.WEB -> {
-                WebScreen(
-                    modifier = modifier,
-                    contentType = contentType,
-                    navigationType = navigationType,
-                    loadDetails = loadWebDetails,
-                    closeDetails = closeDetails,
-                    webDownload = uiState.selectedWeb,
-                    flow = webFlow
-                )
-            }
-
-            Destination.USENET -> {
-                UsenetScreen(
-                    modifier = modifier,
-                    contentType = contentType,
-                    navigationType = navigationType,
-                    loadDetails = loadUsenetDetails,
-                    closeDetails = closeDetails,
-                    usenet = uiState.selectedUsenet,
-                    flow = usenetFlow
-                )
-            }
+        if (navigationType == NullNavigationType.BOTTOM_NAVIGATION) {
+            ExtendableFabMenu(
+                onNewDownload = onNewDownload,
+                showSettings = showSettings,
+                modifier = Modifier.align(Alignment.BottomEnd),
+            )
         }
     }
 }

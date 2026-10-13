@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,10 +24,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
+import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import org.koin.androidx.compose.koinViewModel
@@ -123,7 +126,7 @@ private fun DownloadZipModeOption(
             modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(vertical = 4.dp),
+                .padding(vertical = 1.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
@@ -135,5 +138,20 @@ private fun DownloadZipModeOption(
             text = title,
             style = MaterialTheme.typography.bodyMedium,
         )
+    }
+}
+
+@Preview
+@Composable
+fun SettingsScreenPreview() {
+    NullSeekTheme {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            SettingsScreen(
+                downloadZipMode = DownloadZipMode.ASK,
+                onDownloadZipModeSelected = {},
+            )
+        }
     }
 }
