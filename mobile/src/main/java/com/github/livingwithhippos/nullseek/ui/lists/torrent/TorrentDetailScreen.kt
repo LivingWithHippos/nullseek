@@ -372,43 +372,28 @@ private fun TorrentOverviewCard(
                         text = stringResource(id = R.string.torrent_magnet_title),
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    Text(
-                        text = effectiveMagnet,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .padding(start = 16.dp),
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(
-                        onClick = { setClipboardText(context, effectiveMagnet) },
-                        modifier = Modifier.size(32.dp),
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_copy),
-                            contentDescription = stringResource(id = R.string.copy_magnet),
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(
-                        onClick = { shareText(context, effectiveMagnet, item.name) },
-                        modifier = Modifier.size(32.dp),
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_share),
-                            contentDescription = stringResource(id = R.string.action_share),
-                            modifier = Modifier.size(18.dp),
-                        )
+                    Row {
+                        IconButton(
+                            onClick = { setClipboardText(context, effectiveMagnet) },
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_copy),
+                                contentDescription = stringResource(id = R.string.copy_magnet),
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        IconButton(
+                            onClick = { shareText(context, effectiveMagnet, item.name) },
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_share),
+                                contentDescription = stringResource(id = R.string.action_share),
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -1058,8 +1043,11 @@ private fun TorrentFilesCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            val isFiltered = searchQuery.isNotBlank() || filterVideo || filterAudio
+            val countText =
+                if (isFiltered) "${filteredFiles.size}/${files.size}" else "${files.size}"
             Text(
-                text = "${stringResource(id = R.string.torrent_files_title)} (${files.size})",
+                text = "${stringResource(id = R.string.torrent_files_title)} ($countText)",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
             )
