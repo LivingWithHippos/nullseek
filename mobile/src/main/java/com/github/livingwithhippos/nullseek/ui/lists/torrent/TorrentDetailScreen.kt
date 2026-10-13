@@ -118,7 +118,11 @@ fun TorrentDetailScreen(
             uiState = uiState,
             onRefresh = { viewModel.refreshTorrent() },
             onDownloadZip = { viewModel.requestDownloadLink() },
-            onDownloadFile = { fileId, fileName -> viewModel.requestDownloadLink(fileId, fileName) },
+            onDownloadFile = { fileId, fileName ->
+                viewModel.requestDownloadLink(
+                    fileId, fileName
+                )
+            },
             onDismissDownloadLink = { viewModel.dismissDownloadLink() },
             onShowExportDialog = { viewModel.showExportDialog(it) },
             onExportMagnet = { context -> viewModel.exportMagnet(context) },
@@ -146,25 +150,23 @@ private fun TorrentDetailScreen(
     val focusManager = LocalFocusManager.current
 
     Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) {
-                    focusManager.clearFocus()
-                }
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) {
+                focusManager.clearFocus()
+            }
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Column(
-            modifier =
-                Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxWidth(),
+            modifier = Modifier
+                .widthIn(max = 600.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -264,39 +266,6 @@ private fun TorrentOverviewCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_hash),
-                    modifier = Modifier.padding(end = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f, fill = false),
-                ) {
-                    Text(
-                        text = item.hash,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    CopyButton(
-                        text = item.hash,
-                        modifier = Modifier.size(20.dp),
-                        description = "Copy Hash",
-                        context = context,
-                    )
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
                     text = stringResource(id = R.string.torrent_size),
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -338,11 +307,10 @@ private fun TorrentOverviewCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text =
-                        buildString {
-                            append(if (item.active) "Active" else "Inactive")
-                            if (item.cached) append(" • Cached")
-                        },
+                    text = buildString {
+                        append(if (item.active) "Active" else "Inactive")
+                        if (item.cached) append(" • Cached")
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -388,7 +356,8 @@ private fun TorrentOverviewCard(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            val effectiveMagnet = item.magnet?.takeIf { it.isNotBlank() } ?: "magnet:?xt=urn:btih:${item.hash}"
+            val effectiveMagnet =
+                item.magnet?.takeIf { it.isNotBlank() } ?: "magnet:?xt=urn:btih:${item.hash}"
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -409,10 +378,9 @@ private fun TorrentOverviewCard(
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier =
-                            Modifier
-                                .weight(1f, fill = false)
-                                .padding(start = 16.dp),
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .padding(start = 16.dp),
                     )
                 }
 
@@ -486,10 +454,9 @@ private fun TorrentTransferProgressCard(
 
             LinearWavyProgressIndicator(
                 progress = { item.progress.toFloat().coerceIn(0f, 1f) },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp),
             )
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -576,14 +543,13 @@ private fun TorrentTransferProgressCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text =
-                        if (item.downloadFinished || item.progress >= 1.0) {
-                            "Finished"
-                        } else if (item.eta > 0) {
-                            "${item.eta}s"
-                        } else {
-                            "—"
-                        },
+                    text = if (item.downloadFinished || item.progress >= 1.0) {
+                        "Finished"
+                    } else if (item.eta > 0) {
+                        "${item.eta}s"
+                    } else {
+                        "—"
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -803,7 +769,7 @@ private fun TorrentActionsCard(
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.action_download_zip))
+                Text(text = stringResource(id = R.string.action_download))
             }
 
             if (!item.cached) {
@@ -815,7 +781,7 @@ private fun TorrentActionsCard(
             }
 
             // Export Button
-            if(item.cached.not()) {
+            if (item.cached.not()) {
                 OutlinedButton(
                     onClick = onShowExportDialog,
                     modifier = Modifier.fillMaxWidth(),
@@ -838,35 +804,36 @@ private fun TorrentActionsCard(
                 }
             }
 
-            // Full Info Button
-            OutlinedButton(
-                onClick = onToggleFullInfo,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoadingFullInfo,
-            ) {
-                if (uiState.isLoadingFullInfo) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_info),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text =
-                        if (uiState.fullInfo == null) {
+            if (item.cached.not()) {
+                // Full Info Button
+                OutlinedButton(
+                    onClick = onToggleFullInfo,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !uiState.isLoadingFullInfo,
+                ) {
+                    if (uiState.isLoadingFullInfo) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_info),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (uiState.fullInfo == null) {
                             stringResource(id = R.string.action_full_info)
                         } else if (uiState.isFullInfoExpanded) {
                             "Hide Full Info"
                         } else {
                             "Show Full Info"
                         },
-                )
+                    )
+                }
             }
         }
     }
@@ -910,15 +877,13 @@ private fun TorrentFullInfoCard(
 
                 IconButton(onClick = onToggleExpand) {
                     Icon(
-                        painter =
-                            painterResource(
-                                id =
-                                    if (isExpanded) {
-                                        R.drawable.ic_arrow_drop_up
-                                    } else {
-                                        R.drawable.ic_arrow_drop_down
-                                    },
-                            ),
+                        painter = painterResource(
+                            id = if (isExpanded) {
+                                R.drawable.ic_arrow_drop_up
+                            } else {
+                                R.drawable.ic_arrow_drop_down
+                            },
+                        ),
                         contentDescription = if (isExpanded) "Collapse" else "Expand",
                     )
                 }
@@ -1043,13 +1008,17 @@ private fun formatFileNameDisplay(fullName: String, shortName: String): String {
 private fun TorrentFileDto.isVideo(): Boolean {
     if (mimetype.startsWith("video/", ignoreCase = true)) return true
     val ext = name.substringAfterLast('.', "").lowercase()
-    return ext in listOf("mkv", "mp4", "avi", "mov", "wmv", "flv", "webm", "m4v", "ts", "mpg", "mpeg", "vob", "iso")
+    return ext in listOf(
+        "mkv", "mp4", "avi", "mov", "wmv", "flv", "webm", "m4v", "ts", "mpg", "mpeg", "vob", "iso"
+    )
 }
 
 private fun TorrentFileDto.isAudio(): Boolean {
     if (mimetype.startsWith("audio/", ignoreCase = true)) return true
     val ext = name.substringAfterLast('.', "").lowercase()
-    return ext in listOf("mp3", "flac", "wav", "aac", "m4a", "ogg", "opus", "wma", "alac", "aiff", "ape")
+    return ext in listOf(
+        "mp3", "flac", "wav", "aac", "m4a", "ogg", "opus", "wma", "alac", "aiff", "ape"
+    )
 }
 
 @Composable
@@ -1064,25 +1033,23 @@ private fun TorrentFilesCard(
     var filterAudio by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    val filteredFiles =
-        remember(files, searchQuery, filterVideo, filterAudio) {
-            files.filter { file ->
-                val matchesSearch =
-                    searchQuery.isBlank() ||
-                        file.name.contains(searchQuery, ignoreCase = true) ||
-                        file.shortName.contains(searchQuery, ignoreCase = true)
+    val filteredFiles = remember(files, searchQuery, filterVideo, filterAudio) {
+        files.filter { file ->
+            val matchesSearch = searchQuery.isBlank() || file.name.contains(
+                searchQuery,
+                ignoreCase = true
+            ) || file.shortName.contains(searchQuery, ignoreCase = true)
 
-                val matchesType =
-                    when {
-                        filterVideo && filterAudio -> file.isVideo() || file.isAudio()
-                        filterVideo -> file.isVideo()
-                        filterAudio -> file.isAudio()
-                        else -> true
-                    }
-
-                matchesSearch && matchesType
+            val matchesType = when {
+                filterVideo && filterAudio -> file.isVideo() || file.isAudio()
+                filterVideo -> file.isVideo()
+                filterAudio -> file.isAudio()
+                else -> true
             }
+
+            matchesSearch && matchesType
         }
+    }
 
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
@@ -1219,10 +1186,9 @@ private fun TorrentFilesCard(
 fun TorrentDetailScreenPreview() {
     NullSeekTheme {
         Surface(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
         ) {
             TorrentDetailScreen(
                 item = mockTorrents.first(),
