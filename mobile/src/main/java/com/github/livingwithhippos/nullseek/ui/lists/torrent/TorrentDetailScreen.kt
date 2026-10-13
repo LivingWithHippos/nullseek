@@ -2,6 +2,7 @@ package com.github.livingwithhippos.nullseek.ui.lists.torrent
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,18 +15,29 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.utils.mockTorrents
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
@@ -43,9 +56,13 @@ import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.nullseek.utils.formatToLocalDate
+import com.github.livingwithhippos.nullseek.utils.openWebPage
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
+import com.github.livingwithhippos.nullseek.utils.shareText
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import com.github.livingwithhippos.torbox.model.TorrentFileDto
+import com.github.livingwithhippos.torbox.model.TorrentInfoDto
+import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
 @Composable
@@ -55,16 +72,49 @@ fun TorrentDetailScreen(
     navigationType: NullNavigationType,
     item: TorrentDto,
     closeDetails: () -> Unit,
+    viewModel: TorrentDetailViewModel = koinViewModel(),
 ) {
     BackHandler {
         closeDetails()
     }
 
-    TorrentDetailScreen(
+    LaunchedEffect(item.id) {
+        viewModel.init(item)
+    }
+
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currentItem = uiState.torrent ?: item
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is TorrentDetailEvent.ShowMessage -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         modifier = modifier,
-        context = LocalContext.current,
-        item = item,
-    )
+    ) { innerPadding ->
+        TorrentDetailScreen(
+            modifier = Modifier.padding(innerPadding),
+            context = LocalContext.current,
+            item = currentItem,
+            uiState = uiState,
+            onRefresh = { viewModel.refreshTorrent() },
+            onDownloadZip = { viewModel.requestDownloadLink() },
+            onDownloadFile = { fileId, fileName -> viewModel.requestDownloadLink(fileId, fileName) },
+            onDismissDownloadLink = { viewModel.dismissDownloadLink() },
+            onShowExportDialog = { viewModel.showExportDialog(it) },
+            onExportMagnet = { context -> viewModel.exportMagnet(context) },
+            onExportTorrentFile = { context -> viewModel.exportTorrentFile(context) },
+            onToggleFullInfo = { viewModel.loadFullInfo() },
+        )
+    }
 }
 
 @Composable
@@ -72,6 +122,15 @@ private fun TorrentDetailScreen(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
     item: TorrentDto,
+    uiState: TorrentDetailUiState,
+    onRefresh: () -> Unit,
+    onDownloadZip: () -> Unit,
+    onDownloadFile: (Int, String) -> Unit,
+    onDismissDownloadLink: () -> Unit,
+    onShowExportDialog: (Boolean) -> Unit,
+    onExportMagnet: (Context) -> Unit,
+    onExportTorrentFile: (Context) -> Unit,
+    onToggleFullInfo: () -> Unit,
 ) {
     Column(
         modifier =
@@ -99,17 +158,55 @@ private fun TorrentDetailScreen(
             // Card 3: Magnet Link
             TorrentMagnetCard(item = item, context = context)
 
-            // Card 4: Actions
-            TorrentActionsCard(item = item)
+            // Section: Generated Download Link (Options: Open, Copy, Share)
+            if (uiState.downloadLinkResult != null) {
+                TorrentDownloadLinkCard(
+                    result = uiState.downloadLinkResult,
+                    context = context,
+                    onDismiss = onDismissDownloadLink,
+                )
+            }
 
-            // Card 5: Files List (if available)
+            // Card 4: Actions (Refresh, Download, Export, Full Info)
+            TorrentActionsCard(
+                item = item,
+                uiState = uiState,
+                onRefresh = onRefresh,
+                onDownloadZip = onDownloadZip,
+                onShowExportDialog = { onShowExportDialog(true) },
+                onToggleFullInfo = onToggleFullInfo,
+            )
+
+            // Expandable Card: Full BitTorrent Swarm Info
+            if (uiState.fullInfo != null) {
+                TorrentFullInfoCard(
+                    fullInfo = uiState.fullInfo,
+                    isExpanded = uiState.isFullInfoExpanded,
+                    onToggleExpand = onToggleFullInfo,
+                )
+            }
+
+            // Card 5: Files List (with per-file download buttons)
             if (!item.files.isNullOrEmpty()) {
-                TorrentFilesCard(files = item.files!!)
+                TorrentFilesCard(
+                    files = item.files!!,
+                    isCached = item.cached,
+                    onDownloadFile = onDownloadFile,
+                )
             }
 
             // Bottom spacer for FAB
             Spacer(modifier = Modifier.height(88.dp))
         }
+    }
+
+    if (uiState.showExportDialog) {
+        TorrentExportDialog(
+            context = context,
+            onDismiss = { onShowExportDialog(false) },
+            onExportMagnet = onExportMagnet,
+            onExportTorrentFile = onExportTorrentFile,
+        )
     }
 }
 
@@ -436,6 +533,8 @@ private fun TorrentMagnetCard(
                 fontWeight = FontWeight.Bold,
             )
 
+            // fixme: magnet is not working, build it manually
+
             val magnet = item.magnet
 
             if (magnet != null) {
@@ -471,8 +570,133 @@ private fun TorrentMagnetCard(
 }
 
 @Composable
+private fun TorrentDownloadLinkCard(
+    result: DownloadLinkResult,
+    context: Context,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_download),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = stringResource(id = R.string.download_link_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(24.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_close),
+                        contentDescription = "Dismiss",
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+
+            Text(
+                text = result.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = result.url,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(8.dp),
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Button(
+                    onClick = { openWebPage(context, result.url) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_open_in_new),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = stringResource(id = R.string.action_open))
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        setClipboardText(context, result.url)
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_copy),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = stringResource(id = R.string.copy_link))
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        shareText(context, result.url, title = result.title)
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_share),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = stringResource(id = R.string.action_share))
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun TorrentActionsCard(
     item: TorrentDto,
+    uiState: TorrentDetailUiState,
+    onRefresh: () -> Unit,
+    onDownloadZip: () -> Unit,
+    onShowExportDialog: () -> Unit,
+    onToggleFullInfo: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
@@ -488,42 +712,284 @@ private fun TorrentActionsCard(
                 fontWeight = FontWeight.Bold,
             )
 
-            FilledTonalButton(
-                onClick = { /* TODO: Download action */ },
+            // Refresh Button
+            OutlinedButton(
+                onClick = onRefresh,
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isRefreshing,
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_file),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                )
+                if (uiState.isRefreshing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_refresh),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = stringResource(id = R.string.action_refresh))
+            }
+
+            // Download as Zip Button (Checks item.cached)
+            FilledTonalButton(
+                onClick = onDownloadZip,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = item.cached && !uiState.isDownloading,
+            ) {
+                if (uiState.isDownloading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_download),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = stringResource(id = R.string.action_download_zip))
             }
 
-            OutlinedButton(
-                onClick = { /* TODO: Delete action */ },
-                modifier = Modifier.fillMaxWidth(),
-                colors =
-                    ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_delete),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
+            if (!item.cached) {
+                Text(
+                    text = stringResource(id = R.string.download_not_cached_warning),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+
+            // Export Button
+            if(item.cached.not()) {
+                OutlinedButton(
+                    onClick = onShowExportDialog,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !uiState.isExporting,
+                ) {
+                    if (uiState.isExporting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_share),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(id = R.string.action_export))
+                }
+            }
+
+            // Full Info Button
+            OutlinedButton(
+                onClick = onToggleFullInfo,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isLoadingFullInfo,
+            ) {
+                if (uiState.isLoadingFullInfo) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_info),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.action_delete))
+                Text(
+                    text =
+                        if (uiState.fullInfo == null) {
+                            stringResource(id = R.string.action_full_info)
+                        } else if (uiState.isFullInfoExpanded) {
+                            "Hide Full Info"
+                        } else {
+                            "Show Full Info"
+                        },
+                )
             }
         }
     }
 }
 
 @Composable
+private fun TorrentFullInfoCard(
+    fullInfo: TorrentInfoDto,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_info),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = stringResource(id = R.string.full_info_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+
+                IconButton(onClick = onToggleExpand) {
+                    Icon(
+                        painter =
+                            painterResource(
+                                id =
+                                    if (isExpanded) {
+                                        R.drawable.ic_arrow_drop_up
+                                    } else {
+                                        R.drawable.ic_arrow_drop_down
+                                    },
+                            ),
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    )
+                }
+            }
+
+            AnimatedVisibility(visible = isExpanded) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.swarm_seeds),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Text(
+                            text = "${fullInfo.seeds}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.swarm_peers),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Text(
+                            text = "${fullInfo.peers}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+
+                    if (fullInfo.trackers.isNotEmpty()) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                        Text(
+                            text = "${stringResource(id = R.string.trackers_label)} (${fullInfo.trackers.size})",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+
+                        fullInfo.trackers.forEach { tracker ->
+                            Text(
+                                text = tracker,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TorrentExportDialog(
+    context: Context,
+    onDismiss: () -> Unit,
+    onExportMagnet: (Context) -> Unit,
+    onExportTorrentFile: (Context) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(id = R.string.export_dialog_title))
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { onExportMagnet(context) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_magnet),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(id = R.string.export_as_magnet))
+                }
+
+                OutlinedButton(
+                    onClick = { onExportTorrentFile(context) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_download),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(id = R.string.export_as_file))
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = R.string.action_cancel))
+            }
+        },
+    )
+}
+
+@Composable
 private fun TorrentFilesCard(
     files: List<TorrentFileDto>,
+    isCached: Boolean,
+    onDownloadFile: (Int, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
@@ -549,20 +1015,38 @@ private fun TorrentFilesCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = file.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = convertToSize(file.size),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text(
+                            text = file.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = convertToSize(file.size),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    if (isCached) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            onClick = { onDownloadFile(file.id, file.name) },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_download),
+                                contentDescription = "Download ${file.name}",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -581,6 +1065,15 @@ fun TorrentDetailScreenPreview() {
         ) {
             TorrentDetailScreen(
                 item = mockTorrents.first(),
+                uiState = TorrentDetailUiState(torrent = mockTorrents.first()),
+                onRefresh = {},
+                onDownloadZip = {},
+                onDownloadFile = { _, _ -> },
+                onDismissDownloadLink = {},
+                onShowExportDialog = {},
+                onExportMagnet = {},
+                onExportTorrentFile = {},
+                onToggleFullInfo = {},
             )
         }
     }

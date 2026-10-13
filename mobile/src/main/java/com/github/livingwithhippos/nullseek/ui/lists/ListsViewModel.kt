@@ -19,9 +19,9 @@ import org.koin.core.annotation.KoinViewModel
 @KoinViewModel
 class ListsViewModel(
     private val client: TorboxClient,
-    val pageSize: Int = 100,
 ) : ViewModel() {
     // todo: inject the sources
+    val pageSize = 100
 
     val torrentsPagingFlow: Flow<PagingData<TorrentDto>> =
         Pager(

@@ -12,3 +12,18 @@ fun openWebPage(
     val intent = Intent(Intent.ACTION_VIEW, url.toUri())
     context.startActivity(intent)
 }
+
+fun shareText(
+    context: Context?,
+    text: String,
+    title: String? = null,
+) {
+    if (context == null) return
+    val intent =
+        Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+    context.startActivity(Intent.createChooser(intent, title))
+}
+
