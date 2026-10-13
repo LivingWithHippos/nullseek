@@ -1,0 +1,146 @@
+package com.github.livingwithhippos.nullseek.ui.lists.usenet
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
+import com.github.livingwithhippos.torbox.client.TorboxClient
+import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
+import com.github.livingwithhippos.torbox.network.ApiResult
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import org.koin.core.annotation.KoinViewModel
+
+data class DownloadLinkResult(
+    val url: String,
+    val title: String,
+)
+
+sealed interface UsenetDetailEvent {
+    data class ShowMessage(
+        val message: String,
+    ) : UsenetDetailEvent
+
+    data object Deleted : UsenetDetailEvent
+}
+
+data class UsenetDetailUiState(
+    val usenet: UsenetDownloadDto? = null,
+    val isRefreshing: Boolean = false,
+    val isDownloading: Boolean = false,
+    val isDeleting: Boolean = false,
+    val downloadLinkResult: DownloadLinkResult? = null,
+    val showDeleteConfirmDialog: Boolean = false,
+)
+
+@KoinViewModel
+class UsenetDetailViewModel(
+    private val client: TorboxClient,
+    private val providerRepository: NullProviderRepository,
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(UsenetDetailUiState())
+    val uiState = _uiState.asStateFlow()
+
+    private val _events = MutableSharedFlow<UsenetDetailEvent>()
+    val events = _events.asSharedFlow()
+
+    fun init(item: UsenetDownloadDto) {
+        if (_uiState.value.usenet?.id != item.id) {
+            _uiState.value =
+                UsenetDetailUiState(
+                    usenet = item,
+                )
+        }
+    }
+
+    fun refreshUsenet() {
+        val current = _uiState.value.usenet ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isRefreshing = true)
+            val response = client.usenet.get(bypassCache = true, id = current.id)
+            if (response is ApiResult.Success && response.value.data != null) {
+                val updated = response.value.data!!
+                _uiState.value =
+                    _uiState.value.copy(
+                        usenet = updated,
+                        isRefreshing = false,
+                    )
+                _events.emit(UsenetDetailEvent.ShowMessage("Usenet download info refreshed"))
+            } else {
+                _uiState.value = _uiState.value.copy(isRefreshing = false)
+                _events.emit(UsenetDetailEvent.ShowMessage("Failed to refresh usenet info"))
+            }
+        }
+    }
+
+    fun requestDownloadLink(
+        fileId: Int? = null,
+        fileName: String? = null,
+    ) {
+        val item = _uiState.value.usenet ?: return
+        if (!item.cached) {
+            viewModelScope.launch {
+                _events.emit(UsenetDetailEvent.ShowMessage("Downloads are only available for cached usenet downloads"))
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isDownloading = true)
+            val activeProvider = providerRepository.getActive()
+            val token = activeProvider?.token
+            if (token.isNullOrBlank()) {
+                _uiState.value = _uiState.value.copy(isDownloading = false)
+                _events.emit(UsenetDetailEvent.ShowMessage("No active provider token found"))
+                return@launch
+            }
+
+            val isZip = fileId == null
+            val response =
+                client.usenet.downloadLink(
+                    token = token,
+                    usenetId = item.id,
+                    fileId = fileId,
+                    zipLink = if (isZip) true else null,
+                )
+            _uiState.value = _uiState.value.copy(isDownloading = false)
+
+            if (response is ApiResult.Success && response.value.data != null) {
+                val url = response.value.data!!
+                val rawTitle = fileName ?: if (isZip) "${item.name}.zip" else item.name
+                val title = rawTitle.substringAfterLast('/').substringAfterLast('\\')
+                _uiState.value =
+                    _uiState.value.copy(
+                        downloadLinkResult = DownloadLinkResult(url = url, title = title),
+                    )
+            } else {
+                _events.emit(UsenetDetailEvent.ShowMessage("Failed to generate download link"))
+            }
+        }
+    }
+
+    fun dismissDownloadLink() {
+        _uiState.value = _uiState.value.copy(downloadLinkResult = null)
+    }
+
+    fun showDeleteConfirmDialog(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showDeleteConfirmDialog = show)
+    }
+
+    fun deleteUsenet() {
+        val item = _uiState.value.usenet ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isDeleting = true, showDeleteConfirmDialog = false)
+            val response = client.usenet.control(usenetId = item.id, operation = "Delete")
+            _uiState.value = _uiState.value.copy(isDeleting = false)
+            if (response is ApiResult.Success) {
+                _events.emit(UsenetDetailEvent.ShowMessage("Usenet download deleted"))
+                _events.emit(UsenetDetailEvent.Deleted)
+            } else {
+                _events.emit(UsenetDetailEvent.ShowMessage("Failed to delete usenet download"))
+            }
+        }
+    }
+}
