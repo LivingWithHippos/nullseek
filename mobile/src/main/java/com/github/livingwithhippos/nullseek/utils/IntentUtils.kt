@@ -26,4 +26,3 @@ fun shareText(
         }
     context.startActivity(Intent.createChooser(intent, title))
 }
-

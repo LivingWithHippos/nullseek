@@ -13,8 +13,8 @@ fun saveFileToPublicDownloads(
     fileName: String,
     bytes: ByteArray,
     mimeType: String = "application/x-bittorrent",
-): Uri? {
-    return try {
+): Uri? =
+    try {
         val sanitizedName = if (fileName.endsWith(".torrent", ignoreCase = true)) fileName else "$fileName.torrent"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val contentValues =
@@ -41,4 +41,3 @@ fun saveFileToPublicDownloads(
     } catch (_: Exception) {
         null
     }
-}

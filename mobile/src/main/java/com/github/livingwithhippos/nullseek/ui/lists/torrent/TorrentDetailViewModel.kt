@@ -24,7 +24,9 @@ data class DownloadLinkResult(
 )
 
 sealed interface TorrentDetailEvent {
-    data class ShowMessage(val message: String) : TorrentDetailEvent
+    data class ShowMessage(
+        val message: String,
+    ) : TorrentDetailEvent
 }
 
 data class TorrentDetailUiState(
