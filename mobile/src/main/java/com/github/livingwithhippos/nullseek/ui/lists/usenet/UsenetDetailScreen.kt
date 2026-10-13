@@ -64,6 +64,7 @@ import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.utils.mockUsenetDownload
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
+import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.utils.convertToSize
@@ -119,9 +120,13 @@ fun UsenetDetailScreen(
             item = currentItem,
             uiState = uiState,
             onRefresh = { viewModel.refreshUsenet() },
-            onDownloadZip = { viewModel.requestDownloadLink() },
-            onDownloadFile = { fileId, fileName -> viewModel.requestDownloadLink(fileId, fileName) },
+            onDownloadZip = { viewModel.startDownload() },
+            onDownloadFile = { fileId, fileName -> viewModel.startDownload(fileId, fileName) },
             onDismissDownloadLink = { viewModel.dismissDownloadLink() },
+            onConfirmDownloadModal = { zip, rememberChoice ->
+                viewModel.confirmDownloadModal(zip, rememberChoice)
+            },
+            onDismissDownloadModal = { viewModel.dismissDownloadModal() },
             onShowDeleteDialog = { viewModel.showDeleteConfirmDialog(it) },
             onConfirmDelete = { viewModel.deleteUsenet() },
         )
@@ -138,6 +143,8 @@ private fun UsenetDetailScreen(
     onDownloadZip: () -> Unit,
     onDownloadFile: (Int, String) -> Unit,
     onDismissDownloadLink: () -> Unit,
+    onConfirmDownloadModal: (Boolean, Boolean) -> Unit,
+    onDismissDownloadModal: () -> Unit,
     onShowDeleteDialog: (Boolean) -> Unit,
     onConfirmDelete: () -> Unit,
 ) {
@@ -205,6 +212,14 @@ private fun UsenetDetailScreen(
             // Bottom spacer for FAB
             Spacer(modifier = Modifier.height(88.dp))
         }
+    }
+
+    if (uiState.pendingDownload != null) {
+        DownloadZipModal(
+            itemName = uiState.pendingDownload.fileName ?: item.name,
+            onDismiss = onDismissDownloadModal,
+            onConfirm = onConfirmDownloadModal,
+        )
     }
 
     if (uiState.showDeleteConfirmDialog) {
@@ -574,7 +589,7 @@ private fun UsenetDownloadLinkCard(
                 text = displayTitle,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
+                maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
             )
 
@@ -612,7 +627,7 @@ private fun UsenetDownloadLinkCard(
                 Text(
                     text = result.url,
                     style = MaterialTheme.typography.bodySmall,
-                    maxLines = 2,
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(8.dp),
                 )
@@ -732,7 +747,7 @@ private fun UsenetActionsCard(
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.action_download_zip))
+                Text(text = stringResource(id = R.string.action_download))
             }
 
             if (!item.cached) {
@@ -981,6 +996,8 @@ fun UsenetDetailScreenPreview() {
                 onDownloadZip = {},
                 onDownloadFile = { _, _ -> },
                 onDismissDownloadLink = {},
+                onConfirmDownloadModal = { _, _ -> },
+                onDismissDownloadModal = {},
                 onShowDeleteDialog = {},
                 onConfirmDelete = {},
             )

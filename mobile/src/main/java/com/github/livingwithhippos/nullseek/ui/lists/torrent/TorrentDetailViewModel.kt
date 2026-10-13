@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
+import com.github.livingwithhippos.nullseek.data.repository.DownloadPreferencesRepository
+import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.utils.saveFileToPublicDownloads
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.client.TorboxClient
@@ -23,6 +25,11 @@ data class DownloadLinkResult(
     val title: String,
 )
 
+data class PendingDownload(
+    val fileId: Int? = null,
+    val fileName: String? = null,
+)
+
 sealed interface TorrentDetailEvent {
     data class ShowMessage(
         val message: String,
@@ -39,12 +46,14 @@ data class TorrentDetailUiState(
     val fullInfo: TorrentInfoDto? = null,
     val isFullInfoExpanded: Boolean = false,
     val showExportDialog: Boolean = false,
+    val pendingDownload: PendingDownload? = null,
 )
 
 @KoinViewModel
 class TorrentDetailViewModel(
     private val client: TorboxClient,
     private val providerRepository: NullProviderRepository,
+    private val downloadPreferencesRepository: DownloadPreferencesRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(TorrentDetailUiState())
     val uiState = _uiState.asStateFlow()
@@ -81,9 +90,56 @@ class TorrentDetailViewModel(
         }
     }
 
+    fun startDownload(
+        fileId: Int? = null,
+        fileName: String? = null,
+    ) {
+        val torrent = _uiState.value.torrent ?: return
+        if (!torrent.cached) {
+            viewModelScope.launch {
+                _events.emit(TorrentDetailEvent.ShowMessage("Download is only available for cached torrents"))
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            when (downloadPreferencesRepository.getDownloadZipMode()) {
+                DownloadZipMode.ASK -> {
+                    _uiState.value =
+                        _uiState.value.copy(
+                            pendingDownload = PendingDownload(fileId = fileId, fileName = fileName),
+                        )
+                }
+                DownloadZipMode.ZIP -> {
+                    requestDownloadLink(fileId = fileId, fileName = fileName, zipLink = true)
+                }
+                DownloadZipMode.UNCOMPRESSED -> {
+                    requestDownloadLink(fileId = fileId, fileName = fileName, zipLink = false)
+                }
+            }
+        }
+    }
+
+    fun confirmDownloadModal(zip: Boolean, rememberChoice: Boolean) {
+        val pending = _uiState.value.pendingDownload ?: return
+        _uiState.value = _uiState.value.copy(pendingDownload = null)
+        viewModelScope.launch {
+            if (rememberChoice) {
+                val mode = if (zip) DownloadZipMode.ZIP else DownloadZipMode.UNCOMPRESSED
+                downloadPreferencesRepository.setDownloadZipMode(mode)
+            }
+            requestDownloadLink(fileId = pending.fileId, fileName = pending.fileName, zipLink = zip)
+        }
+    }
+
+    fun dismissDownloadModal() {
+        _uiState.value = _uiState.value.copy(pendingDownload = null)
+    }
+
     fun requestDownloadLink(
         fileId: Int? = null,
         fileName: String? = null,
+        zipLink: Boolean = true,
     ) {
         val torrent = _uiState.value.torrent ?: return
         if (!torrent.cached) {
@@ -103,19 +159,24 @@ class TorrentDetailViewModel(
                 return@launch
             }
 
-            val isZip = fileId == null
             val response =
                 client.torrent.downloadLink(
                     token = token,
                     torrentId = torrent.id,
                     fileId = fileId,
-                    zipLink = if (isZip) true else null,
+                    zipLink = zipLink,
                 )
             _uiState.value = _uiState.value.copy(isDownloading = false)
 
             if (response is ApiResult.Success && response.value.data != null) {
                 val url = response.value.data!!
-                val rawTitle = fileName ?: if (isZip) "${torrent.name}.zip" else torrent.name
+                val baseName = fileName ?: torrent.name
+                val rawTitle =
+                    if (zipLink) {
+                        if (baseName.endsWith(".zip", ignoreCase = true)) baseName else "$baseName.zip"
+                    } else {
+                        baseName
+                    }
                 val title = rawTitle.substringAfterLast('/').substringAfterLast('\\')
                 _uiState.value =
                     _uiState.value.copy(

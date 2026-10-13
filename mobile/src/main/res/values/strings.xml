@@ -89,7 +89,8 @@
     <string name="torrent_magnet_title">Magnet Link</string>
     <string name="copy_magnet">Copy Magnet</string>
     <string name="torrent_actions">Actions</string>
-    <string name="action_download">Download</string>
+    <string name="download">Download</string>
+    <string name="action_download">Generate Download</string>
     <string name="action_download_zip">Download as Zip</string>
     <string name="action_share">Share</string>
     <string name="action_delete">Delete</string>
@@ -122,7 +123,7 @@
     <string name="load_full_info_failed">Failed to load full info</string>
     <string name="torrent_refreshed">Torrent info refreshed</string>
     <string name="refresh_failed">Failed to refresh torrent info</string>
-    <string name="download_link_api_key_warning">Warning: This download link includes your Torbox API key. Do not share it publicly.</string>
+    <string name="download_link_api_key_warning">Warning: This download link includes your Torbox API key. Do not share it publicly!</string>
     <string name="search_files_hint">Filter files…</string>
     <string name="no_files_found">No files matching filter</string>
     <string name="clear_search">Clear search</string>
@@ -143,4 +144,15 @@
     <string name="usenet_delete_failed">Failed to delete usenet download</string>
     <string name="delete_usenet_confirm_title">Delete Usenet Download</string>
     <string name="delete_usenet_confirm_message">Are you sure you want to delete this usenet download? This action cannot be undone.</string>
+    <string name="download_options_title">Download Options</string>
+    <string name="download_option_zip">Zip archive (.zip)</string>
+    <string name="download_option_uncompressed">Direct / Uncompressed</string>
+    <string name="download_remember_choice">Remember choice and don\'t ask again</string>
+    <string name="download_zip_preference_title">Download format</string>
+    <string name="download_zip_preference_summary">Choose whether files should be zipped or downloaded directly</string>
+    <string name="download_zip_preference_ask">Always ask</string>
+    <string name="download_zip_preference_zip">Always zip</string>
+    <string name="download_zip_preference_uncompressed">Always uncompressed</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_downloads_section">Downloads</string>
 </resources>

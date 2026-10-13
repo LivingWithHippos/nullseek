@@ -63,6 +63,7 @@ import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.utils.mockTorrents
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
+import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.utils.convertToSize
@@ -117,13 +118,17 @@ fun TorrentDetailScreen(
             item = currentItem,
             uiState = uiState,
             onRefresh = { viewModel.refreshTorrent() },
-            onDownloadZip = { viewModel.requestDownloadLink() },
+            onDownloadZip = { viewModel.startDownload() },
             onDownloadFile = { fileId, fileName ->
-                viewModel.requestDownloadLink(
+                viewModel.startDownload(
                     fileId, fileName
                 )
             },
             onDismissDownloadLink = { viewModel.dismissDownloadLink() },
+            onConfirmDownloadModal = { zip, rememberChoice ->
+                viewModel.confirmDownloadModal(zip, rememberChoice)
+            },
+            onDismissDownloadModal = { viewModel.dismissDownloadModal() },
             onShowExportDialog = { viewModel.showExportDialog(it) },
             onExportMagnet = { context -> viewModel.exportMagnet(context) },
             onExportTorrentFile = { context -> viewModel.exportTorrentFile(context) },
@@ -142,6 +147,8 @@ private fun TorrentDetailScreen(
     onDownloadZip: () -> Unit,
     onDownloadFile: (Int, String) -> Unit,
     onDismissDownloadLink: () -> Unit,
+    onConfirmDownloadModal: (Boolean, Boolean) -> Unit,
+    onDismissDownloadModal: () -> Unit,
     onShowExportDialog: (Boolean) -> Unit,
     onExportMagnet: (Context) -> Unit,
     onExportTorrentFile: (Context) -> Unit,
@@ -219,6 +226,14 @@ private fun TorrentDetailScreen(
             // Bottom spacer for FAB
             Spacer(modifier = Modifier.height(88.dp))
         }
+    }
+
+    if (uiState.pendingDownload != null) {
+        DownloadZipModal(
+            itemName = uiState.pendingDownload.fileName ?: item.name,
+            onDismiss = onDismissDownloadModal,
+            onConfirm = onConfirmDownloadModal,
+        )
     }
 
     if (uiState.showExportDialog) {
@@ -596,7 +611,7 @@ private fun TorrentDownloadLinkCard(
                 text = displayTitle,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
+                maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
             )
 
@@ -634,7 +649,7 @@ private fun TorrentDownloadLinkCard(
                 Text(
                     text = result.url,
                     style = MaterialTheme.typography.bodySmall,
-                    maxLines = 2,
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(8.dp),
                 )
@@ -1193,6 +1208,8 @@ fun TorrentDetailScreenPreview() {
                 onDownloadZip = {},
                 onDownloadFile = { _, _ -> },
                 onDismissDownloadLink = {},
+                onConfirmDownloadModal = { _, _ -> },
+                onDismissDownloadModal = {},
                 onShowExportDialog = {},
                 onExportMagnet = {},
                 onExportTorrentFile = {},
