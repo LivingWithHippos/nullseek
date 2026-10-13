@@ -17,10 +17,15 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +33,7 @@ import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -37,13 +43,18 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -132,10 +143,18 @@ private fun TorrentDetailScreen(
     onExportTorrentFile: (Context) -> Unit,
     onToggleFullInfo: () -> Unit,
 ) {
+    val focusManager = LocalFocusManager.current
+
     Column(
         modifier =
             modifier
                 .fillMaxSize()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) {
+                    focusManager.clearFocus()
+                }
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -149,14 +168,14 @@ private fun TorrentDetailScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Card 1: Torrent Overview
+            // Card 1: Torrent Overview (includes Magnet link)
             TorrentOverviewCard(item = item, context = context)
 
-            // Card 2: Transfer & Progress
-            TorrentTransferProgressCard(item = item)
-
-            // Card 3: Magnet Link
-            TorrentMagnetCard(item = item, context = context)
+            // Card 2: Transfer & Progress (hidden if cached at 100% progress)
+            val isCachedAndComplete = item.cached && (item.progress >= 1.0 || item.downloadFinished)
+            if (!isCachedAndComplete) {
+                TorrentTransferProgressCard(item = item)
+            }
 
             // Section: Generated Download Link (Options: Open, Copy, Share)
             if (uiState.downloadLinkResult != null) {
@@ -366,6 +385,65 @@ private fun TorrentOverviewCard(
                     )
                 }
             }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            val effectiveMagnet = item.magnet?.takeIf { it.isNotBlank() } ?: "magnet:?xt=urn:btih:${item.hash}"
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.torrent_magnet_title),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        text = effectiveMagnet,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier =
+                            Modifier
+                                .weight(1f, fill = false)
+                                .padding(start = 16.dp),
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(
+                        onClick = { setClipboardText(context, effectiveMagnet) },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_copy),
+                            contentDescription = stringResource(id = R.string.copy_magnet),
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    IconButton(
+                        onClick = { shareText(context, effectiveMagnet, item.name) },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_share),
+                            contentDescription = stringResource(id = R.string.action_share),
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -514,60 +592,6 @@ private fun TorrentTransferProgressCard(
     }
 }
 
-@Composable
-private fun TorrentMagnetCard(
-    item: TorrentDto,
-    context: Context,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedCard(
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(id = R.string.torrent_magnet_title),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-            )
-
-            // fixme: magnet is not working, build it manually
-
-            val magnet = item.magnet
-
-            if (magnet != null) {
-                Text(
-                    text = magnet,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-
-                OutlinedButton(
-                    onClick = { setClipboardText(context, magnet) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_copy),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = stringResource(id = R.string.copy_magnet))
-                }
-            } else {
-                Text(
-                    text = "Magnet link not cached directly",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
 
 @Composable
 private fun TorrentDownloadLinkCard(
@@ -623,6 +647,32 @@ private fun TorrentDownloadLinkCard(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
+
+            // Security Warning Banner
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_warning),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = stringResource(id = R.string.download_link_api_key_warning),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
 
             Surface(
                 shape = RoundedCornerShape(8.dp),
@@ -985,6 +1035,23 @@ private fun TorrentExportDialog(
     )
 }
 
+private fun formatFileNameDisplay(fullName: String, shortName: String): String {
+    val rawName = shortName.ifBlank { fullName.substringAfterLast('/') }
+    return if (rawName.length > 90) "…${rawName.takeLast(85)}" else rawName
+}
+
+private fun TorrentFileDto.isVideo(): Boolean {
+    if (mimetype.startsWith("video/", ignoreCase = true)) return true
+    val ext = name.substringAfterLast('.', "").lowercase()
+    return ext in listOf("mkv", "mp4", "avi", "mov", "wmv", "flv", "webm", "m4v", "ts", "mpg", "mpeg", "vob", "iso")
+}
+
+private fun TorrentFileDto.isAudio(): Boolean {
+    if (mimetype.startsWith("audio/", ignoreCase = true)) return true
+    val ext = name.substringAfterLast('.', "").lowercase()
+    return ext in listOf("mp3", "flac", "wav", "aac", "m4a", "ogg", "opus", "wma", "alac", "aiff", "ape")
+}
+
 @Composable
 private fun TorrentFilesCard(
     files: List<TorrentFileDto>,
@@ -992,6 +1059,31 @@ private fun TorrentFilesCard(
     onDownloadFile: (Int, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var filterVideo by rememberSaveable { mutableStateOf(false) }
+    var filterAudio by rememberSaveable { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+    val filteredFiles =
+        remember(files, searchQuery, filterVideo, filterAudio) {
+            files.filter { file ->
+                val matchesSearch =
+                    searchQuery.isBlank() ||
+                        file.name.contains(searchQuery, ignoreCase = true) ||
+                        file.shortName.contains(searchQuery, ignoreCase = true)
+
+                val matchesType =
+                    when {
+                        filterVideo && filterAudio -> file.isVideo() || file.isAudio()
+                        filterVideo -> file.isVideo()
+                        filterAudio -> file.isAudio()
+                        else -> true
+                    }
+
+                matchesSearch && matchesType
+            }
+        }
+
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
     ) {
@@ -1005,46 +1097,115 @@ private fun TorrentFilesCard(
                 fontWeight = FontWeight.Bold,
             )
 
-            files.forEachIndexed { index, file ->
-                if (index > 0) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                }
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text(text = stringResource(id = R.string.search_files_hint)) },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_manage_search),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_close),
+                                contentDescription = stringResource(id = R.string.clear_search),
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    }
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                    ) {
-                        Text(
-                            text = file.name,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                FilterChip(
+                    selected = filterVideo,
+                    onClick = { filterVideo = !filterVideo },
+                    label = { Text(text = stringResource(id = R.string.filter_video)) },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_movie),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
                         )
-                        Text(
-                            text = convertToSize(file.size),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    },
+                )
+
+                FilterChip(
+                    selected = filterAudio,
+                    onClick = { filterAudio = !filterAudio },
+                    label = { Text(text = stringResource(id = R.string.filter_audio)) },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_audiotrack),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
                         )
+                    },
+                )
+            }
+
+            if (filteredFiles.isEmpty()) {
+                Text(
+                    text = stringResource(id = R.string.no_files_found),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                )
+            } else {
+                filteredFiles.forEachIndexed { index, file ->
+                    if (index > 0) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
 
-                    if (isCached) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(
-                            onClick = { onDownloadFile(file.id, file.name) },
-                            modifier = Modifier.size(36.dp),
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_download),
-                                contentDescription = "Download ${file.name}",
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.primary,
+                            Text(
+                                text = formatFileNameDisplay(file.name, file.shortName),
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis,
                             )
+                            Text(
+                                text = convertToSize(file.size),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+
+                        if (isCached) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(
+                                onClick = { onDownloadFile(file.id, file.name) },
+                                modifier = Modifier.size(36.dp),
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_download),
+                                    contentDescription = "Download ${file.name}",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
                         }
                     }
                 }
