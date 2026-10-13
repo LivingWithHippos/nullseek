@@ -115,7 +115,8 @@ class TorrentDetailViewModel(
 
             if (response is ApiResult.Success && response.value.data != null) {
                 val url = response.value.data!!
-                val title = fileName ?: if (isZip) "${torrent.name}.zip" else torrent.name
+                val rawTitle = fileName ?: if (isZip) "${torrent.name}.zip" else torrent.name
+                val title = rawTitle.substringAfterLast('/').substringAfterLast('\\')
                 _uiState.value =
                     _uiState.value.copy(
                         downloadLinkResult = DownloadLinkResult(url = url, title = title),

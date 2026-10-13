@@ -4,6 +4,7 @@ import com.github.livingwithhippos.nullseek.NullRootViewModel
 import com.github.livingwithhippos.nullseek.NullViewModel
 import com.github.livingwithhippos.nullseek.ui.lists.ListsViewModel
 import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentDetailViewModel
+import com.github.livingwithhippos.nullseek.ui.lists.web.WebDownloadDetailViewModel
 import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadViewModel
 import com.github.livingwithhippos.nullseek.ui.user.UserViewModel
 import org.koin.dsl.module
@@ -17,6 +18,7 @@ val viewModelMobileModule =
         viewModel<NewDownloadViewModel>()
         viewModel<UserViewModel>()
         viewModel<TorrentDetailViewModel>()
+        viewModel<WebDownloadDetailViewModel>()
     }
 
 fun mobileModule() =

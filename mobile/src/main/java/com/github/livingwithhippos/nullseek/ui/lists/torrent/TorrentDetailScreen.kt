@@ -591,8 +591,9 @@ private fun TorrentDownloadLinkCard(
                 }
             }
 
+            val displayTitle = result.title.substringAfterLast('/').substringAfterLast('\\')
             Text(
-                text = result.title,
+                text = displayTitle,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
@@ -673,7 +674,7 @@ private fun TorrentDownloadLinkCard(
 
                 OutlinedButton(
                     onClick = {
-                        shareText(context, result.url, title = result.title)
+                        shareText(context, result.url, title = displayTitle)
                     },
                     modifier = Modifier.weight(1f),
                 ) {
@@ -1151,7 +1152,14 @@ private fun TorrentFilesCard(
                         if (isCached) {
                             Spacer(modifier = Modifier.width(8.dp))
                             IconButton(
-                                onClick = { onDownloadFile(file.id, file.name) },
+                                onClick = {
+                                    onDownloadFile(
+                                        file.id,
+                                        file.shortName.ifBlank {
+                                            file.name.substringAfterLast('/').substringAfterLast('\\')
+                                        },
+                                    )
+                                },
                                 modifier = Modifier.size(36.dp),
                             ) {
                                 Icon(

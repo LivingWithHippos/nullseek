@@ -128,4 +128,12 @@
     <string name="clear_search">Clear search</string>
     <string name="filter_video">Video</string>
     <string name="filter_audio">Audio</string>
+    <string name="web_download_refreshed">Web download info refreshed</string>
+    <string name="web_download_refresh_failed">Failed to refresh web download info</string>
+    <string name="web_download_not_cached_warning">Downloads are only available for cached web downloads</string>
+    <string name="web_download_deleted">Web download deleted</string>
+    <string name="web_download_delete_failed">Failed to delete web download</string>
+    <string name="delete_web_download_confirm_title">Delete Web Download</string>
+    <string name="delete_web_download_confirm_message">Are you sure you want to delete this web download? This action cannot be undone.</string>
+    <string name="share_source_link">Share Source Link</string>
 </resources>
