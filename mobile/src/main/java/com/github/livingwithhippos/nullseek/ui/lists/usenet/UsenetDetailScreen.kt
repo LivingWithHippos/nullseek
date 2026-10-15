@@ -70,6 +70,7 @@ import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.nullseek.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.utils.openWebPage
+import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
@@ -627,57 +628,85 @@ private fun UsenetDownloadLinkCard(
                 Text(
                     text = result.url,
                     style = MaterialTheme.typography.bodySmall,
-                    maxLines = 3,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(8.dp),
                 )
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Button(
-                    onClick = { openWebPage(context, result.url) },
-                    modifier = Modifier.weight(1f),
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_open_in_new),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = stringResource(id = R.string.action_open))
+                    Button(
+                        onClick = { openWebPage(context, result.url) },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_open_in_new),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = stringResource(id = R.string.action_open))
+                    }
+
+                    val chooserTitle = stringResource(id = R.string.action_open_with)
+                    FilledTonalButton(
+                        onClick = {
+                            openWith(
+                                context = context,
+                                url = result.url,
+                                fileName = displayTitle,
+                                chooserTitle = chooserTitle,
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_apps),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = stringResource(id = R.string.action_open_with))
+                    }
                 }
 
-                OutlinedButton(
-                    onClick = {
-                        setClipboardText(context, result.url)
-                    },
-                    modifier = Modifier.weight(1f),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_copy),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = stringResource(id = R.string.copy_link))
-                }
+                    OutlinedButton(
+                        onClick = {
+                            setClipboardText(context, result.url)
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_copy),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = stringResource(id = R.string.copy_link))
+                    }
 
-                OutlinedButton(
-                    onClick = {
-                        shareText(context, result.url, title = displayTitle)
-                    },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_share),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = stringResource(id = R.string.action_share))
+                    OutlinedButton(
+                        onClick = {
+                            shareText(context, result.url, title = displayTitle)
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_share),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = stringResource(id = R.string.action_share))
+                    }
                 }
             }
         }

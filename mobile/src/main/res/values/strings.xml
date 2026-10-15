@@ -156,4 +156,6 @@
     <string name="settings_title">Settings</string>
     <string name="settings_downloads_section">Downloads</string>
     <string name="expand_menu">Expand menu</string>
+    <string name="action_open_with">Open with</string>
+    <string name="open_with_no_app">No app found to open this link</string>
 </resources>
