@@ -12,6 +12,7 @@ enum class DownloadZipMode {
     ASK,
     ZIP,
     UNCOMPRESSED,
+    ZIP_NON_MEDIA,
 }
 
 class DownloadPreferencesRepository(
@@ -24,6 +25,7 @@ class DownloadPreferencesRepository(
             when (preferences[zipModeKey]) {
                 DownloadZipMode.ZIP.name -> DownloadZipMode.ZIP
                 DownloadZipMode.UNCOMPRESSED.name -> DownloadZipMode.UNCOMPRESSED
+                DownloadZipMode.ZIP_NON_MEDIA.name -> DownloadZipMode.ZIP_NON_MEDIA
                 else -> DownloadZipMode.ASK
             }
         }

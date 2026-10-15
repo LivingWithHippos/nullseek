@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
 import com.github.livingwithhippos.nullseek.data.repository.DownloadPreferencesRepository
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
+import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.nullseek.utils.saveFileToPublicDownloads
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.client.TorboxClient
@@ -103,38 +104,69 @@ class TorrentDetailViewModel(
         }
 
         viewModelScope.launch {
-            when (downloadPreferencesRepository.getDownloadZipMode()) {
+            when (val mode = downloadPreferencesRepository.getDownloadZipMode()) {
                 DownloadZipMode.ASK -> {
                     _uiState.value =
                         _uiState.value.copy(
                             pendingDownload = PendingDownload(fileId = fileId, fileName = fileName),
                         )
                 }
-                DownloadZipMode.ZIP -> {
-                    requestDownloadLink(fileId = fileId, fileName = fileName, zipLink = true)
-                }
-                DownloadZipMode.UNCOMPRESSED -> {
-                    requestDownloadLink(fileId = fileId, fileName = fileName, zipLink = false)
+                else -> {
+                    requestDownloadLink(
+                        fileId = fileId,
+                        fileName = fileName,
+                        zipLink = resolveZipLink(mode, fileId, fileName),
+                    )
                 }
             }
         }
     }
 
-    fun confirmDownloadModal(zip: Boolean, rememberChoice: Boolean) {
+    fun confirmDownloadModal(
+        mode: DownloadZipMode,
+        rememberChoice: Boolean,
+    ) {
         val pending = _uiState.value.pendingDownload ?: return
         _uiState.value = _uiState.value.copy(pendingDownload = null)
         viewModelScope.launch {
             if (rememberChoice) {
-                val mode = if (zip) DownloadZipMode.ZIP else DownloadZipMode.UNCOMPRESSED
                 downloadPreferencesRepository.setDownloadZipMode(mode)
             }
-            requestDownloadLink(fileId = pending.fileId, fileName = pending.fileName, zipLink = zip)
+            requestDownloadLink(
+                fileId = pending.fileId,
+                fileName = pending.fileName,
+                zipLink = resolveZipLink(mode, pending.fileId, pending.fileName),
+            )
         }
     }
 
     fun dismissDownloadModal() {
         _uiState.value = _uiState.value.copy(pendingDownload = null)
     }
+
+    /**
+     * ZIP_NON_MEDIA keeps video, audio and subtitles uncompressed (streamable / external players).
+     * Whole downloads with multiple files are always zipped, since only a zip can bundle them.
+     */
+    private fun resolveZipLink(
+        mode: DownloadZipMode,
+        fileId: Int?,
+        fileName: String?,
+    ): Boolean =
+        when (mode) {
+            DownloadZipMode.ASK, DownloadZipMode.ZIP -> true
+            DownloadZipMode.UNCOMPRESSED -> false
+            DownloadZipMode.ZIP_NON_MEDIA -> {
+                val files = _uiState.value.torrent?.files.orEmpty()
+                val target =
+                    when {
+                        fileId != null -> files.firstOrNull { it.id == fileId }
+                        files.size == 1 -> files.first()
+                        else -> null
+                    }
+                fileId == null && target == null || !isStreamableOrSubtitle(target?.name ?: fileName.orEmpty(), target?.mimetype)
+            }
+        }
 
     fun requestDownloadLink(
         fileId: Int? = null,

@@ -62,6 +62,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.core.utils.mockWebDownload
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
@@ -70,6 +71,8 @@ import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.nullseek.utils.formatToLocalDate
+import com.github.livingwithhippos.nullseek.utils.isAudioFile
+import com.github.livingwithhippos.nullseek.utils.isVideoFile
 import com.github.livingwithhippos.nullseek.utils.openWebPage
 import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
@@ -125,8 +128,8 @@ fun WebDownloadDetailScreen(
             onDownloadZip = { viewModel.startDownload() },
             onDownloadFile = { fileId, fileName -> viewModel.startDownload(fileId, fileName) },
             onDismissDownloadLink = { viewModel.dismissDownloadLink() },
-            onConfirmDownloadModal = { zip, rememberChoice ->
-                viewModel.confirmDownloadModal(zip, rememberChoice)
+            onConfirmDownloadModal = { mode, rememberChoice ->
+                viewModel.confirmDownloadModal(mode, rememberChoice)
             },
             onDismissDownloadModal = { viewModel.dismissDownloadModal() },
             onShowDeleteDialog = { viewModel.showDeleteConfirmDialog(it) },
@@ -145,7 +148,7 @@ private fun WebDownloadDetailScreen(
     onDownloadZip: () -> Unit,
     onDownloadFile: (Int, String) -> Unit,
     onDismissDownloadLink: () -> Unit,
-    onConfirmDownloadModal: (Boolean, Boolean) -> Unit,
+    onConfirmDownloadModal: (DownloadZipMode, Boolean) -> Unit,
     onDismissDownloadModal: () -> Unit,
     onShowDeleteDialog: (Boolean) -> Unit,
     onConfirmDelete: () -> Unit,
@@ -820,21 +823,9 @@ private fun formatFileNameDisplay(fullName: String, shortName: String): String {
     return if (rawName.length > 90) "…${rawName.takeLast(85)}" else rawName
 }
 
-private fun WebDownloadFileDto.isVideo(): Boolean {
-    if (mimetype.startsWith("video/", ignoreCase = true)) return true
-    val ext = name.substringAfterLast('.', "").lowercase()
-    return ext in listOf(
-        "mkv", "mp4", "avi", "mov", "wmv", "flv", "webm", "m4v", "ts", "mpg", "mpeg", "vob", "iso"
-    )
-}
+private fun WebDownloadFileDto.isVideo(): Boolean = isVideoFile(name, mimetype)
 
-private fun WebDownloadFileDto.isAudio(): Boolean {
-    if (mimetype.startsWith("audio/", ignoreCase = true)) return true
-    val ext = name.substringAfterLast('.', "").lowercase()
-    return ext in listOf(
-        "mp3", "flac", "wav", "aac", "m4a", "ogg", "opus", "wma", "alac", "aiff", "ape"
-    )
-}
+private fun WebDownloadFileDto.isAudio(): Boolean = isAudioFile(name, mimetype)
 
 @Composable
 private fun WebFilesCard(

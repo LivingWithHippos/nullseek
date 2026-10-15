@@ -28,14 +28,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 
 @Composable
 fun DownloadZipModal(
     itemName: String?,
     onDismiss: () -> Unit,
-    onConfirm: (zip: Boolean, rememberChoice: Boolean) -> Unit,
+    onConfirm: (mode: DownloadZipMode, rememberChoice: Boolean) -> Unit,
 ) {
-    var selectedZip by remember { mutableStateOf(true) }
+    var selectedMode by remember { mutableStateOf(DownloadZipMode.ZIP_NON_MEDIA) }
     var rememberChoice by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -64,45 +65,24 @@ fun DownloadZipModal(
                     Spacer(modifier = Modifier.height(4.dp))
                 }
 
-                // Radio 1: Zip archive
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedZip = true }
-                            .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    RadioButton(
-                        selected = selectedZip,
-                        onClick = { selectedZip = true },
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(id = R.string.download_option_zip),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
+                ModeRadioRow(
+                    title = stringResource(id = R.string.download_option_zip_non_media),
+                    caption = stringResource(id = R.string.download_option_zip_non_media_caption),
+                    selected = selectedMode == DownloadZipMode.ZIP_NON_MEDIA,
+                    onClick = { selectedMode = DownloadZipMode.ZIP_NON_MEDIA },
+                )
 
-                // Radio 2: Direct / Uncompressed
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedZip = false }
-                            .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    RadioButton(
-                        selected = !selectedZip,
-                        onClick = { selectedZip = false },
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(id = R.string.download_option_uncompressed),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
+                ModeRadioRow(
+                    title = stringResource(id = R.string.download_option_zip),
+                    selected = selectedMode == DownloadZipMode.ZIP,
+                    onClick = { selectedMode = DownloadZipMode.ZIP },
+                )
+
+                ModeRadioRow(
+                    title = stringResource(id = R.string.download_option_uncompressed),
+                    selected = selectedMode == DownloadZipMode.UNCOMPRESSED,
+                    onClick = { selectedMode = DownloadZipMode.UNCOMPRESSED },
+                )
 
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.outlineVariant,
@@ -133,7 +113,7 @@ fun DownloadZipModal(
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(selectedZip, rememberChoice) },
+                onClick = { onConfirm(selectedMode, rememberChoice) },
             ) {
                 Text(text = stringResource(id = R.string.action_download))
             }
@@ -144,4 +124,40 @@ fun DownloadZipModal(
             }
         },
     )
+}
+
+@Composable
+private fun ModeRadioRow(
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    caption: String? = null,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = onClick,
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            if (caption != null) {
+                Text(
+                    text = caption,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
 }

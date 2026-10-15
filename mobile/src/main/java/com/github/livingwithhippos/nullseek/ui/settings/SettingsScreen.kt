@@ -104,6 +104,12 @@ fun SettingsScreen(
                     )
 
                     DownloadZipModeOption(
+                        title = stringResource(id = R.string.download_zip_preference_zip_non_media),
+                        selected = downloadZipMode == DownloadZipMode.ZIP_NON_MEDIA,
+                        onClick = { onDownloadZipModeSelected(DownloadZipMode.ZIP_NON_MEDIA) },
+                    )
+
+                    DownloadZipModeOption(
                         title = stringResource(id = R.string.download_zip_preference_uncompressed),
                         selected = downloadZipMode == DownloadZipMode.UNCOMPRESSED,
                         onClick = { onDownloadZipModeSelected(DownloadZipMode.UNCOMPRESSED) },
