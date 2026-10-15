@@ -129,6 +129,7 @@
     <string name="clear_search">Clear search</string>
     <string name="filter_video">Video</string>
     <string name="filter_audio">Audio</string>
+    <string name="filter_subtitles">Subtitles</string>
     <string name="web_download_refreshed">Web download info refreshed</string>
     <string name="web_download_refresh_failed">Failed to refresh web download info</string>
     <string name="web_download_not_cached_warning">Downloads are only available for cached web downloads</string>

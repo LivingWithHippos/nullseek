@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -71,6 +72,7 @@ import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.nullseek.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.utils.isAudioFile
+import com.github.livingwithhippos.nullseek.utils.isSubtitleFile
 import com.github.livingwithhippos.nullseek.utils.isVideoFile
 import com.github.livingwithhippos.nullseek.utils.openWebPage
 import com.github.livingwithhippos.nullseek.utils.openWith
@@ -828,6 +830,8 @@ private fun UsenetDownloadFileDto.isVideo(): Boolean = isVideoFile(name, mimetyp
 
 private fun UsenetDownloadFileDto.isAudio(): Boolean = isAudioFile(name, mimetype)
 
+private fun UsenetDownloadFileDto.isSubtitle(): Boolean = isSubtitleFile(name)
+
 @Composable
 private fun UsenetFilesCard(
     files: List<UsenetDownloadFileDto>,
@@ -838,21 +842,21 @@ private fun UsenetFilesCard(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var filterVideo by rememberSaveable { mutableStateOf(false) }
     var filterAudio by rememberSaveable { mutableStateOf(false) }
+    var filterSubtitles by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    val filteredFiles = remember(files, searchQuery, filterVideo, filterAudio) {
+    val filteredFiles = remember(files, searchQuery, filterVideo, filterAudio, filterSubtitles) {
         files.filter { file ->
             val matchesSearch = searchQuery.isBlank() || file.name.contains(
                 searchQuery,
                 ignoreCase = true
             ) || file.shortName.contains(searchQuery, ignoreCase = true)
 
-            val matchesType = when {
-                filterVideo && filterAudio -> file.isVideo() || file.isAudio()
-                filterVideo -> file.isVideo()
-                filterAudio -> file.isAudio()
-                else -> true
-            }
+            val anyFilterActive = filterVideo || filterAudio || filterSubtitles
+            val matchesType = !anyFilterActive ||
+                (filterVideo && file.isVideo()) ||
+                (filterAudio && file.isAudio()) ||
+                (filterSubtitles && file.isSubtitle())
 
             matchesSearch && matchesType
         }
@@ -865,7 +869,7 @@ private fun UsenetFilesCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            val isFiltered = searchQuery.isNotBlank() || filterVideo || filterAudio
+            val isFiltered = searchQuery.isNotBlank() || filterVideo || filterAudio || filterSubtitles
             val countText = if (isFiltered) "${filteredFiles.size}/${files.size}" else "${files.size}"
             Text(
                 text = "${stringResource(id = R.string.torrent_files_title)} ($countText)",
@@ -901,9 +905,11 @@ private fun UsenetFilesCard(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            // Filter Chips for Video & Audio
+            // Filter Chips for Video, Audio & Subtitles
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 FilterChip(
@@ -927,6 +933,20 @@ private fun UsenetFilesCard(
                     leadingIcon = {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_audiotrack),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(),
+                )
+
+                FilterChip(
+                    selected = filterSubtitles,
+                    onClick = { filterSubtitles = !filterSubtitles },
+                    label = { Text(text = stringResource(id = R.string.filter_subtitles)) },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_subtitles),
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
                         )
