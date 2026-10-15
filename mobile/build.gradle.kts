@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.kotlinx.datetime)
 
     implementation(libs.square.logcat)
+    implementation(libs.okhttp)
 
     implementation(libs.compose.navigation)
     implementation(libs.compose.navigation.adaptive)

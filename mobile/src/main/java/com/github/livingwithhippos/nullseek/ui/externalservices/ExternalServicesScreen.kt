@@ -1,0 +1,620 @@
+package com.github.livingwithhippos.nullseek.ui.externalservices
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.data.model.ExternalService
+import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
+import com.github.livingwithhippos.nullseek.data.model.ExternalServiceType
+import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
+import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import org.koin.androidx.compose.koinViewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExternalServicesScreen(
+    contentType: NullContentType,
+    navigationType: NullNavigationType,
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: ExternalServicesViewModel = koinViewModel(),
+) {
+    val services by viewModel.services.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    var serviceToEdit by remember { mutableStateOf<ExternalService?>(null) }
+    var isAddingService by remember { mutableStateOf(false) }
+    var serviceToDelete by remember { mutableStateOf<ExternalService?>(null) }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is ExternalServicesEvent.ShowMessage ->
+                    snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(text = stringResource(id = R.string.external_services_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_close),
+                            contentDescription = stringResource(id = R.string.close),
+                        )
+                    }
+                },
+            )
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        modifier = modifier.fillMaxSize(),
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 600.dp)
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                // Media Players Section Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text(
+                            text = stringResource(id = R.string.external_services_media_players_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = "Kodi and VLC remote playback",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Button(
+                        onClick = { isAddingService = true },
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_add),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = stringResource(id = R.string.add))
+                    }
+                }
+
+                val mediaPlayers = services.filter { it.type.category == ExternalServiceCategory.MEDIA_PLAYER }
+
+                if (mediaPlayers.isEmpty()) {
+                    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.external_services_empty),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = stringResource(id = R.string.external_services_empty_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                } else {
+                    mediaPlayers.forEach { service ->
+                        ServiceCard(
+                            service = service,
+                            isTesting = uiState.testingServiceId == service.id,
+                            onSetDefault = {
+                                viewModel.setDefault(service.id, service.type.category, service.name)
+                            },
+                            onTestConnection = {
+                                viewModel.testConnection(service)
+                            },
+                            onEdit = {
+                                serviceToEdit = service
+                            },
+                            onDelete = {
+                                serviceToDelete = service
+                            },
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Indexers Coming Soon Section
+                OutlinedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = "File Indexers (Jackett & Prowlarr)",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = "Integration for searching and seeking torrent and usenet releases will be available soon.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (isAddingService) {
+        ServiceEditDialog(
+            initialService = null,
+            isTesting = uiState.isTestingInDialog,
+            testResult = uiState.dialogTestResult,
+            onTest = { service -> viewModel.testDialogConnection(service) },
+            onDismiss = {
+                isAddingService = false
+                viewModel.clearDialogTestResult()
+            },
+            onSave = { service ->
+                viewModel.addService(service)
+                isAddingService = false
+                viewModel.clearDialogTestResult()
+            },
+        )
+    }
+
+    serviceToEdit?.let { service ->
+        ServiceEditDialog(
+            initialService = service,
+            isTesting = uiState.isTestingInDialog,
+            testResult = uiState.dialogTestResult,
+            onTest = { s -> viewModel.testDialogConnection(s) },
+            onDismiss = {
+                serviceToEdit = null
+                viewModel.clearDialogTestResult()
+            },
+            onSave = { updated ->
+                viewModel.updateService(updated)
+                serviceToEdit = null
+                viewModel.clearDialogTestResult()
+            },
+        )
+    }
+
+    serviceToDelete?.let { service ->
+        AlertDialog(
+            onDismissRequest = { serviceToDelete = null },
+            title = { Text(text = stringResource(id = R.string.external_services_delete_confirm_title)) },
+            text = {
+                Text(
+                    text = stringResource(
+                        id = R.string.external_services_delete_confirm_message,
+                        service.name,
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteService(service.id, service.name)
+                        serviceToDelete = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Text(text = stringResource(id = R.string.action_delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { serviceToDelete = null }) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun ServiceCard(
+    service: ExternalService,
+    isTesting: Boolean,
+    onSetDefault: () -> Unit,
+    onTestConnection: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedCard(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = service.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                    ) {
+                        Text(
+                            text = service.type.displayName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                    if (service.isDefault) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.external_services_default_badge),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+                }
+
+                Row {
+                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_edit),
+                            contentDescription = stringResource(id = R.string.edit),
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_delete),
+                            contentDescription = stringResource(id = R.string.action_delete),
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
+
+            Text(
+                text = service.address,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = onTestConnection,
+                    enabled = !isTesting,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    if (isTesting) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    Text(text = stringResource(id = R.string.external_services_test_connection))
+                }
+
+                if (!service.isDefault) {
+                    FilledTonalButton(
+                        onClick = onSetDefault,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(text = stringResource(id = R.string.external_services_set_default))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ServiceEditDialog(
+    initialService: ExternalService?,
+    isTesting: Boolean,
+    testResult: Result<Unit>?,
+    onTest: (ExternalService) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: (ExternalService) -> Unit,
+) {
+    var name by rememberSaveable { mutableStateOf(initialService?.name.orEmpty()) }
+    var selectedType by rememberSaveable { mutableStateOf(initialService?.type ?: ExternalServiceType.KODI) }
+    var address by rememberSaveable { mutableStateOf(initialService?.address.orEmpty()) }
+    var username by rememberSaveable { mutableStateOf(initialService?.username.orEmpty()) }
+    var password by rememberSaveable { mutableStateOf(initialService?.password.orEmpty()) }
+    var isDefault by rememberSaveable { mutableStateOf(initialService?.isDefault ?: false) }
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
+
+    fun currentService() = ExternalService(
+        id = initialService?.id ?: 0,
+        name = name.trim(),
+        type = selectedType,
+        address = address.trim(),
+        username = username.trim(),
+        password = password,
+        isDefault = isDefault,
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(
+                    id = if (initialService == null) {
+                        R.string.external_services_dialog_add_title
+                    } else {
+                        R.string.external_services_dialog_edit_title
+                    }
+                )
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                // Type selector
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterChip(
+                        selected = selectedType == ExternalServiceType.KODI,
+                        onClick = {
+                            selectedType = ExternalServiceType.KODI
+                            if (address.isBlank()) address = "192.168.1.100:8080"
+                        },
+                        label = { Text("Kodi") },
+                    )
+                    FilterChip(
+                        selected = selectedType == ExternalServiceType.VLC,
+                        onClick = {
+                            selectedType = ExternalServiceType.VLC
+                            if (address.isBlank()) address = "192.168.1.100:9090"
+                        },
+                        label = { Text("VLC") },
+                    )
+                }
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(text = stringResource(id = R.string.external_services_name_label)) },
+                    placeholder = { Text(text = stringResource(id = R.string.external_services_name_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = { Text(text = stringResource(id = R.string.external_services_address_label)) },
+                    placeholder = { Text(text = stringResource(id = R.string.external_services_address_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text(text = stringResource(id = R.string.external_services_username_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(text = stringResource(id = R.string.external_services_password_label)) },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                painter = painterResource(id = if (passwordVisible) R.drawable.ic_close else R.drawable.ic_contact_page),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    },
+                    singleLine = true,
+                    supportingText = {
+                        if (selectedType == ExternalServiceType.VLC) {
+                            Text(text = stringResource(id = R.string.external_services_password_vlc_hint))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { isDefault = !isDefault }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = isDefault,
+                        onCheckedChange = { isDefault = it },
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(id = R.string.external_services_set_as_default_label),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+
+                // Test Connection button inside dialog
+                OutlinedButton(
+                    onClick = { onTest(currentService()) },
+                    enabled = !isTesting && address.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (isTesting) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(id = R.string.testing_connection))
+                    } else {
+                        Text(text = stringResource(id = R.string.external_services_test_connection))
+                    }
+                }
+
+                testResult?.let { result ->
+                    val isSuccess = result.isSuccess
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isSuccess) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.errorContainer
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = result.fold(
+                                onSuccess = { "Connection successful!" },
+                                onFailure = { "Failed: ${it.message}" },
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isSuccess) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onErrorContainer
+                            },
+                            modifier = Modifier.padding(8.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(currentService()) },
+                enabled = name.isNotBlank() && address.isNotBlank(),
+            ) {
+                Text(text = stringResource(id = R.string.save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = R.string.cancel))
+            }
+        },
+    )
+}
+
+@Preview
+@Composable
+fun ServiceCardPreview() {
+    NullSeekTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            ServiceCard(
+                service =
+                    ExternalService(
+                        id = 1L,
+                        name = "Living Room Kodi",
+                        type = ExternalServiceType.KODI,
+                        address = "http://192.168.1.100:8080",
+                        username = "kodi",
+                        password = "password",
+                        isDefault = true,
+                    ),
+                isTesting = false,
+                onSetDefault = {},
+                onTestConnection = {},
+                onEdit = {},
+                onDelete = {},
+            )
+        }
+    }
+}
+

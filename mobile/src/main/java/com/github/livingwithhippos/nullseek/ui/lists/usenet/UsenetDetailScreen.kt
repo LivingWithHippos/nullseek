@@ -78,6 +78,9 @@ import com.github.livingwithhippos.nullseek.utils.openWebPage
 import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
+import com.github.livingwithhippos.nullseek.data.model.ExternalService
+import com.github.livingwithhippos.nullseek.ui.externalservices.PlayChoiceDialog
+import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
 import com.github.livingwithhippos.torbox.model.UsenetDownloadFileDto
 import org.koin.androidx.compose.koinViewModel
@@ -100,6 +103,8 @@ fun UsenetDetailScreen(
     }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
+    val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
     val currentItem = uiState.usenet ?: item
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -125,6 +130,11 @@ fun UsenetDetailScreen(
             context = LocalContext.current,
             item = currentItem,
             uiState = uiState,
+            defaultPlayer = defaultPlayer,
+            mediaPlayers = mediaPlayers,
+            onPlayMedia = { service, url, setAsDefault ->
+                viewModel.playOnMedia(service, url, setAsDefault)
+            },
             onRefresh = { viewModel.refreshUsenet() },
             onDownloadZip = { viewModel.startDownload() },
             onDownloadFile = { fileId, fileName -> viewModel.startDownload(fileId, fileName) },
@@ -145,6 +155,9 @@ private fun UsenetDetailScreen(
     context: Context = LocalContext.current,
     item: UsenetDownloadDto,
     uiState: UsenetDetailUiState,
+    defaultPlayer: ExternalService? = null,
+    mediaPlayers: List<ExternalService> = emptyList(),
+    onPlayMedia: (ExternalService, String, Boolean) -> Unit = { _, _, _ -> },
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
     onDownloadFile: (Int, String) -> Unit,
@@ -155,6 +168,7 @@ private fun UsenetDetailScreen(
     onConfirmDelete: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
+    var showPlayChoiceDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier =
@@ -193,6 +207,14 @@ private fun UsenetDetailScreen(
                 UsenetDownloadLinkCard(
                     result = uiState.downloadLinkResult,
                     context = context,
+                    defaultPlayer = defaultPlayer,
+                    onPlay = {
+                        if (defaultPlayer != null) {
+                            onPlayMedia(defaultPlayer, uiState.downloadLinkResult.url, false)
+                        } else {
+                            showPlayChoiceDialog = true
+                        }
+                    },
                     onDismiss = onDismissDownloadLink,
                 )
             }
@@ -218,6 +240,17 @@ private fun UsenetDetailScreen(
             // Bottom spacer for FAB
             Spacer(modifier = Modifier.height(88.dp))
         }
+    }
+
+    if (showPlayChoiceDialog && uiState.downloadLinkResult != null) {
+        PlayChoiceDialog(
+            services = mediaPlayers,
+            onDismiss = { showPlayChoiceDialog = false },
+            onSelect = { service, setAsDefault ->
+                showPlayChoiceDialog = false
+                onPlayMedia(service, uiState.downloadLinkResult.url, setAsDefault)
+            },
+        )
     }
 
     if (uiState.pendingDownload != null) {
@@ -547,6 +580,8 @@ private fun UsenetTransferProgressCard(
 private fun UsenetDownloadLinkCard(
     result: DownloadLinkResult,
     context: Context,
+    defaultPlayer: ExternalService? = null,
+    onPlay: () -> Unit = {},
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -639,22 +674,57 @@ private fun UsenetDownloadLinkCard(
                 )
             }
 
+            val isMedia = isStreamableOrSubtitle(displayTitle)
+
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (isMedia) {
+                    Button(
+                        onClick = onPlay,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_play_arrow),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        val playText = defaultPlayer?.let {
+                            stringResource(id = R.string.action_play_on, it.name)
+                        } ?: stringResource(id = R.string.action_play_external)
+                        Text(text = playText)
+                    }
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Button(
-                        onClick = { openWebPage(context, result.url) },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_open_in_new),
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = stringResource(id = R.string.action_open))
+                    if (isMedia) {
+                        FilledTonalButton(
+                            onClick = { openWebPage(context, result.url) },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_open_in_new),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = stringResource(id = R.string.action_open))
+                        }
+                    } else {
+                        Button(
+                            onClick = { openWebPage(context, result.url) },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_open_in_new),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = stringResource(id = R.string.action_open))
+                        }
                     }
 
                     val chooserTitle = stringResource(id = R.string.action_open_with)
@@ -1032,6 +1102,9 @@ fun UsenetDetailScreenPreview() {
             UsenetDetailScreen(
                 item = mockUsenetDownload,
                 uiState = UsenetDetailUiState(usenet = mockUsenetDownload),
+                defaultPlayer = null,
+                mediaPlayers = emptyList(),
+                onPlayMedia = { _, _, _ -> },
                 onRefresh = {},
                 onDownloadZip = {},
                 onDownloadFile = { _, _ -> },

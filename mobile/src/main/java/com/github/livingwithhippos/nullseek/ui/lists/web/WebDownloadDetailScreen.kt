@@ -70,9 +70,12 @@ import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.data.model.ExternalService
+import com.github.livingwithhippos.nullseek.ui.externalservices.PlayChoiceDialog
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.nullseek.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.utils.isAudioFile
+import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.nullseek.utils.isSubtitleFile
 import com.github.livingwithhippos.nullseek.utils.isVideoFile
 import com.github.livingwithhippos.nullseek.utils.openWebPage
@@ -101,6 +104,8 @@ fun WebDownloadDetailScreen(
     }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
+    val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
     val currentItem = uiState.webDownload ?: webDownload
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -126,6 +131,11 @@ fun WebDownloadDetailScreen(
             context = LocalContext.current,
             item = currentItem,
             uiState = uiState,
+            defaultPlayer = defaultPlayer,
+            mediaPlayers = mediaPlayers,
+            onPlayMedia = { service, url, setAsDefault ->
+                viewModel.playOnMedia(service, url, setAsDefault)
+            },
             onRefresh = { viewModel.refreshWebDownload() },
             onDownloadZip = { viewModel.startDownload() },
             onDownloadFile = { fileId, fileName -> viewModel.startDownload(fileId, fileName) },
@@ -146,6 +156,9 @@ private fun WebDownloadDetailScreen(
     context: Context = LocalContext.current,
     item: WebDownloadDto,
     uiState: WebDownloadDetailUiState,
+    defaultPlayer: ExternalService?,
+    mediaPlayers: List<ExternalService>,
+    onPlayMedia: (ExternalService, String, Boolean) -> Unit,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
     onDownloadFile: (Int, String) -> Unit,
@@ -156,6 +169,7 @@ private fun WebDownloadDetailScreen(
     onConfirmDelete: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
+    var showPlayChoiceDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier =
@@ -194,6 +208,14 @@ private fun WebDownloadDetailScreen(
                 WebDownloadLinkCard(
                     result = uiState.downloadLinkResult,
                     context = context,
+                    defaultPlayer = defaultPlayer,
+                    onPlay = {
+                        if (defaultPlayer != null) {
+                            onPlayMedia(defaultPlayer, uiState.downloadLinkResult.url, false)
+                        } else {
+                            showPlayChoiceDialog = true
+                        }
+                    },
                     onDismiss = onDismissDownloadLink,
                 )
             }
@@ -226,6 +248,17 @@ private fun WebDownloadDetailScreen(
             itemName = uiState.pendingDownload.fileName ?: item.name,
             onDismiss = onDismissDownloadModal,
             onConfirm = onConfirmDownloadModal,
+        )
+    }
+
+    if (showPlayChoiceDialog && uiState.downloadLinkResult != null) {
+        PlayChoiceDialog(
+            services = mediaPlayers,
+            onSelect = { selected, setAsDefault ->
+                onPlayMedia(selected, uiState.downloadLinkResult.url, setAsDefault)
+                showPlayChoiceDialog = false
+            },
+            onDismiss = { showPlayChoiceDialog = false },
         )
     }
 
@@ -546,6 +579,8 @@ private fun WebTransferProgressCard(
 private fun WebDownloadLinkCard(
     result: DownloadLinkResult,
     context: Context,
+    defaultPlayer: ExternalService? = null,
+    onPlay: () -> Unit = {},
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -638,22 +673,57 @@ private fun WebDownloadLinkCard(
                 )
             }
 
+            val isMedia = isStreamableOrSubtitle(displayTitle)
+
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (isMedia) {
+                    Button(
+                        onClick = onPlay,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_play_arrow),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        val playText = defaultPlayer?.let {
+                            stringResource(id = R.string.action_play_on, it.name)
+                        } ?: stringResource(id = R.string.action_play_external)
+                        Text(text = playText)
+                    }
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Button(
-                        onClick = { openWebPage(context, result.url) },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_open_in_new),
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = stringResource(id = R.string.action_open))
+                    if (isMedia) {
+                        FilledTonalButton(
+                            onClick = { openWebPage(context, result.url) },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_open_in_new),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = stringResource(id = R.string.action_open))
+                        }
+                    } else {
+                        Button(
+                            onClick = { openWebPage(context, result.url) },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_open_in_new),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = stringResource(id = R.string.action_open))
+                        }
                     }
 
                     val chooserTitle = stringResource(id = R.string.action_open_with)
@@ -1031,6 +1101,9 @@ fun WebDownloadDetailScreenPreview() {
             WebDownloadDetailScreen(
                 item = mockWebDownload,
                 uiState = WebDownloadDetailUiState(webDownload = mockWebDownload),
+                defaultPlayer = null,
+                mediaPlayers = emptyList(),
+                onPlayMedia = { _, _, _ -> },
                 onRefresh = {},
                 onDownloadZip = {},
                 onDownloadFile = { _, _ -> },

@@ -7,7 +7,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room3.Room
 import com.github.livingwithhippos.nullseek.core.data.database.NullDatabase
+import com.github.livingwithhippos.nullseek.core.data.database.dao.ExternalServiceDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.NullProviderDao
+import com.github.livingwithhippos.nullseek.core.data.repository.ExternalServiceRepository
+import com.github.livingwithhippos.nullseek.core.data.repository.ExternalServiceRepositoryImpl
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepositoryImpl
 import com.github.livingwithhippos.torbox.client.TorboxClient
@@ -34,11 +37,16 @@ private fun database(context: Context): NullDatabase =
             context,
             NullDatabase::class.java,
             "null.db",
-        ).build()
+        ).fallbackToDestructiveMigration(dropAllTables = true)
+        .build()
 
 private fun providerDao(db: NullDatabase): NullProviderDao = db.provider()
 
+private fun externalServiceDao(db: NullDatabase): ExternalServiceDao = db.externalService()
+
 private fun providerRepository(dao: NullProviderDao): NullProviderRepository = NullProviderRepositoryImpl(dao)
+
+private fun externalServiceRepository(dao: ExternalServiceDao): ExternalServiceRepository = ExternalServiceRepositoryImpl(dao)
 
 private fun datastore(context: Context): DataStore<Preferences> =
     PreferenceDataStoreFactory.create(
@@ -54,6 +62,10 @@ private val storageModule =
         single { create(::providerDao) }
 
         single { create(::providerRepository) }
+
+        single { create(::externalServiceDao) }
+
+        single { create(::externalServiceRepository) }
     }
 
 fun appModule(debug: Boolean) =

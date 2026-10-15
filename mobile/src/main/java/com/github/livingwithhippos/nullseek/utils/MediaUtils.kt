@@ -2,17 +2,47 @@ package com.github.livingwithhippos.nullseek.utils
 
 private val VIDEO_EXTENSIONS =
     setOf(
-        "mkv", "mp4", "avi", "mov", "wmv", "flv", "webm", "m4v", "ts", "mpg", "mpeg", "vob", "iso",
+        "mkv",
+        "mp4",
+        "avi",
+        "mov",
+        "wmv",
+        "flv",
+        "webm",
+        "m4v",
+        "ts",
+        "mpg",
+        "mpeg",
+        "vob",
+        "iso",
     )
 
 private val AUDIO_EXTENSIONS =
     setOf(
-        "mp3", "flac", "wav", "aac", "m4a", "ogg", "opus", "wma", "alac", "aiff", "ape",
+        "mp3",
+        "flac",
+        "wav",
+        "aac",
+        "m4a",
+        "ogg",
+        "opus",
+        "wma",
+        "alac",
+        "aiff",
+        "ape",
     )
 
 private val SUBTITLE_EXTENSIONS =
     setOf(
-        "srt", "ass", "ssa", "sub", "idx", "vtt", "sup", "smi", "ttml",
+        "srt",
+        "ass",
+        "ssa",
+        "sub",
+        "idx",
+        "vtt",
+        "sup",
+        "smi",
+        "ttml",
     )
 
 private fun String.fileExtension(): String = substringAfterLast('.', "").lowercase()

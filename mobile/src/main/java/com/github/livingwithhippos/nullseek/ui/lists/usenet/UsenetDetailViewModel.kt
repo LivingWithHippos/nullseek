@@ -3,16 +3,22 @@ package com.github.livingwithhippos.nullseek.ui.lists.usenet
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
+import com.github.livingwithhippos.nullseek.data.model.ExternalService
+import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
 import com.github.livingwithhippos.nullseek.data.repository.DownloadPreferencesRepository
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
+import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
 import com.github.livingwithhippos.torbox.network.ApiResult
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 
@@ -49,12 +55,49 @@ class UsenetDetailViewModel(
     private val client: TorboxClient,
     private val providerRepository: NullProviderRepository,
     private val downloadPreferencesRepository: DownloadPreferencesRepository,
+    private val externalServicesRepository: ExternalServicesRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(UsenetDetailUiState())
     val uiState = _uiState.asStateFlow()
 
     private val _events = MutableSharedFlow<UsenetDetailEvent>()
     val events = _events.asSharedFlow()
+
+    val defaultMediaPlayer: StateFlow<ExternalService?> =
+        externalServicesRepository.defaultMediaPlayer.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null,
+        )
+
+    val mediaPlayerServices: StateFlow<List<ExternalService>> =
+        externalServicesRepository.mediaPlayerServices.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList(),
+        )
+
+    fun playOnMedia(
+        service: ExternalService,
+        url: String,
+        setAsDefault: Boolean = false,
+    ) {
+        viewModelScope.launch {
+            if (setAsDefault) {
+                externalServicesRepository.setDefault(service.id, ExternalServiceCategory.MEDIA_PLAYER)
+            }
+            _events.emit(UsenetDetailEvent.ShowMessage("Sending to ${service.name}…"))
+            val result = externalServicesRepository.playMedia(service, url)
+            result.fold(
+                onSuccess = {
+                    _events.emit(UsenetDetailEvent.ShowMessage("Playing on ${service.name}"))
+                },
+                onFailure = { error ->
+                    _events.emit(UsenetDetailEvent.ShowMessage("Failed to play on ${service.name}: ${error.message}"))
+                },
+            )
+        }
+    }
 
     fun init(item: UsenetDownloadDto) {
         if (_uiState.value.usenet?.id != item.id) {
@@ -105,6 +148,7 @@ class UsenetDetailViewModel(
                             pendingDownload = PendingDownload(fileId = fileId, fileName = fileName),
                         )
                 }
+
                 else -> {
                     requestDownloadLink(
                         fileId = fileId,
@@ -148,10 +192,19 @@ class UsenetDetailViewModel(
         fileName: String?,
     ): Boolean =
         when (mode) {
-            DownloadZipMode.ASK, DownloadZipMode.ZIP -> true
-            DownloadZipMode.UNCOMPRESSED -> false
+            DownloadZipMode.ASK, DownloadZipMode.ZIP -> {
+                true
+            }
+
+            DownloadZipMode.UNCOMPRESSED -> {
+                false
+            }
+
             DownloadZipMode.ZIP_NON_MEDIA -> {
-                val files = _uiState.value.usenet?.files.orEmpty()
+                val files =
+                    _uiState.value.usenet
+                        ?.files
+                        .orEmpty()
                 val target =
                     when {
                         fileId != null -> files.firstOrNull { it.id == fileId }

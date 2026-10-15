@@ -24,6 +24,7 @@ import com.github.livingwithhippos.nullseek.ui.navigation.NullNavigationWrapper
 import com.github.livingwithhippos.nullseek.ui.navigation.Route
 import com.github.livingwithhippos.nullseek.ui.navigation.SETTINGS_DESTINATION
 import com.github.livingwithhippos.nullseek.ui.search.SearchScreen
+import com.github.livingwithhippos.nullseek.ui.externalservices.ExternalServicesScreen
 import com.github.livingwithhippos.nullseek.ui.settings.SettingsScreen
 import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadScreen
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -167,7 +168,17 @@ private fun NullNavHost(
         composable<Route.Settings> {
             SettingsScreen(
                 contentType = contentType,
-                navigationType = navigationType
+                navigationType = navigationType,
+                onNavigateToExternalServices = {
+                    navController.navigate(Route.ExternalServices)
+                },
+            )
+        }
+        composable<Route.ExternalServices> {
+            ExternalServicesScreen(
+                contentType = contentType,
+                navigationType = navigationType,
+                onNavigateBack = { navController.popBackStack() },
             )
         }
         composable<Route.NewDownload> {

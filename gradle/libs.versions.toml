@@ -23,6 +23,7 @@ logcat = "0.4"
 material = "1.14.0"
 materialAlpha = "1.5.0-beta01"
 navigation = "2.10.2"
+okhttp = "5.5.0"
 paging = "3.5.3"
 room = "3.0.3"
 spotless = "8.10.4"
@@ -78,6 +79,7 @@ room-compiler = { group = "androidx.room3", name = "room3-compiler", version.ref
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 
 square-logcat = { group = "com.squareup.logcat", name = "logcat", version.ref = "logcat" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 
 torbox-client = { group = "io.github.livingwithhippos", name = "torbox-kmp-client", version.ref = "torbox" }
 
