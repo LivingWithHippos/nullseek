@@ -16,29 +16,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.compositeOver
-import kotlinx.coroutines.launch
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import com.github.livingwithhippos.nullseek.R
-import com.github.livingwithhippos.nullseek.ui.lists.utils.findMatchIndices
-import com.github.livingwithhippos.nullseek.ui.lists.utils.wrapMatchPosition
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
@@ -59,7 +39,12 @@ import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.github.livingwithhippos.nullseek.core.utils.mockTorrents
+import com.github.livingwithhippos.nullseek.ui.lists.utils.FindBar
+import com.github.livingwithhippos.nullseek.ui.lists.utils.MatchHighlight
 import com.github.livingwithhippos.nullseek.ui.lists.utils.PagingRefreshState
+import com.github.livingwithhippos.nullseek.ui.lists.utils.matchCardBorder
+import com.github.livingwithhippos.nullseek.ui.lists.utils.matchCardColors
+import com.github.livingwithhippos.nullseek.ui.lists.utils.rememberFindInListState
 import com.github.livingwithhippos.nullseek.ui.lists.utils.pagingAppendState
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -115,36 +100,7 @@ private fun TorrentsScreen(
 ) {
     val listState: LazyListState = rememberLazyListState()
     val lazyPagingItems = flow.collectAsLazyPagingItems()
-    val scope = rememberCoroutineScope()
-
-    // only the currently loaded items are searched
-    val matches by remember(lazyPagingItems, query) {
-        derivedStateOf {
-            findMatchIndices(
-                lazyPagingItems.itemSnapshotList.map { it?.name },
-                query
-            )
-        }
-    }
-    var position by remember { mutableIntStateOf(0) }
-    val refreshState = lazyPagingItems.loadState.refresh
-
-    LaunchedEffect(query, refreshState is LoadState.Loading) {
-        position = 0
-    }
-    LaunchedEffect(matches.size) {
-        if (position >= matches.size) position = 0
-    }
-
-    fun move(step: Int) {
-        if (matches.isEmpty()) return
-        position = wrapMatchPosition(position, step, matches.size)
-        val target = matches[position]
-        scope.launch { listState.animateScrollToItem(target) }
-    }
-
-    val currentMatch = matches.getOrNull(position)
-    val matchSet = remember(matches) { matches.toSet() }
+    val find = rememberFindInListState(lazyPagingItems, query, listState) { it.name }
 
     Column(
         modifier = Modifier
@@ -159,10 +115,10 @@ private fun TorrentsScreen(
                 .padding(top = 8.dp),
             query = query,
             onQueryChange = onQueryChange,
-            matchCount = matches.size,
-            position = position,
-            onPrevious = { move(-1) },
-            onNext = { move(1) },
+            matchCount = find.matches.size,
+            position = find.position,
+            onPrevious = { find.onMove(-1) },
+            onNext = { find.onMove(1) },
         )
     PullToRefreshBox(
         isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading,
@@ -185,11 +141,7 @@ private fun TorrentsScreen(
                     TorrentRow(
                         torrent,
                         loadDetails = loadDetails,
-                        highlight = when {
-                            index == currentMatch -> MatchHighlight.CURRENT
-                            index in matchSet -> MatchHighlight.MATCH
-                            else -> MatchHighlight.NONE
-                        }
+                        highlight = find.highlightFor(index)
                     )
                 } else {
                     TorrentRowPlaceholder()
@@ -202,63 +154,6 @@ private fun TorrentsScreen(
     }
 }
 
-private enum class MatchHighlight { NONE, MATCH, CURRENT }
-
-@Composable
-private fun FindBar(
-    modifier: Modifier = Modifier,
-    query: String,
-    onQueryChange: (String) -> Unit,
-    matchCount: Int,
-    position: Int,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-) {
-    val hasQuery = query.isNotBlank()
-    val canMove = matchCount > 0
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        modifier = modifier,
-        singleLine = true,
-        placeholder = { Text(stringResource(R.string.find_in_list_hint)) },
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { onNext() }),
-        trailingIcon = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (hasQuery) {
-                    Text(
-                        text = if (canMove) stringResource(
-                            R.string.find_in_list_counter, position + 1, matchCount
-                        ) else stringResource(R.string.find_in_list_no_matches),
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                }
-                IconButton(onClick = onPrevious, enabled = canMove) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_arrow_drop_up),
-                        contentDescription = stringResource(R.string.find_in_list_previous),
-                    )
-                }
-                IconButton(onClick = onNext, enabled = canMove) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_arrow_drop_down),
-                        contentDescription = stringResource(R.string.find_in_list_next),
-                    )
-                }
-                if (hasQuery) {
-                    IconButton(onClick = { onQueryChange("") }) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_close),
-                            contentDescription = stringResource(R.string.find_in_list_clear),
-                        )
-                    }
-                }
-            }
-        },
-    )
-}
-
 @Composable
 private fun TorrentRow(
     item: TorrentDto,
@@ -266,25 +161,11 @@ private fun TorrentRow(
     loadDetails: (torrent: TorrentDto) -> Unit,
     highlight: MatchHighlight = MatchHighlight.NONE,
 ) {
-    val primary = MaterialTheme.colorScheme.primary
     OutlinedCard(
         onClick = { loadDetails(item) },
         modifier = modifier.fillMaxWidth(),
-        colors = when (highlight) {
-            MatchHighlight.CURRENT -> CardDefaults.outlinedCardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
-            MatchHighlight.MATCH -> CardDefaults.outlinedCardColors(
-                containerColor = primary.copy(alpha = 0.08f)
-                    .compositeOver(MaterialTheme.colorScheme.surface)
-            )
-            MatchHighlight.NONE -> CardDefaults.outlinedCardColors()
-        },
-        border = when (highlight) {
-            MatchHighlight.CURRENT -> BorderStroke(2.dp, primary)
-            MatchHighlight.MATCH -> BorderStroke(1.dp, primary.copy(alpha = 0.5f))
-            MatchHighlight.NONE -> CardDefaults.outlinedCardBorder()
-        },
+        colors = matchCardColors(highlight),
+        border = matchCardBorder(highlight),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

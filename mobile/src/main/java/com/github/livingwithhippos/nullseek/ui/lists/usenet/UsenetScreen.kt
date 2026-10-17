@@ -24,6 +24,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,7 +40,12 @@ import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.github.livingwithhippos.nullseek.core.utils.mockUsenetDownload
+import com.github.livingwithhippos.nullseek.ui.lists.utils.FindBar
+import com.github.livingwithhippos.nullseek.ui.lists.utils.MatchHighlight
 import com.github.livingwithhippos.nullseek.ui.lists.utils.PagingRefreshState
+import com.github.livingwithhippos.nullseek.ui.lists.utils.matchCardBorder
+import com.github.livingwithhippos.nullseek.ui.lists.utils.matchCardColors
+import com.github.livingwithhippos.nullseek.ui.lists.utils.rememberFindInListState
 import com.github.livingwithhippos.nullseek.ui.lists.utils.pagingAppendState
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -56,6 +65,8 @@ fun UsenetScreen(
     closeDetails: () -> Unit
 ) {
     val context = LocalContext.current
+    // kept here so the query survives opening/closing the details
+    var query by rememberSaveable { mutableStateOf("") }
 
     if (usenet != null) {
         UsenetDetailScreen(
@@ -67,7 +78,12 @@ fun UsenetScreen(
         )
     } else {
         UsenetScreen(
-            modifier = modifier, context = context, flow = flow, loadDetails = loadDetails
+            modifier = modifier,
+            context = context,
+            flow = flow,
+            query = query,
+            onQueryChange = { query = it },
+            loadDetails = loadDetails
         )
     }
 }
@@ -78,16 +94,36 @@ private fun UsenetScreen(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
     flow: Flow<PagingData<UsenetDownloadDto>>,
+    query: String,
+    onQueryChange: (String) -> Unit,
     loadDetails: (usenetDownload: UsenetDownloadDto) -> Unit
 ) {
     val listState: LazyListState = rememberLazyListState()
     val lazyPagingItems = flow.collectAsLazyPagingItems()
-    PullToRefreshBox(
-        isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading,
-        onRefresh = { lazyPagingItems.refresh() },
+    val find = rememberFindInListState(lazyPagingItems, query, listState) { it.name }
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        FindBar(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 600.dp)
+                .padding(top = 8.dp),
+            query = query,
+            onQueryChange = onQueryChange,
+            matchCount = find.matches.size,
+            position = find.position,
+            onPrevious = { find.onMove(-1) },
+            onNext = { find.onMove(1) },
+        )
+    PullToRefreshBox(
+        isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading,
+        onRefresh = { lazyPagingItems.refresh() },
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.TopCenter
     ) {
         LazyColumn(
@@ -102,7 +138,11 @@ private fun UsenetScreen(
                 lazyPagingItems.itemCount, key = lazyPagingItems.itemKey { it.id }) { index ->
                 val usenet = lazyPagingItems[index]
                 if (usenet != null) {
-                    UsenetRow(usenet, loadDetails = loadDetails)
+                    UsenetRow(
+                        usenet,
+                        loadDetails = loadDetails,
+                        highlight = find.highlightFor(index)
+                    )
                 } else {
                     UsenetRowPlaceholder()
                 }
@@ -110,6 +150,7 @@ private fun UsenetScreen(
             pagingAppendState(lazyPagingItems.loadState.append, lazyPagingItems::retry)
         }
         PagingRefreshState(lazyPagingItems.loadState.refresh, lazyPagingItems::retry)
+    }
     }
 }
 
@@ -119,10 +160,13 @@ private fun UsenetRow(
     item: UsenetDownloadDto,
     modifier: Modifier = Modifier,
     loadDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
+    highlight: MatchHighlight = MatchHighlight.NONE,
 ) {
     OutlinedCard(
         onClick = { loadDetails(item) },
         modifier = modifier.fillMaxWidth(),
+        colors = matchCardColors(highlight),
+        border = matchCardBorder(highlight),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
