@@ -710,7 +710,7 @@ private fun UsenetDownloadLinkCard(
                                 modifier = Modifier.size(16.dp),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = stringResource(id = R.string.action_open))
+                            Text(text = stringResource(id = R.string.action_open_link))
                         }
                     } else {
                         Button(
@@ -723,7 +723,7 @@ private fun UsenetDownloadLinkCard(
                                 modifier = Modifier.size(16.dp),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = stringResource(id = R.string.action_open))
+                            Text(text = stringResource(id = R.string.action_open_link))
                         }
                     }
 

@@ -66,7 +66,6 @@ import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.core.utils.mockWebDownload
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
-import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
@@ -709,7 +708,7 @@ private fun WebDownloadLinkCard(
                                 modifier = Modifier.size(16.dp),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = stringResource(id = R.string.action_open))
+                            Text(text = stringResource(id = R.string.action_open_link))
                         }
                     } else {
                         Button(
@@ -722,7 +721,7 @@ private fun WebDownloadLinkCard(
                                 modifier = Modifier.size(16.dp),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = stringResource(id = R.string.action_open))
+                            Text(text = stringResource(id = R.string.action_open_link))
                         }
                     }
 

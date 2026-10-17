@@ -102,6 +102,7 @@
     <string name="action_refresh">Refresh</string>
     <string name="action_export">Export</string>
     <string name="action_full_info">Full Info</string>
+    <string name="action_open_link">Open Link</string>
     <string name="action_open">Open</string>
     <string name="download_link_title">Download Link</string>
     <string name="copy_link">Copy</string>
