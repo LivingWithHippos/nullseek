@@ -3,6 +3,9 @@ package com.github.livingwithhippos.nullseek.ui.lists.torrent
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,14 +17,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -61,15 +61,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.R
-import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.core.utils.mockTorrents
+import com.github.livingwithhippos.nullseek.data.model.ExternalService
+import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
+import com.github.livingwithhippos.nullseek.ui.externalservices.PlayChoiceDialog
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.FileTypeBadge
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
-import com.github.livingwithhippos.nullseek.data.model.ExternalService
-import com.github.livingwithhippos.nullseek.ui.externalservices.PlayChoiceDialog
 import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.formatToLocalDate
@@ -321,7 +321,7 @@ private fun TorrentOverviewCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_size),
+                    text = stringResource(id = R.string.size),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -339,7 +339,7 @@ private fun TorrentOverviewCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_status),
+                    text = stringResource(id = R.string.status),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -379,7 +379,7 @@ private fun TorrentOverviewCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_added),
+                    text = stringResource(id = R.string.added_on),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -424,7 +424,7 @@ private fun TorrentOverviewCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = stringResource(id = R.string.torrent_magnet_title),
+                        text = stringResource(id = R.string.magnet_link),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Row {
@@ -481,7 +481,7 @@ private fun TorrentTransferProgressCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_progress),
+                    text = stringResource(id = R.string.progress),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -507,7 +507,7 @@ private fun TorrentTransferProgressCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_download_speed),
+                    text = stringResource(id = R.string.download_speed),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -525,7 +525,7 @@ private fun TorrentTransferProgressCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_upload_speed),
+                    text = stringResource(id = R.string.upload_speed),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -561,7 +561,7 @@ private fun TorrentTransferProgressCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_ratio),
+                    text = stringResource(id = R.string.ratio),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -579,7 +579,7 @@ private fun TorrentTransferProgressCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_eta),
+                    text = stringResource(id = R.string.eta),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -829,7 +829,7 @@ private fun TorrentActionsCard(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = stringResource(id = R.string.torrent_actions),
+                text = stringResource(id = R.string.actions),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
             )
@@ -1139,9 +1139,9 @@ private fun TorrentFilesCard(
 
             val anyFilterActive = filterVideo || filterAudio || filterSubtitles
             val matchesType = !anyFilterActive ||
-                (filterVideo && file.isVideo()) ||
-                (filterAudio && file.isAudio()) ||
-                (filterSubtitles && file.isSubtitle())
+                    (filterVideo && file.isVideo()) ||
+                    (filterAudio && file.isAudio()) ||
+                    (filterSubtitles && file.isSubtitle())
 
             matchesSearch && matchesType
         }
@@ -1154,7 +1154,8 @@ private fun TorrentFilesCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            val isFiltered = searchQuery.isNotBlank() || filterVideo || filterAudio || filterSubtitles
+            val isFiltered =
+                searchQuery.isNotBlank() || filterVideo || filterAudio || filterSubtitles
             val countText =
                 if (isFiltered) "${filteredFiles.size}/${files.size}" else "${files.size}"
             Text(
@@ -1289,7 +1290,8 @@ private fun TorrentFilesCard(
                                     onDownloadFile(
                                         file.id,
                                         file.shortName.ifBlank {
-                                            file.name.substringAfterLast('/').substringAfterLast('\\')
+                                            file.name.substringAfterLast('/')
+                                                .substringAfterLast('\\')
                                         },
                                     )
                                 },

@@ -74,4 +74,3 @@ class ListsViewModel(
                 ).flow
             }.cachedIn(viewModelScope)
 }
-

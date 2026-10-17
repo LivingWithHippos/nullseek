@@ -3,6 +3,7 @@ package com.github.livingwithhippos.nullseek.ui.lists.usenet
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -62,8 +62,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.R
-import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.core.utils.mockUsenetDownload
+import com.github.livingwithhippos.nullseek.data.model.ExternalService
+import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
+import com.github.livingwithhippos.nullseek.ui.externalservices.PlayChoiceDialog
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
@@ -74,15 +76,13 @@ import com.github.livingwithhippos.nullseek.utils.convertToSize
 import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.utils.isAudioFile
+import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.nullseek.utils.isSubtitleFile
 import com.github.livingwithhippos.nullseek.utils.isVideoFile
 import com.github.livingwithhippos.nullseek.utils.openWebPage
 import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
-import com.github.livingwithhippos.nullseek.data.model.ExternalService
-import com.github.livingwithhippos.nullseek.ui.externalservices.PlayChoiceDialog
-import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
 import com.github.livingwithhippos.torbox.model.UsenetDownloadFileDto
 import org.koin.androidx.compose.koinViewModel
@@ -116,6 +116,7 @@ fun UsenetDetailScreen(
                 is UsenetDetailEvent.ShowMessage -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
+
                 is UsenetDetailEvent.Deleted -> {
                     closeDetails()
                 }
@@ -323,7 +324,7 @@ private fun UsenetOverviewCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_hash),
+                    text = stringResource(id = R.string.hash),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Row(
@@ -354,7 +355,7 @@ private fun UsenetOverviewCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_size),
+                    text = stringResource(id = R.string.size),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -372,7 +373,7 @@ private fun UsenetOverviewCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_status),
+                    text = stringResource(id = R.string.status),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -413,7 +414,7 @@ private fun UsenetOverviewCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_added),
+                    text = stringResource(id = R.string.added_on),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -513,7 +514,7 @@ private fun UsenetTransferProgressCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_progress),
+                    text = stringResource(id = R.string.progress),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -540,7 +541,7 @@ private fun UsenetTransferProgressCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_download_speed),
+                    text = stringResource(id = R.string.download_speed),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -558,7 +559,7 @@ private fun UsenetTransferProgressCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(id = R.string.torrent_eta),
+                    text = stringResource(id = R.string.eta),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -807,7 +808,7 @@ private fun UsenetActionsCard(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = stringResource(id = R.string.torrent_actions),
+                text = stringResource(id = R.string.actions),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
             )
@@ -926,9 +927,9 @@ private fun UsenetFilesCard(
 
             val anyFilterActive = filterVideo || filterAudio || filterSubtitles
             val matchesType = !anyFilterActive ||
-                (filterVideo && file.isVideo()) ||
-                (filterAudio && file.isAudio()) ||
-                (filterSubtitles && file.isSubtitle())
+                    (filterVideo && file.isVideo()) ||
+                    (filterAudio && file.isAudio()) ||
+                    (filterSubtitles && file.isSubtitle())
 
             matchesSearch && matchesType
         }
@@ -941,8 +942,10 @@ private fun UsenetFilesCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            val isFiltered = searchQuery.isNotBlank() || filterVideo || filterAudio || filterSubtitles
-            val countText = if (isFiltered) "${filteredFiles.size}/${files.size}" else "${files.size}"
+            val isFiltered =
+                searchQuery.isNotBlank() || filterVideo || filterAudio || filterSubtitles
+            val countText =
+                if (isFiltered) "${filteredFiles.size}/${files.size}" else "${files.size}"
             Text(
                 text = "${stringResource(id = R.string.torrent_files_title)} ($countText)",
                 style = MaterialTheme.typography.titleSmall,
@@ -1078,7 +1081,8 @@ private fun UsenetFilesCard(
                                     onDownloadFile(
                                         file.id,
                                         file.shortName.ifBlank {
-                                            file.name.substringAfterLast('/').substringAfterLast('\\')
+                                            file.name.substringAfterLast('/')
+                                                .substringAfterLast('\\')
                                         },
                                     )
                                 },

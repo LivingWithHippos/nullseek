@@ -8,19 +8,26 @@ import com.github.livingwithhippos.nullseek.R
 import kotlinx.serialization.Serializable
 
 sealed interface Route {
-    @Serializable data object Home : Route
+    @Serializable
+    data object Home : Route
 
-    @Serializable data object Lists : Route
+    @Serializable
+    data object Lists : Route
 
-    @Serializable data object Search : Route
+    @Serializable
+    data object Search : Route
 
-    @Serializable data object Settings : Route
+    @Serializable
+    data object Settings : Route
 
-    @Serializable data object ExternalServices : Route
+    @Serializable
+    data object ExternalServices : Route
 
-    @Serializable data object ManageProviders : Route
+    @Serializable
+    data object ManageProviders : Route
 
-    @Serializable data object NewDownload : Route
+    @Serializable
+    data object NewDownload : Route
 }
 
 data class TopLevelDestination(
@@ -56,19 +63,19 @@ val TOP_LEVEL_DESTINATIONS =
             route = Route.Home,
             selectedIcon = R.drawable.ic_contact_page,
             unselectedIcon = R.drawable.ic_contact_page,
-            iconTextId = R.string.tab_home,
+            iconTextId = R.string.home,
         ),
         TopLevelDestination(
             route = Route.Lists,
             selectedIcon = R.drawable.ic_list_bullet,
             unselectedIcon = R.drawable.ic_list_bullet,
-            iconTextId = R.string.tab_lists,
+            iconTextId = R.string.lists,
         ),
         TopLevelDestination(
             route = Route.Search,
             selectedIcon = R.drawable.ic_manage_search,
             unselectedIcon = R.drawable.ic_manage_search,
-            iconTextId = R.string.tab_search,
+            iconTextId = R.string.search,
         ),
     )
 
@@ -96,4 +103,5 @@ val NEW_DOWNLOAD_DESTINATION =
  *
  * This is used to de-duplicate navigation events.
  */
-private fun NavBackStackEntry.lifecycleIsResumed() = this.lifecycle.currentState == Lifecycle.State.RESUMED
+private fun NavBackStackEntry.lifecycleIsResumed() =
+    this.lifecycle.currentState == Lifecycle.State.RESUMED

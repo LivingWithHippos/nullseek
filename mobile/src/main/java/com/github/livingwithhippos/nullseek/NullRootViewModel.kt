@@ -34,6 +34,7 @@ class NullRootViewModel(
 
     init {
         // check if there's an active token and enable it, initializing the TorboxClient with the token
+        // todo: try catch and handle errors, like network issues, invalid token, etc.
         loadActiveToken()
     }
 
@@ -171,7 +172,12 @@ class NullRootViewModel(
     }
 
     fun closeDetails() {
-        _uiState.value = _uiState.value.copy(selectedTorrent = null, selectedWeb = null, selectedUsenet = null, isDetailOnlyOpen = false)
+        _uiState.value = _uiState.value.copy(
+            selectedTorrent = null,
+            selectedWeb = null,
+            selectedUsenet = null,
+            isDetailOnlyOpen = false
+        )
     }
 
     // helpers to update the state //
@@ -183,7 +189,8 @@ class NullRootViewModel(
     }
 
     private fun loadedTorrentDetails(torrent: TorrentDto) {
-        _uiState.value = _uiState.value.copy(loading = false, selectedTorrent = torrent, error = null)
+        _uiState.value =
+            _uiState.value.copy(loading = false, selectedTorrent = torrent, error = null)
     }
 
     private fun loadingWebDetails() {
@@ -191,7 +198,8 @@ class NullRootViewModel(
     }
 
     private fun loadedWebDetails(webDownload: WebDownloadDto) {
-        _uiState.value = _uiState.value.copy(loading = false, selectedWeb = webDownload, error = null)
+        _uiState.value =
+            _uiState.value.copy(loading = false, selectedWeb = webDownload, error = null)
     }
 
     private fun loadingUsenetDetails() {
@@ -199,11 +207,13 @@ class NullRootViewModel(
     }
 
     private fun loadedUsenetDetails(usenetDownload: UsenetDownloadDto) {
-        _uiState.value = _uiState.value.copy(loading = false, selectedUsenet = usenetDownload, error = null)
+        _uiState.value =
+            _uiState.value.copy(loading = false, selectedUsenet = usenetDownload, error = null)
     }
 
     private fun activeTokenLoaded(user: UserDataDto) {
-        _uiState.value = _uiState.value.copy(loading = false, setup = false, user = user, error = null)
+        _uiState.value =
+            _uiState.value.copy(loading = false, setup = false, user = user, error = null)
     }
 
     private fun setupNeeded() {
@@ -211,7 +221,8 @@ class NullRootViewModel(
     }
 
     private fun setupCompleted(user: UserDataDto) {
-        _uiState.value = _uiState.value.copy(loading = false, setup = false, user = user, error = null)
+        _uiState.value =
+            _uiState.value.copy(loading = false, setup = false, user = user, error = null)
     }
 
     private fun setupInvalid(error: String) {
