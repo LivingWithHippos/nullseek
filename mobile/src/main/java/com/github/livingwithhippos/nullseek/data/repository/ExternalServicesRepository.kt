@@ -20,19 +20,23 @@ class ExternalServicesRepository(
         }
 
     val mediaPlayerServices: Flow<List<ExternalService>> =
-        coreRepository.getByCategoryFlow(ExternalServiceCategory.MEDIA_PLAYER.name).map { entities ->
-            entities.map { ExternalService.fromEntity(it) }
-        }
+        coreRepository.getByCategoryFlow(ExternalServiceCategory.MEDIA_PLAYER.name)
+            .map { entities ->
+                entities.map { ExternalService.fromEntity(it) }
+            }
 
     val defaultMediaPlayer: Flow<ExternalService?> =
-        coreRepository.getDefaultByCategoryFlow(ExternalServiceCategory.MEDIA_PLAYER.name).map { entity ->
-            entity?.let { ExternalService.fromEntity(it) }
-        }
+        coreRepository.getDefaultByCategoryFlow(ExternalServiceCategory.MEDIA_PLAYER.name)
+            .map { entity ->
+                entity?.let { ExternalService.fromEntity(it) }
+            }
 
-    suspend fun getAll(): List<ExternalService> = coreRepository.getAll().map { ExternalService.fromEntity(it) }
+    suspend fun getAll(): List<ExternalService> =
+        coreRepository.getAll().map { ExternalService.fromEntity(it) }
 
     suspend fun getMediaPlayers(): List<ExternalService> =
-        coreRepository.getByCategory(ExternalServiceCategory.MEDIA_PLAYER.name).map { ExternalService.fromEntity(it) }
+        coreRepository.getByCategory(ExternalServiceCategory.MEDIA_PLAYER.name)
+            .map { ExternalService.fromEntity(it) }
 
     suspend fun getDefaultMediaPlayer(): ExternalService? =
         coreRepository.getDefaultByCategory(ExternalServiceCategory.MEDIA_PLAYER.name)?.let {

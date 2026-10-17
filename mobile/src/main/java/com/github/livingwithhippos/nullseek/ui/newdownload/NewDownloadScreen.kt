@@ -89,8 +89,8 @@ fun Context.getFileName(uri: Uri): String {
 fun isValidDownloadLink(link: String): Boolean {
     val trimmed = link.trim()
     return trimmed.startsWith("magnet:?xt=urn:btih:", ignoreCase = true) ||
-           trimmed.startsWith("http://", ignoreCase = true) ||
-           trimmed.startsWith("https://", ignoreCase = true)
+            trimmed.startsWith("http://", ignoreCase = true) ||
+            trimmed.startsWith("https://", ignoreCase = true)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -170,7 +170,10 @@ fun NewDownloadScreen(
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     Text("Successfully queued: ${state.successful}")
-                    Text("Failed to queue: ${state.failed}", color = MaterialTheme.colorScheme.error)
+                    Text(
+                        "Failed to queue: ${state.failed}",
+                        color = MaterialTheme.colorScheme.error
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     state.errors.forEach { err ->
                         Text(err, style = MaterialTheme.typography.bodySmall)
@@ -207,7 +210,8 @@ fun NewDownloadScreen(
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(
                         onClick = {
-                            val validLinks = linkText.split("\\s+".toRegex()).filter { isValidDownloadLink(it) }
+                            val validLinks =
+                                linkText.split("\\s+".toRegex()).filter { isValidDownloadLink(it) }
                             val passwordValue = password.takeIf { it.isNotBlank() }
                             val seedingInt = when (selectedSeedingOption) {
                                 R.string.seeding_seed -> 2
@@ -221,11 +225,12 @@ fun NewDownloadScreen(
                                 R.string.usenet_repair_unpack_delete -> 3
                                 else -> -1
                             }
-                            
+
                             coroutineScope.launch(Dispatchers.IO) {
                                 val fileData = selectedFiles.mapNotNull { uri ->
                                     val name = context.getFileName(uri)
-                                    val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                                    val bytes = context.contentResolver.openInputStream(uri)
+                                        ?.use { it.readBytes() }
                                     if (bytes != null) name to bytes else null
                                 }
                                 viewModel.queueDownloads(
@@ -302,7 +307,11 @@ fun NewDownloadScreen(
                         append(stringResource(id = R.string.optional_label))
                     }
                 }
-                Text(text = labelString, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
+                Text(
+                    text = labelString,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },

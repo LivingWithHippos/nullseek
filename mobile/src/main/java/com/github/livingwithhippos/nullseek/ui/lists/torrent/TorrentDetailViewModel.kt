@@ -86,7 +86,10 @@ class TorrentDetailViewModel(
     fun playOnMedia(service: ExternalService, url: String, setAsDefault: Boolean = false) {
         viewModelScope.launch {
             if (setAsDefault) {
-                externalServicesRepository.setDefault(service.id, ExternalServiceCategory.MEDIA_PLAYER)
+                externalServicesRepository.setDefault(
+                    service.id,
+                    ExternalServiceCategory.MEDIA_PLAYER
+                )
             }
             _events.emit(TorrentDetailEvent.ShowMessage("Sending to ${service.name}…"))
             val result = externalServicesRepository.playMedia(service, url)
@@ -150,6 +153,7 @@ class TorrentDetailViewModel(
                             pendingDownload = PendingDownload(fileId = fileId, fileName = fileName),
                         )
                 }
+
                 else -> {
                     requestDownloadLink(
                         fileId = fileId,
@@ -203,7 +207,9 @@ class TorrentDetailViewModel(
                         files.size == 1 -> files.first()
                         else -> null
                     }
-                fileId == null && target == null || !isStreamableOrSubtitle(target?.name ?: fileName.orEmpty(), target?.mimetype)
+                fileId == null && target == null || !isStreamableOrSubtitle(
+                    target?.name ?: fileName.orEmpty(), target?.mimetype
+                )
             }
         }
 
@@ -244,7 +250,11 @@ class TorrentDetailViewModel(
                 val baseName = fileName ?: torrent.name
                 val rawTitle =
                     if (zipLink) {
-                        if (baseName.endsWith(".zip", ignoreCase = true)) baseName else "$baseName.zip"
+                        if (baseName.endsWith(
+                                ".zip",
+                                ignoreCase = true
+                            )
+                        ) baseName else "$baseName.zip"
                     } else {
                         baseName
                     }
@@ -307,7 +317,11 @@ class TorrentDetailViewModel(
                             } else {
                                 "${torrent.name}.torrent"
                             }
-                        val savedUri = saveFileToPublicDownloads(context = context, fileName = fileName, bytes = result.bytes)
+                        val savedUri = saveFileToPublicDownloads(
+                            context = context,
+                            fileName = fileName,
+                            bytes = result.bytes
+                        )
                         if (savedUri != null) {
                             _events.emit(TorrentDetailEvent.ShowMessage("Torrent saved to Downloads"))
                         } else {

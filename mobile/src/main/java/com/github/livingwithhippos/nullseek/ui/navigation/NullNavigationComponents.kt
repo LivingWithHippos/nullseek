@@ -59,8 +59,9 @@ import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationContentPositi
 import kotlinx.coroutines.launch
 
 
-private fun WindowSizeClass.isCompact() = !isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) ||
-        !isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
+private fun WindowSizeClass.isCompact() =
+    !isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) ||
+            !isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
 
 class NullNavSuiteScope(val navSuiteType: NavigationSuiteType)
 
@@ -86,11 +87,12 @@ fun NullNavigationWrapper(
 
         else -> NavigationSuiteType.NavigationRail
     }
-    val navContentPosition = if (adaptiveInfo.windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)) {
-        NullNavigationContentPosition.CENTER
-    } else {
-        NullNavigationContentPosition.TOP
-    }
+    val navContentPosition =
+        if (adaptiveInfo.windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)) {
+            NullNavigationContentPosition.CENTER
+        } else {
+            NullNavigationContentPosition.TOP
+        }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -467,7 +469,8 @@ fun ModalNavigationDrawerContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     TOP_LEVEL_DESTINATIONS.forEach { nullDestination ->
-                        val isItemEnabled = if (nullDestination.route == Route.Lists) isUserLoaded else true
+                        val isItemEnabled =
+                            if (nullDestination.route == Route.Lists) isUserLoaded else true
                         NavigationDrawerItem(
                             selected = currentDestination.hasRoute(nullDestination),
                             label = {
@@ -544,4 +547,5 @@ enum class LayoutType {
     CONTENT,
 }
 
-fun NavDestination?.hasRoute(destination: TopLevelDestination): Boolean = this?.hasRoute(destination.route::class) ?: false
+fun NavDestination?.hasRoute(destination: TopLevelDestination): Boolean =
+    this?.hasRoute(destination.route::class) ?: false

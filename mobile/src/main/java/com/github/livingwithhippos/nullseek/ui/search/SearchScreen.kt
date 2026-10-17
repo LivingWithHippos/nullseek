@@ -20,7 +20,7 @@ fun SearchScreen(
     uiState: NullRootUiState,
     navigationType: NullNavigationType,
     modifier: Modifier = Modifier,
-    ) {
+) {
     Surface {
         Column(
             modifier = Modifier.fillMaxSize(),

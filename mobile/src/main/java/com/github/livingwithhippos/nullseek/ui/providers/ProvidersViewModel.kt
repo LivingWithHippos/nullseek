@@ -87,7 +87,12 @@ class ProvidersViewModel(
             }
             val netProvider = NetProvider.Torbox()
             val hasActive = repository.getActive() != null
-            val provider = NullProvider(type = netProvider.type, name = cleanName, token = cleanToken, active = !hasActive)
+            val provider = NullProvider(
+                type = netProvider.type,
+                name = cleanName,
+                token = cleanToken,
+                active = !hasActive
+            )
             if (hasActive) {
                 repository.insert(provider)
             } else {

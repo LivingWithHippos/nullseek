@@ -51,11 +51,19 @@ class NewDownloadViewModel(
                 val result =
                     when {
                         link.startsWith("magnet:", ignoreCase = true) -> {
-                            client.torrent.create(magnet = link, seed = seedingOption, allowZip = allowZipped)
+                            client.torrent.create(
+                                magnet = link,
+                                seed = seedingOption,
+                                allowZip = allowZipped
+                            )
                         }
 
                         link.endsWith(".nzb", ignoreCase = true) -> {
-                            client.usenet.create(link = link, password = password, postProcessing = usenetOption)
+                            client.usenet.create(
+                                link = link,
+                                password = password,
+                                postProcessing = usenetOption
+                            )
                         }
 
                         else -> {
@@ -95,11 +103,21 @@ class NewDownloadViewModel(
                 val result =
                     when {
                         name.endsWith(".torrent", ignoreCase = true) -> {
-                            client.torrent.create(fileBytes = bytes, fileName = name, seed = seedingOption, allowZip = allowZipped)
+                            client.torrent.create(
+                                fileBytes = bytes,
+                                fileName = name,
+                                seed = seedingOption,
+                                allowZip = allowZipped
+                            )
                         }
 
                         name.endsWith(".nzb", ignoreCase = true) -> {
-                            client.usenet.create(fileBytes = bytes, fileName = name, password = password, postProcessing = usenetOption)
+                            client.usenet.create(
+                                fileBytes = bytes,
+                                fileName = name,
+                                password = password,
+                                postProcessing = usenetOption
+                            )
                         }
 
                         else -> {

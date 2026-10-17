@@ -84,7 +84,10 @@ class UsenetDetailViewModel(
     ) {
         viewModelScope.launch {
             if (setAsDefault) {
-                externalServicesRepository.setDefault(service.id, ExternalServiceCategory.MEDIA_PLAYER)
+                externalServicesRepository.setDefault(
+                    service.id,
+                    ExternalServiceCategory.MEDIA_PLAYER
+                )
             }
             _events.emit(UsenetDetailEvent.ShowMessage("Sending to ${service.name}…"))
             val result = externalServicesRepository.playMedia(service, url)
@@ -256,7 +259,11 @@ class UsenetDetailViewModel(
                 val baseName = fileName ?: item.name
                 val rawTitle =
                     if (zipLink) {
-                        if (baseName.endsWith(".zip", ignoreCase = true)) baseName else "$baseName.zip"
+                        if (baseName.endsWith(
+                                ".zip",
+                                ignoreCase = true
+                            )
+                        ) baseName else "$baseName.zip"
                     } else {
                         baseName
                     }

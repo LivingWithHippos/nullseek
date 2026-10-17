@@ -118,7 +118,8 @@ class ExternalServicesViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isTestingInDialog = true, dialogTestResult = null)
             val result = repository.testConnection(service)
-            _uiState.value = _uiState.value.copy(isTestingInDialog = false, dialogTestResult = result)
+            _uiState.value =
+                _uiState.value.copy(isTestingInDialog = false, dialogTestResult = result)
         }
     }
 

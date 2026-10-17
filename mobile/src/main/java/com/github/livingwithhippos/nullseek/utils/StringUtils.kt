@@ -83,7 +83,8 @@ fun isDateNotInPast(datetime: String?): Boolean {
     } catch (e: Exception) {
         try {
             val zonedDateTime = java.time.ZonedDateTime.parse(datetime)
-            val targetDate = zonedDateTime.withZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalDate()
+            val targetDate =
+                zonedDateTime.withZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalDate()
             val today = java.time.LocalDate.now(java.time.ZoneId.systemDefault())
             !targetDate.isBefore(today)
         } catch (e2: Exception) {

@@ -14,7 +14,11 @@ class VlcRemoteClient(
     private fun normalizeBaseUrl(address: String): String {
         val trimmed = address.trim()
         val withScheme =
-            if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)) {
+            if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith(
+                    "https://",
+                    ignoreCase = true
+                )
+            ) {
                 trimmed
             } else {
                 "http://$trimmed"
@@ -45,7 +49,8 @@ class VlcRemoteClient(
         withContext(Dispatchers.IO) {
             try {
                 val encodedUrl = URLEncoder.encode(mediaUrl, "UTF-8")
-                val requestUrl = "${normalizeBaseUrl(address)}/requests/status.xml?command=in_play&input=$encodedUrl"
+                val requestUrl =
+                    "${normalizeBaseUrl(address)}/requests/status.xml?command=in_play&input=$encodedUrl"
                 val request = buildRequest(requestUrl, username, password)
 
                 client.newCall(request).execute().use { response ->

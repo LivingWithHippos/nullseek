@@ -17,7 +17,11 @@ class KodiRemoteClient(
     private fun normalizeBaseUrl(address: String): String {
         val trimmed = address.trim()
         val withScheme =
-            if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)) {
+            if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith(
+                    "https://",
+                    ignoreCase = true
+                )
+            ) {
                 trimmed
             } else {
                 "http://$trimmed"

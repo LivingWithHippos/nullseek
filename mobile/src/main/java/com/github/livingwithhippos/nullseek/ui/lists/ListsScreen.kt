@@ -75,7 +75,10 @@ fun ListsScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            PrimaryTabRow(selectedTabIndex = selectedDestination, modifier = Modifier.padding(10.dp)) {
+            PrimaryTabRow(
+                selectedTabIndex = selectedDestination,
+                modifier = Modifier.padding(10.dp)
+            ) {
                 Destination.entries.forEachIndexed { index, destination ->
                     Tab(
                         // todo: add icon to see if it's better
@@ -83,7 +86,9 @@ fun ListsScreen(
                             selectedDestination = index
                         }, text = {
                             Text(
-                                text = destination.label, maxLines = 2, overflow = TextOverflow.Ellipsis
+                                text = destination.label,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                         })
                 }
