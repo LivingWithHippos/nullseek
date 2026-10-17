@@ -6,6 +6,7 @@ import androidx.room3.Insert
 import androidx.room3.Query
 import androidx.room3.Upsert
 import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface NullProviderDao {
@@ -20,6 +21,21 @@ interface NullProviderDao {
 
     @Query("UPDATE providers SET active = CASE WHEN id = :id THEN 1 ELSE 0 END")
     suspend fun setActive(id: Long)
+
+    @Query("UPDATE providers SET name = :name WHERE id = :id")
+    suspend fun updateName(
+        id: Long,
+        name: String,
+    )
+
+    @Query("UPDATE providers SET token = :token WHERE id = :id")
+    suspend fun updateToken(
+        id: Long,
+        token: String,
+    )
+
+    @Query("SELECT * FROM providers ORDER BY id")
+    fun observeAll(): Flow<List<NullProvider>>
 
     @Insert
     suspend fun insert(provider: NullProvider): Long

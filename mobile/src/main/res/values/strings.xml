@@ -220,4 +220,26 @@
     <string name="paging_load_size_title">List page load size</string>
     <string name="paging_load_size_summary">Number of items fetched per page for Torrents, Web, and Usenet lists. Larger values may result in slower loading times.</string>
     <string name="paging_load_size_label">Items per page</string>
+    <string name="providers_title">Manage accounts</string>
+    <string name="providers_summary">Add, rename, remove accounts and choose the default one</string>
+    <string name="providers_default">Default</string>
+    <string name="active">Active</string>
+    <string name="providers_set_default">Set as default</string>
+    <string name="set_active">Set as active</string>
+    <string name="providers_rename">Rename</string>
+    <string name="providers_replace_token">Replace API token</string>
+    <string name="providers_delete">Delete</string>
+    <string name="providers_add_title">Add account</string>
+    <string name="providers_name_label">Name</string>
+    <string name="providers_token_label">API token</string>
+    <string name="providers_empty">No accounts configured</string>
+    <string name="providers_delete_title">Delete account</string>
+    <string name="providers_delete_message">Delete \"%1$s\"? This only removes it from this app.</string>
+    <string name="providers_validating">Validating token…</string>
+    <string name="providers_invalid_token">Invalid token</string>
+    <string name="providers_added">Added %1$s</string>
+    <string name="providers_renamed">Renamed to %1$s</string>
+    <string name="providers_token_replaced">Token updated</string>
+    <string name="providers_deleted">Deleted %1$s</string>
+    <string name="providers_default_set">%1$s is now the default</string>
 </resources>

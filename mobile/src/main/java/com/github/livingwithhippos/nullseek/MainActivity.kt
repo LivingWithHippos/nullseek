@@ -35,6 +35,7 @@ class MainActivity : ComponentActivity() {
                     NullSeekApp(
                         windowSize = windowSize,
                         rootUiState = uiState,
+                        reloadProviders = { viewModel.loadActiveToken() },
                         checkValidToken = { provider, token ->
                             viewModel.checkValidToken(provider, token)
                         },

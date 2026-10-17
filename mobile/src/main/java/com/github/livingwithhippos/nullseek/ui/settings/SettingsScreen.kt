@@ -58,6 +58,7 @@ fun SettingsScreen(
     navigationType: NullNavigationType,
     modifier: Modifier = Modifier,
     onNavigateToExternalServices: () -> Unit = {},
+    onNavigateToProviders: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
@@ -69,6 +70,7 @@ fun SettingsScreen(
         pagingLoadSize = pagingLoadSize,
         onPagingLoadSizeSelected = { viewModel.setPagingLoadSize(it) },
         onNavigateToExternalServices = onNavigateToExternalServices,
+        onNavigateToProviders = onNavigateToProviders,
         modifier = modifier,
     )
 }
@@ -81,6 +83,7 @@ fun SettingsScreen(
     pagingLoadSize: Int = DEFAULT_PAGING_LOAD_SIZE,
     onPagingLoadSizeSelected: (Int) -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
+    onNavigateToProviders: () -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
     var pageSizeInput by rememberSaveable { mutableStateOf(pagingLoadSize.toString()) }
@@ -104,6 +107,41 @@ fun SettingsScreen(
                     .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            OutlinedCard(
+                onClick = onNavigateToProviders,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.providers_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = stringResource(id = R.string.providers_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_open_in_new),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+
             OutlinedCard(
                 onClick = onNavigateToExternalServices,
                 modifier = Modifier.fillMaxWidth(),

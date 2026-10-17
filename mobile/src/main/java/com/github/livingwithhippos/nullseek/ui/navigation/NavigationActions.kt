@@ -18,6 +18,8 @@ sealed interface Route {
 
     @Serializable data object ExternalServices : Route
 
+    @Serializable data object ManageProviders : Route
+
     @Serializable data object NewDownload : Route
 }
 

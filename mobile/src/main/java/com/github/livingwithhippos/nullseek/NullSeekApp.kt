@@ -11,6 +11,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,6 +27,7 @@ import com.github.livingwithhippos.nullseek.ui.navigation.Route
 import com.github.livingwithhippos.nullseek.ui.navigation.SETTINGS_DESTINATION
 import com.github.livingwithhippos.nullseek.ui.search.SearchScreen
 import com.github.livingwithhippos.nullseek.ui.externalservices.ExternalServicesScreen
+import com.github.livingwithhippos.nullseek.ui.providers.ProvidersScreen
 import com.github.livingwithhippos.nullseek.ui.settings.SettingsScreen
 import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadScreen
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -51,6 +54,7 @@ fun NullSeekApp(
     loadWebDetails: (webDownload: WebDownloadDto) -> Unit,
     loadUsenetDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
     closeDetails: () -> Unit,
+    reloadProviders: () -> Unit = {},
     viewmodel: NullViewModel = koinViewModel<NullViewModel>()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -85,6 +89,16 @@ fun NullSeekApp(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
+    // when no provider is left, go back to the setup screen
+    LaunchedEffect(rootUiState.setup) {
+        if (rootUiState.setup && currentDestination?.hasRoute<Route.ManageProviders>() == true) {
+            navController.navigate(Route.Home) {
+                popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
     Surface {
         NullNavigationWrapper(
             currentDestination = currentDestination,
@@ -111,7 +125,8 @@ fun NullSeekApp(
                 showNewDownload = {
                     navigationActions.navigateTo(com.github.livingwithhippos.nullseek.ui.navigation.NEW_DOWNLOAD_DESTINATION)
                 },
-                closeDetails = closeDetails
+                closeDetails = closeDetails,
+                reloadProviders = reloadProviders,
             )
         }
     }
@@ -130,6 +145,7 @@ private fun NullNavHost(
     showSettings: () -> Unit,
     showNewDownload: () -> Unit,
     closeDetails: () -> Unit,
+    reloadProviders: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NavHost(
@@ -169,6 +185,9 @@ private fun NullNavHost(
             SettingsScreen(
                 contentType = contentType,
                 navigationType = navigationType,
+                onNavigateToProviders = {
+                    navController.navigate(Route.ManageProviders)
+                },
                 onNavigateToExternalServices = {
                     navController.navigate(Route.ExternalServices)
                 },
@@ -179,6 +198,12 @@ private fun NullNavHost(
                 contentType = contentType,
                 navigationType = navigationType,
                 onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable<Route.ManageProviders> {
+            ProvidersScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onProvidersChanged = reloadProviders,
             )
         }
         composable<Route.NewDownload> {

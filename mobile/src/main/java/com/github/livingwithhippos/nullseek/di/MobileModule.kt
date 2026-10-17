@@ -12,6 +12,7 @@ import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentDetailViewMo
 import com.github.livingwithhippos.nullseek.ui.lists.usenet.UsenetDetailViewModel
 import com.github.livingwithhippos.nullseek.ui.lists.web.WebDownloadDetailViewModel
 import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadViewModel
+import com.github.livingwithhippos.nullseek.ui.providers.ProvidersViewModel
 import com.github.livingwithhippos.nullseek.ui.settings.SettingsViewModel
 import com.github.livingwithhippos.nullseek.ui.user.UserViewModel
 import okhttp3.OkHttpClient
@@ -31,6 +32,7 @@ val viewModelMobileModule =
         viewModel<UsenetDetailViewModel>()
         viewModel<SettingsViewModel>()
         viewModel<ExternalServicesViewModel>()
+        viewModel<ProvidersViewModel>()
     }
 
 val repositoryMobileModule =
