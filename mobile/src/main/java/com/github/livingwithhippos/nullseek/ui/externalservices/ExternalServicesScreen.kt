@@ -75,6 +75,7 @@ import com.github.livingwithhippos.nullseek.data.model.ExternalServiceType
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.utils.openWebPage
 import org.koin.androidx.compose.koinViewModel
 
 private fun hasLocalNetworkPermission(context: Context): Boolean =
@@ -501,7 +502,11 @@ private fun ServiceEditDialog(
         )
     }
     var address by rememberSaveable { mutableStateOf(initialService?.address.orEmpty()) }
-    var username by rememberSaveable { mutableStateOf(initialService?.username.orEmpty()) }
+    var username by rememberSaveable {
+        mutableStateOf(
+            if (initialService?.type == ExternalServiceType.VLC) "" else initialService?.username.orEmpty(),
+        )
+    }
     var password by rememberSaveable { mutableStateOf(initialService?.password.orEmpty()) }
     var isDefault by rememberSaveable { mutableStateOf(initialService?.isDefault ?: false) }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
@@ -511,23 +516,46 @@ private fun ServiceEditDialog(
         name = name.trim(),
         type = selectedType,
         address = address.trim(),
-        username = username.trim(),
+        username = if (selectedType == ExternalServiceType.VLC) "" else username.trim(),
         password = password,
         isDefault = isDefault,
     )
 
+    val context = LocalContext.current
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(
-                text = stringResource(
-                    id = if (serviceId == 0L) {
-                        R.string.external_services_dialog_add_title
-                    } else {
-                        R.string.external_services_dialog_edit_title
-                    }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(
+                        id = if (serviceId == 0L) {
+                            R.string.external_services_dialog_add_title
+                        } else {
+                            R.string.external_services_dialog_edit_title
+                        }
+                    )
                 )
-            )
+                IconButton(
+                    onClick = {
+                        val helpUrl =
+                            when (selectedType) {
+                                ExternalServiceType.VLC -> "https://wiki.videolan.org/Documentation:Modules/http_intf"
+                                else -> "https://kodi.wiki/view/Settings/Services/Control"
+                            }
+                        openWebPage(context, helpUrl)
+                    },
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_help),
+                        contentDescription = stringResource(id = R.string.help),
+                    )
+                }
+            }
         },
         text = {
             Column(
@@ -553,6 +581,7 @@ private fun ServiceEditDialog(
                         selected = selectedType == ExternalServiceType.VLC,
                         onClick = {
                             selectedType = ExternalServiceType.VLC
+                            username = ""
                             if (address.isBlank()) address = "192.168.1.100:9090"
                         },
                         label = { Text("VLC") },
@@ -580,6 +609,7 @@ private fun ServiceEditDialog(
                 OutlinedTextField(
                     value = username,
                     onValueChange = { username = it },
+                    enabled = selectedType != ExternalServiceType.VLC,
                     label = { Text(text = stringResource(id = R.string.external_services_username_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
