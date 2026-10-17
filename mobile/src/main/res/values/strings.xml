@@ -209,4 +209,11 @@
     <string name="duplicate">Duplicate</string>
     <string name="help">Help</string>
     <string name="save">Save</string>
+    <string name="file_type_video">Video</string>
+    <string name="file_type_audio">Audio</string>
+    <string name="file_type_document">Document</string>
+    <string name="file_type_book">Book</string>
+    <string name="file_type_archive">Archive</string>
+    <string name="file_type_subtitle">Subtitle</string>
+    <string name="file_type_executable">Executable</string>
 </resources>

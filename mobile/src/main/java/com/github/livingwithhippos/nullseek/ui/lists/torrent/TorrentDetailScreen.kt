@@ -70,7 +70,9 @@ import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.ui.externalservices.PlayChoiceDialog
+import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.convertToSize
+import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.utils.isAudioFile
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
@@ -1257,7 +1259,7 @@ private fun TorrentFilesCard(
                     ) {
                         Column(
                             modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
                                 text = formatFileNameDisplay(file.name, file.shortName),
@@ -1265,12 +1267,20 @@ private fun TorrentFilesCard(
                                 maxLines = 3,
                                 overflow = TextOverflow.Ellipsis,
                             )
-                            Text(
-                                text = convertToSize(file.size),
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(
+                                    text = convertToSize(file.size),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                detectFileTypeCategory(file.name, file.mimetype)?.let { category ->
+                                    FileTypeBadge(category = category)
+                                }
+                            }
                         }
 
                         if (isCached) {
@@ -1298,6 +1308,36 @@ private fun TorrentFilesCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun FileTypeBadge(
+    category: FileTypeCategory,
+    modifier: Modifier = Modifier,
+) {
+    val labelRes =
+        when (category) {
+            FileTypeCategory.VIDEO -> R.string.file_type_video
+            FileTypeCategory.AUDIO -> R.string.file_type_audio
+            FileTypeCategory.DOCUMENT -> R.string.file_type_document
+            FileTypeCategory.BOOK -> R.string.file_type_book
+            FileTypeCategory.ARCHIVE -> R.string.file_type_archive
+            FileTypeCategory.SUBTITLE -> R.string.file_type_subtitle
+            FileTypeCategory.EXECUTABLE -> R.string.file_type_executable
+        }
+
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = modifier,
+    ) {
+        Text(
+            text = stringResource(id = labelRes),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
     }
 }
 
