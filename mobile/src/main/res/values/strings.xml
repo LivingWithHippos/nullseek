@@ -167,7 +167,7 @@
     <string name="external_services_media_players_title">Media Players</string>
     <string name="external_services_add_player">Add Media Player</string>
     <string name="external_services_empty">No external services configured yet.</string>
-    <string name="external_services_empty_hint">Tap \"Add Media Player\" to configure Kodi or VLC remote playback.</string>
+    <string name="external_services_empty_hint">Tap \"Add\" to configure Kodi or VLC remote playback.</string>
     <string name="external_services_default_badge">Default</string>
     <string name="external_services_set_default">Set as default</string>
     <string name="external_services_test_connection">Test connection</string>
