@@ -49,11 +49,11 @@ import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.utils.mockUser
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
-import com.github.livingwithhippos.nullseek.utils.convertToDays
-import com.github.livingwithhippos.nullseek.utils.convertToSize
-import com.github.livingwithhippos.nullseek.utils.formatToLocalDate
-import com.github.livingwithhippos.nullseek.utils.getPlanName
-import com.github.livingwithhippos.nullseek.utils.isDateNotInPast
+import com.github.livingwithhippos.nullseek.core.utils.convertToDays
+import com.github.livingwithhippos.nullseek.core.utils.convertToSize
+import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
+import com.github.livingwithhippos.nullseek.core.utils.getPlanName
+import com.github.livingwithhippos.nullseek.core.utils.isDateNotInPast
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.model.UserDataDto
 import logcat.asLog

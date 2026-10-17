@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.koin.compiler)
     alias(libs.plugins.ksp)
     alias(libs.plugins.android.room)
+    id("kotlin-parcelize")
 }
 
 android {
@@ -47,6 +48,8 @@ dependencies {
     ksp(libs.room.compiler)
 
     implementation(libs.square.logcat)
+
+    implementation(libs.jsoup)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
