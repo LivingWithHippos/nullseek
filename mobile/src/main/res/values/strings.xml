@@ -241,4 +241,10 @@
     <string name="providers_token_replaced">Token updated</string>
     <string name="providers_deleted">Deleted %1$s</string>
     <string name="providers_default_set">%1$s is now the default</string>
+    <string name="find_in_list_hint">Find in loaded torrents</string>
+    <string name="find_in_list_no_matches">No matches</string>
+    <string name="find_in_list_counter">%1$d/%2$d</string>
+    <string name="find_in_list_previous">Previous match</string>
+    <string name="find_in_list_next">Next match</string>
+    <string name="find_in_list_clear">Clear search</string>
 </resources>
