@@ -41,8 +41,8 @@ import org.koin.androidx.compose.koinViewModel
 fun SettingsScreen(
     contentType: NullContentType,
     navigationType: NullNavigationType,
-    onNavigateToExternalServices: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onNavigateToExternalServices: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
@@ -59,8 +59,8 @@ fun SettingsScreen(
 fun SettingsScreen(
     downloadZipMode: DownloadZipMode,
     onDownloadZipModeSelected: (DownloadZipMode) -> Unit,
-    onNavigateToExternalServices: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onNavigateToExternalServices: () -> Unit = {},
 ) {
     Column(
         modifier =

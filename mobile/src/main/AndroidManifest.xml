@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Uses INTERNET to fetch RSS feed + images -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Uses ACCESS_LOCAL_NETWORK to connect to local media players like Kodi and VLC -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
     <application
         android:name=".MainApplication"

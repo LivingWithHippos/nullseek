@@ -1,5 +1,14 @@
 package com.github.livingwithhippos.nullseek.ui.externalservices
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -45,6 +54,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +62,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
@@ -62,6 +75,27 @@ import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import org.koin.androidx.compose.koinViewModel
 
+private fun hasLocalNetworkPermission(context: Context): Boolean =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_LOCAL_NETWORK,
+        ) == PackageManager.PERMISSION_GRANTED
+    } else {
+        true
+    }
+
+private fun openAppSettings(context: Context) {
+    val intent =
+        Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", context.packageName, null),
+        ).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    context.startActivity(intent)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExternalServicesScreen(
@@ -71,9 +105,22 @@ fun ExternalServicesScreen(
     modifier: Modifier = Modifier,
     viewModel: ExternalServicesViewModel = koinViewModel(),
 ) {
+    val context = LocalContext.current
     val services by viewModel.services.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    var hasPermission by remember { mutableStateOf(hasLocalNetworkPermission(context)) }
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { isGranted ->
+            hasPermission = isGranted
+        }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        hasPermission = hasLocalNetworkPermission(context)
+    }
 
     var serviceToEdit by remember { mutableStateOf<ExternalService?>(null) }
     var isAddingService by remember { mutableStateOf(false) }
@@ -119,6 +166,19 @@ fun ExternalServicesScreen(
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                if (!hasPermission) {
+                    LocalNetworkPermissionWarningCard(
+                        onRequestPermission = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+                                permissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+                            }
+                        },
+                        onOpenSettings = {
+                            openAppSettings(context)
+                        },
+                    )
+                }
+
                 // Media Players Section Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -592,6 +652,82 @@ private fun ServiceEditDialog(
     )
 }
 
+@Composable
+private fun LocalNetworkPermissionWarningCard(
+    onRequestPermission: () -> Unit,
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_warning),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = stringResource(id = R.string.external_services_local_network_warning_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
+            }
+
+            Text(
+                text = stringResource(id = R.string.external_services_local_network_warning_message),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+            ) {
+                OutlinedButton(
+                    onClick = onOpenSettings,
+                ) {
+                    Text(text = stringResource(id = R.string.external_services_open_settings))
+                }
+                Button(
+                    onClick = onRequestPermission,
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                        ),
+                ) {
+                    Text(text = stringResource(id = R.string.external_services_grant_permission))
+                }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun LocalNetworkPermissionWarningCardPreview() {
+    NullSeekTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            LocalNetworkPermissionWarningCard(
+                onRequestPermission = {},
+                onOpenSettings = {},
+            )
+        }
+    }
+}
+
 @Preview
 @Composable
 fun ServiceCardPreview() {
@@ -617,4 +753,5 @@ fun ServiceCardPreview() {
         }
     }
 }
+
 
