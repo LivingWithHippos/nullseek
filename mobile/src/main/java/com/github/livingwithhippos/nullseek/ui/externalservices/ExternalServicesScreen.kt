@@ -10,6 +10,7 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -60,6 +61,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -210,7 +212,8 @@ fun ExternalServicesScreen(
                     }
                 }
 
-                val mediaPlayers = services.filter { it.type.category == ExternalServiceCategory.MEDIA_PLAYER }
+                val mediaPlayers =
+                    services.filter { it.type.category == ExternalServiceCategory.MEDIA_PLAYER }
 
                 if (mediaPlayers.isEmpty()) {
                     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
@@ -237,7 +240,11 @@ fun ExternalServicesScreen(
                             service = service,
                             isTesting = uiState.testingServiceId == service.id,
                             onSetDefault = {
-                                viewModel.setDefault(service.id, service.type.category, service.name)
+                                viewModel.setDefault(
+                                    service.id,
+                                    service.type.category,
+                                    service.name
+                                )
                             },
                             onTestConnection = {
                                 viewModel.testConnection(service)
@@ -308,7 +315,11 @@ fun ExternalServicesScreen(
                 viewModel.clearDialogTestResult()
             },
             onSave = { updated ->
-                viewModel.updateService(updated)
+                if (updated.id == 0L) {
+                    viewModel.addService(updated)
+                } else {
+                    viewModel.updateService(updated)
+                }
                 serviceToEdit = null
                 viewModel.clearDialogTestResult()
             },
@@ -323,6 +334,7 @@ fun ExternalServicesScreen(
                 Text(
                     text = stringResource(
                         id = R.string.external_services_delete_confirm_message,
+                        service.type.displayName,
                         service.name,
                     )
                 )
@@ -368,6 +380,14 @@ private fun ServiceCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onEdit,
+                            ),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -375,7 +395,11 @@ private fun ServiceCard(
                         text = service.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.MiddleEllipsis,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
+
                     Surface(
                         shape = RoundedCornerShape(6.dp),
                         color = MaterialTheme.colorScheme.secondaryContainer,
@@ -399,6 +423,7 @@ private fun ServiceCard(
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             )
                         }
+
                     }
                 }
 
@@ -437,7 +462,10 @@ private fun ServiceCard(
                     modifier = Modifier.weight(1f),
                 ) {
                     if (isTesting) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
                         Spacer(modifier = Modifier.width(6.dp))
                     }
                     Text(text = stringResource(id = R.string.external_services_test_connection))
@@ -465,8 +493,13 @@ private fun ServiceEditDialog(
     onDismiss: () -> Unit,
     onSave: (ExternalService) -> Unit,
 ) {
+    var serviceId by rememberSaveable { mutableStateOf(initialService?.id ?: 0L) }
     var name by rememberSaveable { mutableStateOf(initialService?.name.orEmpty()) }
-    var selectedType by rememberSaveable { mutableStateOf(initialService?.type ?: ExternalServiceType.KODI) }
+    var selectedType by rememberSaveable {
+        mutableStateOf(
+            initialService?.type ?: ExternalServiceType.KODI
+        )
+    }
     var address by rememberSaveable { mutableStateOf(initialService?.address.orEmpty()) }
     var username by rememberSaveable { mutableStateOf(initialService?.username.orEmpty()) }
     var password by rememberSaveable { mutableStateOf(initialService?.password.orEmpty()) }
@@ -474,7 +507,7 @@ private fun ServiceEditDialog(
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     fun currentService() = ExternalService(
-        id = initialService?.id ?: 0,
+        id = serviceId,
         name = name.trim(),
         type = selectedType,
         address = address.trim(),
@@ -488,7 +521,7 @@ private fun ServiceEditDialog(
         title = {
             Text(
                 text = stringResource(
-                    id = if (initialService == null) {
+                    id = if (serviceId == 0L) {
                         R.string.external_services_dialog_add_title
                     } else {
                         R.string.external_services_dialog_edit_title
@@ -568,8 +601,8 @@ private fun ServiceEditDialog(
                     },
                     singleLine = true,
                     supportingText = {
-                        if (selectedType == ExternalServiceType.VLC) {
-                            Text(text = stringResource(id = R.string.external_services_password_vlc_hint))
+                        if (selectedType == ExternalServiceType.KODI) {
+                            Text(text = stringResource(id = R.string.external_services_password_kodi_hint))
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -600,11 +633,33 @@ private fun ServiceEditDialog(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     if (isTesting) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = stringResource(id = R.string.testing_connection))
                     } else {
                         Text(text = stringResource(id = R.string.external_services_test_connection))
+                    }
+                }
+
+                if (serviceId != 0L) {
+                    OutlinedButton(
+                        onClick = {
+                            serviceId = 0L
+                            name = ""
+                            isDefault = false
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_copy),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(id = R.string.duplicate))
                     }
                 }
 
@@ -753,5 +808,6 @@ fun ServiceCardPreview() {
         }
     }
 }
+
 
 

@@ -180,10 +180,10 @@
     <string name="external_services_address_hint">e.g. 192.168.1.100:8080</string>
     <string name="external_services_username_label">Username (optional)</string>
     <string name="external_services_password_label">Password (optional)</string>
-    <string name="external_services_password_vlc_hint">VLC requires the password set in its HTTP interface settings.</string>
+    <string name="external_services_password_kodi_hint">Kodi requires the password set in its HTTP interface settings.</string>
     <string name="external_services_set_as_default_label">Set as default player</string>
     <string name="external_services_delete_confirm_title">Delete Service</string>
-    <string name="external_services_delete_confirm_message">Are you sure you want to delete \"%s\"?</string>
+    <string name="external_services_delete_confirm_message">Are you sure you want to delete %s service \"%s\"?</string>
     <string name="action_play">Play</string>
     <string name="action_play_on">Play on %s</string>
     <string name="action_play_external">Play on external player</string>
@@ -206,5 +206,6 @@
     <string name="add">Add</string>
     <string name="cancel">Cancel</string>
     <string name="edit">Edit</string>
+    <string name="duplicate">Duplicate</string>
     <string name="save">Save</string>
 </resources>

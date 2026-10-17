@@ -57,7 +57,7 @@ class ExternalServicesViewModel(
         viewModelScope.launch {
             try {
                 repository.updateService(service)
-                _events.emit(ExternalServicesEvent.ShowMessage("Updated ${service.name}"))
+                _events.emit(ExternalServicesEvent.ShowMessage("Updated ${service.type.displayName} service ${service.name}"))
             } catch (e: Exception) {
                 _events.emit(ExternalServicesEvent.ShowMessage("Failed to update service: ${e.message}"))
             }
