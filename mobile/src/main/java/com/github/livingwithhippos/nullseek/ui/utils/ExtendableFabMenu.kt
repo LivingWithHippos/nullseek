@@ -33,7 +33,7 @@ fun ExtendableFabMenu(
                 onCheckedChange = { expanded = it },
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_add),
+                    painter = painterResource(id = R.drawable.icon_action),
                     contentDescription = stringResource(id = R.string.expand_menu),
                 )
             }
