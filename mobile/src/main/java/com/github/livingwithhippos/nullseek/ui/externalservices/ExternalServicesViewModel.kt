@@ -101,7 +101,11 @@ class ExternalServicesViewModel(
 
             result.fold(
                 onSuccess = {
-                    _events.emit(ExternalServicesEvent.ShowMessage("Connected successfully to ${service.type.displayName} service \"${service.name}\""))
+                    _events.emit(
+                        ExternalServicesEvent.ShowMessage(
+                            "Connected successfully to ${service.type.displayName} service \"${service.name}\"",
+                        ),
+                    )
                 },
                 onFailure = { error ->
                     _events.emit(ExternalServicesEvent.ShowMessage("Connection failed: ${error.message}"))

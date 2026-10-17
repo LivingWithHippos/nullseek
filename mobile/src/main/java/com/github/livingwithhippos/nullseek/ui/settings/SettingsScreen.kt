@@ -1,6 +1,7 @@
 package com.github.livingwithhippos.nullseek.ui.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,33 +10,47 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import org.koin.androidx.compose.koinViewModel
+
+private val PAGING_LOAD_SIZE_PRESETS = listOf(100, 500, 1000, 5000)
 
 @Composable
 fun SettingsScreen(
@@ -46,10 +61,13 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
+    val pagingLoadSize by viewModel.pagingLoadSize.collectAsStateWithLifecycle()
 
     SettingsScreen(
         downloadZipMode = downloadZipMode,
         onDownloadZipModeSelected = { viewModel.setDownloadZipMode(it) },
+        pagingLoadSize = pagingLoadSize,
+        onPagingLoadSizeSelected = { viewModel.setPagingLoadSize(it) },
         onNavigateToExternalServices = onNavigateToExternalServices,
         modifier = modifier,
     )
@@ -60,8 +78,17 @@ fun SettingsScreen(
     downloadZipMode: DownloadZipMode,
     onDownloadZipModeSelected: (DownloadZipMode) -> Unit,
     modifier: Modifier = Modifier,
+    pagingLoadSize: Int = DEFAULT_PAGING_LOAD_SIZE,
+    onPagingLoadSizeSelected: (Int) -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
 ) {
+    val focusManager = LocalFocusManager.current
+    var pageSizeInput by rememberSaveable { mutableStateOf(pagingLoadSize.toString()) }
+
+    LaunchedEffect(pagingLoadSize) {
+        pageSizeInput = pagingLoadSize.toString()
+    }
+
     Column(
         modifier =
             modifier
@@ -157,6 +184,76 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.paging_load_size_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = stringResource(id = R.string.paging_load_size_summary),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        PAGING_LOAD_SIZE_PRESETS.forEach { preset ->
+                            FilterChip(
+                                selected = pagingLoadSize == preset,
+                                onClick = {
+                                    pageSizeInput = preset.toString()
+                                    onPagingLoadSizeSelected(preset)
+                                },
+                                label = { Text(text = preset.toString()) },
+                            )
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = pageSizeInput,
+                        onValueChange = { newValue ->
+                            val filtered = newValue.filter { it.isDigit() }
+                            pageSizeInput = filtered
+                            filtered.toIntOrNull()?.takeIf { it > 0 }?.let { validSize ->
+                                onPagingLoadSizeSelected(validSize)
+                            }
+                        },
+                        label = { Text(text = stringResource(id = R.string.paging_load_size_label)) },
+                        singleLine = true,
+                        keyboardOptions =
+                            KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done,
+                            ),
+                        keyboardActions =
+                            KeyboardActions(
+                                onDone = {
+                                    val parsed = pageSizeInput.toIntOrNull()?.takeIf { it > 0 }
+                                    if (parsed != null) {
+                                        onPagingLoadSizeSelected(parsed)
+                                    } else {
+                                        pageSizeInput = pagingLoadSize.toString()
+                                    }
+                                    focusManager.clearFocus()
+                                },
+                            ),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
         }
     }
 }
@@ -198,6 +295,8 @@ fun SettingsScreenPreview() {
             SettingsScreen(
                 downloadZipMode = DownloadZipMode.ASK,
                 onDownloadZipModeSelected = {},
+                pagingLoadSize = DEFAULT_PAGING_LOAD_SIZE,
+                onPagingLoadSizeSelected = {},
             )
         }
     }

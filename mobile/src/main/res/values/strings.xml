@@ -217,4 +217,7 @@
     <string name="file_type_archive">Archive</string>
     <string name="file_type_subtitle">Subtitle</string>
     <string name="file_type_executable">Executable</string>
+    <string name="paging_load_size_title">List page load size</string>
+    <string name="paging_load_size_summary">Number of items fetched per page for Torrents, Web, and Usenet lists. Larger values may result in slower loading times.</string>
+    <string name="paging_load_size_label">Items per page</string>
 </resources>

@@ -9,7 +9,7 @@ import logcat.logcat
 
 class WebPagingSource(
     val client: TorboxClient,
-    val pageSize: Int = 100,
+    val pageSize: Int = DEFAULT_PAGING_LOAD_SIZE,
 ) : PagingSource<Int, WebDownloadDto>() {
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, WebDownloadDto> {
         try {

@@ -2,6 +2,7 @@ package com.github.livingwithhippos.nullseek.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadPreferencesRepository
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,9 +22,23 @@ class SettingsViewModel(
             initialValue = DownloadZipMode.ASK,
         )
 
+    val pagingLoadSize: StateFlow<Int> =
+        downloadPreferencesRepository.pagingLoadSize.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = DEFAULT_PAGING_LOAD_SIZE,
+        )
+
     fun setDownloadZipMode(mode: DownloadZipMode) {
         viewModelScope.launch {
             downloadPreferencesRepository.setDownloadZipMode(mode)
         }
     }
+
+    fun setPagingLoadSize(size: Int) {
+        viewModelScope.launch {
+            downloadPreferencesRepository.setPagingLoadSize(size)
+        }
+    }
 }
+
