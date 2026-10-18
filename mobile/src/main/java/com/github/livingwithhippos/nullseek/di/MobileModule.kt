@@ -16,6 +16,7 @@ import com.github.livingwithhippos.nullseek.ui.lists.usenet.UsenetDetailViewMode
 import com.github.livingwithhippos.nullseek.ui.lists.web.WebDownloadDetailViewModel
 import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadViewModel
 import com.github.livingwithhippos.nullseek.ui.providers.ProvidersViewModel
+import com.github.livingwithhippos.nullseek.ui.search.SearchViewModel
 import com.github.livingwithhippos.nullseek.ui.settings.SettingsViewModel
 import com.github.livingwithhippos.nullseek.ui.user.UserViewModel
 import okhttp3.OkHttpClient
@@ -37,6 +38,7 @@ val viewModelMobileModule =
         viewModel<ExternalServicesViewModel>()
         viewModel<IndexersViewModel>()
         viewModel<ProvidersViewModel>()
+        viewModel<SearchViewModel>()
     }
 
 val repositoryMobileModule =

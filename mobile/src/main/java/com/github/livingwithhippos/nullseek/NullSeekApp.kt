@@ -178,7 +178,14 @@ private fun NullNavHost(
         }
         composable<Route.Search> {
             SearchScreen(
-                contentType = contentType, navigationType = navigationType, uiState = uiState
+                contentType = contentType,
+                navigationType = navigationType,
+                uiState = uiState,
+                onNewDownload = showNewDownload,
+                showSettings = showSettings,
+                onNavigateToExternalServices = {
+                    navController.navigate(Route.ExternalServices)
+                },
             )
         }
         composable<Route.Settings> {

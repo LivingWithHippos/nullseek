@@ -258,4 +258,25 @@
     <string name="find_in_list_previous">Previous match</string>
     <string name="find_in_list_next">Next match</string>
     <string name="find_in_list_clear">Clear search</string>
+    <string name="search_hint">Search torrents</string>
+    <string name="search_clear">Clear</string>
+    <string name="search_action">Search</string>
+    <string name="search_options">Search options</string>
+    <string name="search_prompt">Enter a query to search your indexers</string>
+    <plurals name="search_active_indexers">
+        <item quantity="one">%d active indexer</item>
+        <item quantity="other">%d active indexers</item>
+    </plurals>
+    <string name="search_no_indexers">No indexers enabled. Add or enable Jackett/Prowlarr in External services</string>
+    <string name="search_open_external_services">External services</string>
+    <string name="search_sort_by">Sort by</string>
+    <string name="search_sort_relevance">Relevance</string>
+    <string name="search_sort_size">Size</string>
+    <string name="search_sort_seeders">Seeders</string>
+    <string name="search_sort_peers">Peers</string>
+    <string name="search_sort_age">Age</string>
+    <string name="search_sort_name">Name</string>
+    <string name="search_order_ascending">Ascending</string>
+    <string name="search_order_descending">Descending</string>
+    <string name="search_done">Done</string>
 </resources>
