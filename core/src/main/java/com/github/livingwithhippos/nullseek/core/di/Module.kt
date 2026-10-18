@@ -8,9 +8,12 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room3.Room
 import com.github.livingwithhippos.nullseek.core.data.database.NullDatabase
 import com.github.livingwithhippos.nullseek.core.data.database.dao.ExternalServiceDao
+import com.github.livingwithhippos.nullseek.core.data.database.dao.IndexerDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.NullProviderDao
 import com.github.livingwithhippos.nullseek.core.data.repository.ExternalServiceRepository
 import com.github.livingwithhippos.nullseek.core.data.repository.ExternalServiceRepositoryImpl
+import com.github.livingwithhippos.nullseek.core.data.repository.IndexerRepository
+import com.github.livingwithhippos.nullseek.core.data.repository.IndexerRepositoryImpl
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepositoryImpl
 import com.github.livingwithhippos.torbox.client.TorboxClient
@@ -44,6 +47,10 @@ private fun providerDao(db: NullDatabase): NullProviderDao = db.provider()
 
 private fun externalServiceDao(db: NullDatabase): ExternalServiceDao = db.externalService()
 
+private fun indexerDao(db: NullDatabase): IndexerDao = db.indexer()
+
+private fun indexerRepository(dao: IndexerDao): IndexerRepository = IndexerRepositoryImpl(dao)
+
 private fun providerRepository(dao: NullProviderDao): NullProviderRepository = NullProviderRepositoryImpl(dao)
 
 private fun externalServiceRepository(dao: ExternalServiceDao): ExternalServiceRepository = ExternalServiceRepositoryImpl(dao)
@@ -66,6 +73,10 @@ private val storageModule =
         single { create(::externalServiceDao) }
 
         single { create(::externalServiceRepository) }
+
+        single { create(::indexerDao) }
+
+        single { create(::indexerRepository) }
     }
 
 fun appModule(debug: Boolean) =

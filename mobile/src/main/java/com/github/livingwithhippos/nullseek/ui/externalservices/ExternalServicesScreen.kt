@@ -72,6 +72,7 @@ import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceType
+import com.github.livingwithhippos.nullseek.data.model.Indexer
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
@@ -107,10 +108,13 @@ fun ExternalServicesScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ExternalServicesViewModel = koinViewModel(),
+    indexersViewModel: IndexersViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
     val services by viewModel.services.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val indexers by indexersViewModel.indexers.collectAsStateWithLifecycle()
+    val indexersState by indexersViewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var hasPermission by remember { mutableStateOf(hasLocalNetworkPermission(context)) }
@@ -128,6 +132,15 @@ fun ExternalServicesScreen(
     var serviceToEdit by remember { mutableStateOf<ExternalService?>(null) }
     var isAddingService by remember { mutableStateOf(false) }
     var serviceToDelete by remember { mutableStateOf<ExternalService?>(null) }
+    var isAddingIndexer by remember { mutableStateOf(false) }
+    var indexerToEdit by remember { mutableStateOf<Indexer?>(null) }
+    var indexerToDelete by remember { mutableStateOf<Indexer?>(null) }
+
+    LaunchedEffect(Unit) {
+        indexersViewModel.events.collect { event ->
+            if (event is ExternalServicesEvent.ShowMessage) snackbarHostState.showSnackbar(event.message)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -262,29 +275,52 @@ fun ExternalServicesScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Indexers Coming Soon Section
-                OutlinedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = "File Indexers (Jackett & Prowlarr)",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = "Integration for searching and seeking torrent and usenet releases will be available soon.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+                IndexersSection(
+                    indexers = indexers,
+                    testingIndexerId = indexersState.testingIndexerId,
+                    onAdd = { isAddingIndexer = true },
+                    onToggleActive = { indexer, active -> indexersViewModel.setActive(indexer, active) },
+                    onTest = { indexersViewModel.testConnection(it) },
+                    onEdit = { indexerToEdit = it },
+                    onDelete = { indexerToDelete = it },
+                )
             }
         }
+    }
+
+    if (isAddingIndexer || indexerToEdit != null) {
+        IndexerEditDialog(
+            initialIndexer = indexerToEdit,
+            isTesting = indexersState.isTestingInDialog,
+            testResult = indexersState.dialogTestResult,
+            onTest = { indexersViewModel.testDialogConnection(it) },
+            onDismiss = {
+                isAddingIndexer = false
+                indexerToEdit = null
+                indexersViewModel.clearDialogTestResult()
+            },
+            onSave = { indexer ->
+                if (indexer.id == 0L) {
+                    indexersViewModel.addIndexer(indexer)
+                } else {
+                    indexersViewModel.updateIndexer(indexer)
+                }
+                isAddingIndexer = false
+                indexerToEdit = null
+                indexersViewModel.clearDialogTestResult()
+            },
+        )
+    }
+
+    indexerToDelete?.let { indexer ->
+        IndexerDeleteDialog(
+            indexer = indexer,
+            onConfirm = {
+                indexersViewModel.deleteIndexer(indexer)
+                indexerToDelete = null
+            },
+            onDismiss = { indexerToDelete = null },
+        )
     }
 
     if (isAddingService) {

@@ -2,10 +2,13 @@ package com.github.livingwithhippos.nullseek.di
 
 import com.github.livingwithhippos.nullseek.NullRootViewModel
 import com.github.livingwithhippos.nullseek.NullViewModel
+import com.github.livingwithhippos.nullseek.data.remote.IndexerRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.KodiRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.VlcRemoteClient
 import com.github.livingwithhippos.nullseek.data.repository.DownloadPreferencesRepository
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
+import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
+import com.github.livingwithhippos.nullseek.ui.externalservices.IndexersViewModel
 import com.github.livingwithhippos.nullseek.ui.externalservices.ExternalServicesViewModel
 import com.github.livingwithhippos.nullseek.ui.lists.ListsViewModel
 import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentDetailViewModel
@@ -32,6 +35,7 @@ val viewModelMobileModule =
         viewModel<UsenetDetailViewModel>()
         viewModel<SettingsViewModel>()
         viewModel<ExternalServicesViewModel>()
+        viewModel<IndexersViewModel>()
         viewModel<ProvidersViewModel>()
     }
 
@@ -47,6 +51,8 @@ val repositoryMobileModule =
         single { KodiRemoteClient(get()) }
         single { VlcRemoteClient(get()) }
         single { ExternalServicesRepository(get(), get(), get()) }
+        single { IndexerRemoteClient(get()) }
+        single { IndexersRepository(get(), get()) }
         single { DownloadPreferencesRepository(get()) }
     }
 

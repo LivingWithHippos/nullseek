@@ -163,6 +163,17 @@
     <string name="download_option_zip_non_media_caption">Video, audio and subtitles stay uncompressed. Downloads with multiple files are always zipped.</string>
     <string name="download_zip_preference_zip_non_media">Zip only non-media files</string>
     <string name="external_services_title">External Services</string>
+    <string name="indexers_title">Indexers</string>
+    <string name="indexers_subtitle">Jackett and Prowlarr connections</string>
+    <string name="indexers_empty">No indexers configured yet.</string>
+    <string name="indexers_empty_hint">Tap \"Add\" to configure Jackett or Prowlarr.</string>
+    <string name="indexers_dialog_add_title">Add Indexer</string>
+    <string name="indexers_dialog_edit_title">Edit Indexer</string>
+    <string name="indexers_name_hint">e.g. Home Jackett</string>
+    <string name="indexers_api_token_label">API token</string>
+    <string name="indexers_active_label">Active</string>
+    <string name="indexers_delete_confirm_title">Delete Indexer</string>
+    <string name="indexers_delete_confirm_message">Are you sure you want to delete %1$s indexer \"%2$s\"?</string>
     <string name="external_services_summary">Manage remote media players (Kodi, VLC) and file indexers</string>
     <string name="external_services_media_players_title">Media Players</string>
     <string name="external_services_add_player">Add Media Player</string>
