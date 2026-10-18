@@ -100,9 +100,10 @@ fun NewDownloadScreen(
     navigationType: NullNavigationType,
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit = {},
+    initialLinks: String = "",
     viewModel: NewDownloadViewModel = koinViewModel()
 ) {
-    var linkText by rememberSaveable { mutableStateOf("") }
+    var linkText by rememberSaveable(initialLinks) { mutableStateOf(initialLinks) }
     var password by rememberSaveable { mutableStateOf("") }
 
     var advancedExpanded by rememberSaveable { mutableStateOf(false) }

@@ -289,4 +289,11 @@
     <string name="search_result_seeders_peers">%1$d seeders · %2$d peers</string>
     <string name="search_result_age_days">%1$d d</string>
     <string name="search_result_age_today">Today</string>
+    <string name="search_detail_back">Back to results</string>
+    <string name="search_detail_published">Published: %1$s</string>
+    <string name="search_detail_link">Link</string>
+    <string name="search_detail_copy_link">Copy link</string>
+    <string name="search_detail_link_copied">Link copied</string>
+    <string name="search_detail_open_info">Open info page</string>
+    <string name="search_detail_download">Download</string>
 </resources>

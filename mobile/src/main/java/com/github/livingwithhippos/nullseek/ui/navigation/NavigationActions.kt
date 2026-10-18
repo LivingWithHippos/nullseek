@@ -26,8 +26,9 @@ sealed interface Route {
     @Serializable
     data object ManageProviders : Route
 
+    /** [links] optionally prefills the links field. */
     @Serializable
-    data object NewDownload : Route
+    data class NewDownload(val links: String? = null) : Route
 }
 
 data class TopLevelDestination(
@@ -92,7 +93,7 @@ val SETTINGS_DESTINATION =
 
 val NEW_DOWNLOAD_DESTINATION =
     TopLevelDestination(
-        route = Route.NewDownload,
+        route = Route.NewDownload(),
         selectedIcon = R.drawable.ic_add,
         unselectedIcon = R.drawable.ic_add,
         iconTextId = R.string.new_download,

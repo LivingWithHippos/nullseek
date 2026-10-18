@@ -73,13 +73,19 @@ fun SearchScreen(
     navigationType: NullNavigationType,
     modifier: Modifier = Modifier,
     onNewDownload: () -> Unit = {},
+    onDownload: (link: String) -> Unit = {},
     showSettings: () -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
     viewModel: SearchViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val selected by viewModel.selectedResult.collectAsStateWithLifecycle()
     SearchContent(
         state = state,
+        selectedResult = selected,
+        onResultClick = viewModel::selectResult,
+        onCloseDetails = viewModel::closeDetails,
+        onDownload = onDownload,
         navigationType = navigationType,
         modifier = modifier,
         onSearch = viewModel::onSearch,
@@ -105,6 +111,10 @@ fun SearchContent(
     onNewDownload: () -> Unit = {},
     showSettings: () -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
+    selectedResult: SearchResult? = null,
+    onResultClick: (SearchResult) -> Unit = {},
+    onCloseDetails: () -> Unit = {},
+    onDownload: (link: String) -> Unit = {},
     initialSheetVisible: Boolean = false,
 ) {
     var showSheet by rememberSaveable { mutableStateOf(initialSheetVisible) }
@@ -154,6 +164,16 @@ fun SearchContent(
             )
         }
 
+    if (selectedResult != null) {
+        SearchResultDetailScreen(
+            result = selectedResult,
+            onClose = onCloseDetails,
+            onDownload = onDownload,
+            modifier = modifier,
+        )
+        return
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
@@ -195,7 +215,7 @@ fun SearchContent(
             }
 
             if (state.hasActiveIndexers && state.status != SearchStatus.Idle) {
-                SearchResultsSection(state = state, onDismissErrors = onDismissErrors)
+                SearchResultsSection(state = state, onDismissErrors = onDismissErrors, onResultClick = onResultClick)
             } else {
                 Column(
                     modifier = Modifier
@@ -250,6 +270,7 @@ fun SearchContent(
 private fun SearchResultsSection(
     state: SearchUiState,
     onDismissErrors: () -> Unit,
+    onResultClick: (SearchResult) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         val status = state.status
@@ -302,14 +323,14 @@ private fun SearchResultsSection(
                 ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(state.results) { SearchResultCard(it) }
+                items(state.results) { SearchResultCard(it, onClick = { onResultClick(it) }) }
             }
         }
     }
 }
 
 @Composable
-private fun ageText(publishedAt: Long?): String? {
+internal fun ageText(publishedAt: Long?): String? {
     if (publishedAt == null) return null
     val days = ((System.currentTimeMillis() - publishedAt) / 86_400_000L).toInt()
     return if (days <= 0) stringResource(R.string.search_result_age_today)
@@ -320,8 +341,9 @@ private fun ageText(publishedAt: Long?): String? {
 fun SearchResultCard(
     result: SearchResult,
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
+    Card(onClick = onClick, modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 text = result.title,

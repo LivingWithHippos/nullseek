@@ -14,6 +14,12 @@ data class SearchResult(
     val categories: List<String> = emptyList(),
 )
 
+fun SearchResult.hasDownloadLink(): Boolean = !magnetLink.isNullOrBlank() || !downloadLink.isNullOrBlank()
+
+/** The magnet link if present, otherwise the torrent download link. */
+fun SearchResult.preferredLink(): String? =
+    magnetLink?.takeIf { it.isNotBlank() } ?: downloadLink?.takeIf { it.isNotBlank() }
+
 /** Progress of a single indexer during a search. */
 sealed interface IndexerSearchOutcome {
     val indexer: Indexer

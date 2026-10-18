@@ -18,6 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.ui.externalservices.ExternalServicesScreen
 import com.github.livingwithhippos.nullseek.ui.home.HomeScreen
@@ -182,6 +183,7 @@ private fun NullNavHost(
                 navigationType = navigationType,
                 uiState = uiState,
                 onNewDownload = showNewDownload,
+                onDownload = { link -> navController.navigate(Route.NewDownload(links = link)) },
                 showSettings = showSettings,
                 onNavigateToExternalServices = {
                     navController.navigate(Route.ExternalServices)
@@ -213,8 +215,10 @@ private fun NullNavHost(
                 onProvidersChanged = reloadProviders,
             )
         }
-        composable<Route.NewDownload> {
+        composable<Route.NewDownload> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.NewDownload>()
             NewDownloadScreen(
+                initialLinks = route.links.orEmpty(),
                 contentType = contentType,
                 navigationType = navigationType,
                 onNavigateBack = { navController.popBackStack() }

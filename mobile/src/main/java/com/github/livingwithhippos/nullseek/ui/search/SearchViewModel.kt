@@ -6,6 +6,7 @@ import com.github.livingwithhippos.nullseek.data.model.Indexer
 import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
 import com.github.livingwithhippos.nullseek.data.model.IndexerSearchOutcome
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
+import com.github.livingwithhippos.nullseek.data.model.hasDownloadLink
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.BufferOverflow
@@ -86,7 +87,7 @@ fun buildSearchState(
 ): SearchUiState {
     val order = progress.outcomes.sortedBy { o -> active.indexOfFirst { it.id == o.indexer.id }.let { if (it < 0) Int.MAX_VALUE else it } }
     val results =
-        order.filterIsInstance<IndexerSearchOutcome.Success>().flatMap { it.results }.applySort(sort)
+        order.filterIsInstance<IndexerSearchOutcome.Success>().flatMap { it.results }.filter { it.hasDownloadLink() }.applySort(sort)
     val failed = order.filterIsInstance<IndexerSearchOutcome.Failure>().map { it.indexer.name }
     val status =
         when {
@@ -104,6 +105,8 @@ class SearchViewModel(
 ) : ViewModel() {
     private val sort = MutableStateFlow(SearchSort())
     private val progress = MutableStateFlow(SearchProgress())
+    private val _selectedResult = MutableStateFlow<SearchResult?>(null)
+    val selectedResult: StateFlow<SearchResult?> = _selectedResult
     private val errorsDismissed = MutableStateFlow(false)
     private val submissions =
         MutableSharedFlow<String>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
@@ -145,6 +148,14 @@ class SearchViewModel(
     fun setSortOption(option: SearchSortOption) = sort.update { it.copy(option = option) }
 
     fun setAscending(ascending: Boolean) = sort.update { it.copy(ascending = ascending) }
+
+    fun selectResult(result: SearchResult) {
+        _selectedResult.value = result
+    }
+
+    fun closeDetails() {
+        _selectedResult.value = null
+    }
 
     fun dismissErrors() {
         errorsDismissed.value = true
