@@ -93,7 +93,7 @@ content:
       - attrs:
           disabled: true
         row:
-          - username
+          - null
           - null
       - attrs:
           disabled: false
@@ -102,3 +102,4 @@ content:
           - test
 ---
 ```
+%%EMPTY_LINE%%
