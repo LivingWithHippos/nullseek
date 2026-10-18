@@ -18,3 +18,4 @@ local.properties
 /extra/docker/prowlarr
 /extra/docker/jackett
 /extra/voiden/.voiden/history
+/extra/torbox/.voiden
