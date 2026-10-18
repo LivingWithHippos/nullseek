@@ -279,4 +279,14 @@
     <string name="search_order_ascending">Ascending</string>
     <string name="search_order_descending">Descending</string>
     <string name="search_done">Done</string>
+    <string name="search_no_results">No results</string>
+    <string name="search_progress">Searching… %1$d/%2$d indexers</string>
+    <plurals name="search_indexers_failed">
+        <item quantity="one">%1$d indexer failed: %2$s</item>
+        <item quantity="other">%1$d indexers failed: %2$s</item>
+    </plurals>
+    <string name="search_dismiss">Dismiss</string>
+    <string name="search_result_seeders_peers">%1$d seeders · %2$d peers</string>
+    <string name="search_result_age_days">%1$d d</string>
+    <string name="search_result_age_today">Today</string>
 </resources>

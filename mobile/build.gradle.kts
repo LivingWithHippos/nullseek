@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.datastore)
 
     implementation(libs.kotlin.serialization.core)
+    implementation(libs.kotlin.serialization.json)
     implementation(libs.kotlinx.datetime)
 
     implementation(libs.square.logcat)

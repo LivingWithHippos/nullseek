@@ -8,12 +8,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,22 +43,22 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.NullRootUiState
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.data.model.Indexer
+import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.data.model.IndexerType
+import com.github.livingwithhippos.nullseek.data.model.SearchResult
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.ExtendableFabMenu
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -79,12 +85,14 @@ fun SearchScreen(
         onSearch = viewModel::onSearch,
         onSortOption = viewModel::setSortOption,
         onAscending = viewModel::setAscending,
+        onDismissErrors = viewModel::dismissErrors,
         onNewDownload = onNewDownload,
         showSettings = showSettings,
         onNavigateToExternalServices = onNavigateToExternalServices,
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchContent(
     state: SearchUiState,
@@ -93,13 +101,12 @@ fun SearchContent(
     onSearch: (query: String) -> Unit = {},
     onSortOption: (SearchSortOption) -> Unit = {},
     onAscending: (Boolean) -> Unit = {},
+    onDismissErrors: () -> Unit = {},
     onNewDownload: () -> Unit = {},
     showSettings: () -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
     initialSheetVisible: Boolean = false,
 ) {
-    val keyboard = LocalSoftwareKeyboardController.current
-    val focusManager: FocusManager = LocalFocusManager.current
     var showSheet by rememberSaveable { mutableStateOf(initialSheetVisible) }
     val searchBarState = rememberSearchBarState()
     val textFieldState = rememberTextFieldState()
@@ -109,8 +116,6 @@ fun SearchContent(
     val startSearch = {
         scope.launch {
             searchBarState.animateToCollapsed()
-            focusManager.clearFocus()
-            keyboard?.hide()
             val query = textFieldState.text.toString().trim()
             if (query.isNotEmpty())
                 onSearch(query)
@@ -162,6 +167,10 @@ fun SearchContent(
                     state = searchBarState,
                     inputField = inputField,
                 )
+                ExpandedFullScreenSearchBar(
+                    state = searchBarState,
+                    inputField = inputField,
+                ) {}
                 IconButton(onClick = { showSheet = true }) {
                     Icon(
                         painter = painterResource(R.drawable.ic_tune),
@@ -185,30 +194,34 @@ fun SearchContent(
                 )
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                if (state.hasActiveIndexers) {
-                    Text(
-                        text = stringResource(R.string.search_prompt),
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.search_no_indexers),
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                    )
-                    Button(
-                        onClick = onNavigateToExternalServices,
-                        modifier = Modifier.padding(top = 16.dp),
-                    ) {
-                        Text(stringResource(R.string.search_open_external_services))
+            if (state.hasActiveIndexers && state.status != SearchStatus.Idle) {
+                SearchResultsSection(state = state, onDismissErrors = onDismissErrors)
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    if (state.hasActiveIndexers) {
+                        Text(
+                            text = stringResource(R.string.search_prompt),
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.search_no_indexers),
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                        )
+                        Button(
+                            onClick = onNavigateToExternalServices,
+                            modifier = Modifier.padding(top = 16.dp),
+                        ) {
+                            Text(stringResource(R.string.search_open_external_services))
+                        }
                     }
                 }
             }
@@ -230,6 +243,109 @@ fun SearchContent(
             onAscending = onAscending,
             onDismiss = { showSheet = false },
         )
+    }
+}
+
+@Composable
+private fun SearchResultsSection(
+    state: SearchUiState,
+    onDismissErrors: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        val status = state.status
+        if (status is SearchStatus.Loading) {
+            LinearProgressIndicator(
+                progress = { status.completed.toFloat() / status.total.coerceAtLeast(1) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                text = stringResource(R.string.search_progress, status.completed, status.total),
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+        }
+        if (state.failedIndexers.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.search_indexers_failed,
+                        state.failedIndexers.size,
+                        state.failedIndexers.size,
+                        state.failedIndexers.joinToString(", "),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onDismissErrors) { Text(stringResource(R.string.search_dismiss)) }
+            }
+        }
+        if (state.results.isEmpty()) {
+            if (status == SearchStatus.Results) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = stringResource(R.string.search_no_results),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    start = 12.dp, end = 12.dp, top = 8.dp, bottom = 88.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(state.results) { SearchResultCard(it) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ageText(publishedAt: Long?): String? {
+    if (publishedAt == null) return null
+    val days = ((System.currentTimeMillis() - publishedAt) / 86_400_000L).toInt()
+    return if (days <= 0) stringResource(R.string.search_result_age_today)
+    else stringResource(R.string.search_result_age_days, days)
+}
+
+@Composable
+fun SearchResultCard(
+    result: SearchResult,
+    modifier: Modifier = Modifier,
+) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = result.title,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(
+                modifier = Modifier.padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AssistChip(onClick = {}, label = { Text(result.indexerName) })
+                Text(convertToSize(result.sizeBytes), style = MaterialTheme.typography.labelMedium)
+                ageText(result.publishedAt)?.let {
+                    Text(it, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+            Text(
+                text = stringResource(R.string.search_result_seeders_peers, result.seeders, result.peers),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 
@@ -342,5 +458,58 @@ fun SearchScreenIndexersPreview() {
 fun SearchSortSheetPreview() {
     NullSeekTheme {
         SearchSortSheet(SearchSort(SearchSortOption.SEEDERS, false), {}, {}, {})
+    }
+}
+
+private val previewResults = listOf(
+    SearchResult("Ubuntu 24.04 Desktop amd64", "Jackett", 6_200_000_000, 120, 15, System.currentTimeMillis() - 3 * 86_400_000L),
+    SearchResult("Debian 12 netinst", "Prowlarr", 650_000_000, 80, 4, null),
+)
+
+@Preview
+@Composable
+fun SearchScreenResultsPreview() {
+    NullSeekTheme {
+        Surface {
+            SearchContent(
+                SearchUiState(
+                    activeIndexers = previewIndexers,
+                    status = SearchStatus.Results,
+                    results = previewResults,
+                    failedIndexers = listOf("Prowlarr"),
+                ),
+                NullNavigationType.BOTTOM_NAVIGATION,
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+fun SearchScreenLoadingPreview() {
+    NullSeekTheme {
+        Surface {
+            SearchContent(
+                SearchUiState(
+                    activeIndexers = previewIndexers,
+                    status = SearchStatus.Loading(1, 2),
+                    results = previewResults.take(1),
+                ),
+                NullNavigationType.BOTTOM_NAVIGATION,
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+fun SearchScreenEmptyPreview() {
+    NullSeekTheme {
+        Surface {
+            SearchContent(
+                SearchUiState(activeIndexers = previewIndexers, status = SearchStatus.Results),
+                NullNavigationType.BOTTOM_NAVIGATION,
+            )
+        }
     }
 }
