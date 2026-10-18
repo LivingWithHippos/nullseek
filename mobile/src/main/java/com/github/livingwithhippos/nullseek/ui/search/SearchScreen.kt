@@ -26,6 +26,7 @@ import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
@@ -291,9 +292,9 @@ private fun SearchResultsSection(
     Column(modifier = Modifier.fillMaxSize()) {
         val status = state.status
         if (status is SearchStatus.Loading) {
-            LinearProgressIndicator(
-                progress = { status.completed.toFloat() / status.total.coerceAtLeast(1) },
-                modifier = Modifier.fillMaxWidth(),
+            LinearWavyProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
             )
             Text(
                 text = stringResource(R.string.search_progress, status.completed, status.total),
