@@ -28,9 +28,19 @@ class PreferencesRepository(
     private val referralKey = booleanPreferencesKey("include_referral_in_browser")
     private val searchAutoAddDownloadKey = booleanPreferencesKey("search_auto_add_download")
 
+    private val searchSortOptionKey = stringPreferencesKey("search_sort_option")
+    private val searchSortAscendingKey = booleanPreferencesKey("search_sort_ascending")
+
     // null means the user has not chosen yet
     val includeReferral: Flow<Boolean?> =
         dataStore.data.map { preferences -> preferences[referralKey] }
+
+    /** Stored as the option name; unknown or missing values fall back to the default. */
+    val searchSortOption: Flow<String?> =
+        dataStore.data.map { preferences -> preferences[searchSortOptionKey] }
+
+    val searchSortAscending: Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[searchSortAscendingKey] ?: false }
 
     val searchAutoAddDownload: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[searchAutoAddDownloadKey] ?: false }
@@ -91,5 +101,13 @@ class PreferencesRepository(
                 preferences.remove(searchAutoAddDownloadKey)
             }
         }
+    }
+
+    suspend fun setSearchSortOption(name: String) {
+        dataStore.edit { preferences -> preferences[searchSortOptionKey] = name }
+    }
+
+    suspend fun setSearchSortAscending(ascending: Boolean) {
+        dataStore.edit { preferences -> preferences[searchSortAscendingKey] = ascending }
     }
 }

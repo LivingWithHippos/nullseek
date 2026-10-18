@@ -20,8 +20,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,9 +36,9 @@ import androidx.core.net.toUri
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
-import com.github.livingwithhippos.nullseek.data.model.preferredLink
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
+import com.github.livingwithhippos.nullseek.utils.shareText
 import java.text.DateFormat
 import java.util.Date
 
@@ -54,6 +54,7 @@ fun SearchResultDetailScreen(
     BackHandler(onBack = onClose)
     val context = LocalContext.current
     val link = result.infoUrl
+    val magnetLink = result.magnetLink
     val linkCopied = stringResource(R.string.search_detail_link_copied)
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -88,16 +89,21 @@ fun SearchResultDetailScreen(
                 AssistChip(onClick = {}, label = { Text(convertToSize(result.sizeBytes)) })
             }
             Text(
-                text = stringResource(R.string.search_result_seeders_peers, result.seeders, result.peers),
+                text = stringResource(
+                    R.string.search_result_seeders_peers,
+                    result.seeders,
+                    result.peers
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
             result.publishedAt?.let { published ->
-                val absolute = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(published))
+                val absolute = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+                    .format(Date(published))
                 val relative = ageText(published)
                 Text(
                     text = stringResource(R.string.search_detail_published, absolute) +
-                        (relative?.let { " ($it)" } ?: ""),
+                            (relative?.let { " ($it)" } ?: ""),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -111,7 +117,7 @@ fun SearchResultDetailScreen(
             }
             if (!link.isNullOrBlank()) {
                 Text(
-                    text = stringResource(R.string.search_detail_link),
+                    text = stringResource(R.string.source_link_title),
                     style = MaterialTheme.typography.labelLarge,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -145,10 +151,48 @@ fun SearchResultDetailScreen(
                     Text(stringResource(R.string.search_detail_open_info))
                 }
             }
+
+            if (!magnetLink.isNullOrBlank()) {
+                Text(
+                    text = stringResource(R.string.magnet_link),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = magnetLink,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(
+                        onClick = {
+                            shareText(context, magnetLink, result.title)
+                            Toast.makeText(context, linkCopied, Toast.LENGTH_SHORT).show()
+                        },
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_share),
+                            contentDescription = stringResource(R.string.share_source_link),
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            setClipboardText(context, magnetLink)
+                            Toast.makeText(context, linkCopied, Toast.LENGTH_SHORT).show()
+                        },
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_copy),
+                            contentDescription = stringResource(R.string.search_detail_copy_link),
+                        )
+                    }
+                }
+            }
         }
         Button(
-            onClick = { link?.let(onDownload) },
-            enabled = link != null && !downloadInProgress,
+            onClick = { magnetLink?.let(onDownload) },
+            enabled = magnetLink.isNullOrBlank().not() && !downloadInProgress,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
@@ -156,6 +200,7 @@ fun SearchResultDetailScreen(
             Text(stringResource(R.string.search_detail_download))
         }
     }
+
 }
 
 @Preview

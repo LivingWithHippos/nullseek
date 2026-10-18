@@ -125,7 +125,16 @@ class SearchViewModel(
     /** Emits true when the download was added, false on failure. */
     val downloadEvents: SharedFlow<Boolean> = _downloadEvents
 
-    private val sort = MutableStateFlow(SearchSort())
+    private val sort: StateFlow<SearchSort> =
+        combine(
+            preferencesRepository.searchSortOption,
+            preferencesRepository.searchSortAscending,
+        ) { option, ascending ->
+            SearchSort(
+                option = SearchSortOption.entries.firstOrNull { it.name == option } ?: SearchSortOption.RELEVANCE,
+                ascending = ascending,
+            )
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, SearchSort())
     private val progress = MutableStateFlow(SearchProgress())
     private val _selectedResult = MutableStateFlow<SearchResult?>(null)
     val selectedResult: StateFlow<SearchResult?> = _selectedResult
@@ -167,9 +176,13 @@ class SearchViewModel(
             }
         }
 
-    fun setSortOption(option: SearchSortOption) = sort.update { it.copy(option = option) }
+    fun setSortOption(option: SearchSortOption) {
+        viewModelScope.launch { preferencesRepository.setSearchSortOption(option.name) }
+    }
 
-    fun setAscending(ascending: Boolean) = sort.update { it.copy(ascending = ascending) }
+    fun setAscending(ascending: Boolean) {
+        viewModelScope.launch { preferencesRepository.setSearchSortAscending(ascending) }
+    }
 
     fun selectResult(result: SearchResult) {
         _selectedResult.value = result
