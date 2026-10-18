@@ -27,7 +27,7 @@ fun ExtendableFabMenu(
     showSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var expanded by rememberSaveable { mutableStateOf(true) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
 
     FloatingActionButtonMenu(
         expanded = expanded,
