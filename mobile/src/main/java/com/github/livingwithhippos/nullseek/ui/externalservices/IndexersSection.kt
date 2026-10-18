@@ -228,7 +228,7 @@ fun IndexerEditDialog(
     onDismiss: () -> Unit,
     onSave: (Indexer) -> Unit,
 ) {
-    val indexerId = initialIndexer?.id ?: 0L
+    var indexerId by rememberSaveable { mutableStateOf(initialIndexer?.id ?: 0L) }
     var name by rememberSaveable { mutableStateOf(initialIndexer?.name.orEmpty()) }
     var selectedType by rememberSaveable { mutableStateOf(initialIndexer?.type ?: IndexerType.JACKETT) }
     var address by rememberSaveable { mutableStateOf(initialIndexer?.address.orEmpty()) }
@@ -334,6 +334,24 @@ fun IndexerEditDialog(
                         Text(text = stringResource(id = R.string.testing_connection))
                     } else {
                         Text(text = stringResource(id = R.string.external_services_test_connection))
+                    }
+                }
+
+                if (indexerId != 0L) {
+                    OutlinedButton(
+                        onClick = {
+                            indexerId = 0L
+                            name = ""
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_copy),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(id = R.string.duplicate))
                     }
                 }
 

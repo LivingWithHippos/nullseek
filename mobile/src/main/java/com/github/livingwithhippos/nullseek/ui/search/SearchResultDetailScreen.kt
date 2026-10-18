@@ -49,10 +49,11 @@ fun SearchResultDetailScreen(
     onClose: () -> Unit,
     onDownload: (link: String) -> Unit,
     modifier: Modifier = Modifier,
+    downloadInProgress: Boolean = false,
 ) {
     BackHandler(onBack = onClose)
     val context = LocalContext.current
-    val link = result.preferredLink()
+    val link = result.infoUrl
     val linkCopied = stringResource(R.string.search_detail_link_copied)
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -108,7 +109,7 @@ fun SearchResultDetailScreen(
                     result.categories.forEach { SuggestionChip(onClick = {}, label = { Text(it) }) }
                 }
             }
-            if (link != null) {
+            if (!link.isNullOrBlank()) {
                 Text(
                     text = stringResource(R.string.search_detail_link),
                     style = MaterialTheme.typography.labelLarge,
@@ -133,12 +134,10 @@ fun SearchResultDetailScreen(
                         )
                     }
                 }
-            }
-            if (!result.infoUrl.isNullOrBlank()) {
                 OutlinedButton(
                     onClick = {
                         runCatching {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, result.infoUrl.toUri()))
+                            context.startActivity(Intent(Intent.ACTION_VIEW, link.toUri()))
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -149,7 +148,7 @@ fun SearchResultDetailScreen(
         }
         Button(
             onClick = { link?.let(onDownload) },
-            enabled = link != null,
+            enabled = link != null && !downloadInProgress,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),

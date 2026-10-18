@@ -2,6 +2,7 @@ package com.github.livingwithhippos.nullseek.data.repository
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -18,11 +19,21 @@ enum class DownloadZipMode {
     ZIP_NON_MEDIA,
 }
 
-class DownloadPreferencesRepository(
+class PreferencesRepository(
     private val dataStore: DataStore<Preferences>,
 ) {
     private val zipModeKey = stringPreferencesKey("download_zip_mode")
     private val pagingLoadSizeKey = intPreferencesKey("paging_load_size")
+
+    private val referralKey = booleanPreferencesKey("include_referral_in_browser")
+    private val searchAutoAddDownloadKey = booleanPreferencesKey("search_auto_add_download")
+
+    // null means the user has not chosen yet
+    val includeReferral: Flow<Boolean?> =
+        dataStore.data.map { preferences -> preferences[referralKey] }
+
+    val searchAutoAddDownload: Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[searchAutoAddDownloadKey] ?: false }
 
     val downloadZipMode: Flow<DownloadZipMode> =
         dataStore.data.map { preferences ->
@@ -60,6 +71,24 @@ class DownloadPreferencesRepository(
                 preferences.remove(pagingLoadSizeKey)
             } else {
                 preferences[pagingLoadSizeKey] = validSize
+            }
+        }
+    }
+
+    suspend fun setIncludeReferral(include: Boolean) {
+        dataStore.edit { preferences -> preferences[referralKey] = include }
+    }
+
+    suspend fun resetIncludeReferral() {
+        dataStore.edit { preferences -> preferences.remove(referralKey) }
+    }
+
+    suspend fun setSearchAutoAddDownload(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            if (enabled) {
+                preferences[searchAutoAddDownloadKey] = true
+            } else {
+                preferences.remove(searchAutoAddDownloadKey)
             }
         }
     }

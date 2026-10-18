@@ -21,6 +21,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Switch
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
@@ -63,12 +64,15 @@ fun SettingsScreen(
 ) {
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
     val pagingLoadSize by viewModel.pagingLoadSize.collectAsStateWithLifecycle()
+    val searchAutoAddDownload by viewModel.searchAutoAddDownload.collectAsStateWithLifecycle()
 
     SettingsScreen(
         downloadZipMode = downloadZipMode,
         onDownloadZipModeSelected = { viewModel.setDownloadZipMode(it) },
         pagingLoadSize = pagingLoadSize,
         onPagingLoadSizeSelected = { viewModel.setPagingLoadSize(it) },
+        searchAutoAddDownload = searchAutoAddDownload,
+        onSearchAutoAddDownloadChanged = { viewModel.setSearchAutoAddDownload(it) },
         onNavigateToExternalServices = onNavigateToExternalServices,
         onNavigateToProviders = onNavigateToProviders,
         modifier = modifier,
@@ -82,6 +86,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     pagingLoadSize: Int = DEFAULT_PAGING_LOAD_SIZE,
     onPagingLoadSizeSelected: (Int) -> Unit = {},
+    searchAutoAddDownload: Boolean = false,
+    onSearchAutoAddDownloadChanged: (Boolean) -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
 ) {
@@ -219,6 +225,39 @@ fun SettingsScreen(
                         title = stringResource(id = R.string.download_zip_preference_uncompressed),
                         selected = downloadZipMode == DownloadZipMode.UNCOMPRESSED,
                         onClick = { onDownloadZipModeSelected(DownloadZipMode.UNCOMPRESSED) },
+                    )
+                }
+            }
+
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.search_auto_add_download_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = stringResource(id = R.string.search_auto_add_download_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = searchAutoAddDownload,
+                        onCheckedChange = onSearchAutoAddDownloadChanged,
                     )
                 }
             }

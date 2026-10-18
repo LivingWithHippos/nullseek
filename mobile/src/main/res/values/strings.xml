@@ -217,6 +217,10 @@
     <string name="add">Add</string>
     <string name="cancel">Cancel</string>
     <string name="edit">Edit</string>
+    <string name="search_auto_add_download_title">Add download from search results</string>
+    <string name="search_auto_add_download_summary">Tapping a search result link adds the download immediately instead of opening the new download page</string>
+    <string name="search_download_added">Download added</string>
+    <string name="search_download_failed">Unable to add the download</string>
     <string name="duplicate">Duplicate</string>
     <string name="help">Help</string>
     <string name="save">Save</string>

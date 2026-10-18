@@ -6,7 +6,7 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.github.livingwithhippos.nullseek.data.repository.DownloadPreferencesRepository
+import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.nullseek.data.repository.TorrentsPagingSource
 import com.github.livingwithhippos.nullseek.data.repository.UsenetPagingSource
 import com.github.livingwithhippos.nullseek.data.repository.WebPagingSource
@@ -24,10 +24,10 @@ import org.koin.core.annotation.KoinViewModel
 @KoinViewModel
 class ListsViewModel(
     private val client: TorboxClient,
-    private val downloadPreferencesRepository: DownloadPreferencesRepository,
+    private val preferencesRepository: PreferencesRepository,
 ) : ViewModel() {
     val torrentsPagingFlow: Flow<PagingData<TorrentDto>> =
-        downloadPreferencesRepository.pagingLoadSize
+        preferencesRepository.pagingLoadSize
             .distinctUntilChanged()
             .flatMapLatest { pageSize ->
                 Pager(
@@ -43,7 +43,7 @@ class ListsViewModel(
             }.cachedIn(viewModelScope)
 
     val webPagingFlow: Flow<PagingData<WebDownloadDto>> =
-        downloadPreferencesRepository.pagingLoadSize
+        preferencesRepository.pagingLoadSize
             .distinctUntilChanged()
             .flatMapLatest { pageSize ->
                 Pager(
@@ -59,7 +59,7 @@ class ListsViewModel(
             }.cachedIn(viewModelScope)
 
     val usenetPagingFlow: Flow<PagingData<UsenetDownloadDto>> =
-        downloadPreferencesRepository.pagingLoadSize
+        preferencesRepository.pagingLoadSize
             .distinctUntilChanged()
             .flatMapLatest { pageSize ->
                 Pager(

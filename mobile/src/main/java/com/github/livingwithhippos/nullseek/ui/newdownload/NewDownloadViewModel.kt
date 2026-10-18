@@ -2,6 +2,8 @@ package com.github.livingwithhippos.nullseek.ui.newdownload
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
+import com.github.livingwithhippos.nullseek.data.repository.describe
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.network.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +26,7 @@ sealed interface UploadState {
 @KoinViewModel
 class NewDownloadViewModel(
     private val client: TorboxClient,
+    private val downloadCreator: DownloadCreator,
 ) : ViewModel() {
     private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
     val uploadState = _uploadState.asStateFlow()
@@ -49,51 +52,17 @@ class NewDownloadViewModel(
 
             for (link in links) {
                 val result =
-                    when {
-                        link.startsWith("magnet:", ignoreCase = true) -> {
-                            client.torrent.create(
-                                magnet = link,
-                                seed = seedingOption,
-                                allowZip = allowZipped
-                            )
-                        }
-
-                        link.endsWith(".nzb", ignoreCase = true) -> {
-                            client.usenet.create(
-                                link = link,
-                                password = password,
-                                postProcessing = usenetOption
-                            )
-                        }
-
-                        else -> {
-                            client.web.create(link = link, password = password)
-                        }
-                    }
+                    downloadCreator.createFromLink(
+                        link = link,
+                        password = password,
+                        seedingOption = seedingOption,
+                        usenetOption = usenetOption,
+                        allowZipped = allowZipped,
+                    )
 
                 if (result is ApiResult.Failure) {
                     failCount++
-                    when (result) {
-                        is ApiResult.Failure.Http -> {
-                            errorMessages.add("Link ($link): HTTP Error ${result.code}")
-                        }
-
-                        is ApiResult.Failure.Network -> {
-                            errorMessages.add("Link ($link): Network Error - ${result.cause}")
-                        }
-
-                        is ApiResult.Failure.BadRequest -> {
-                            errorMessages.add("Link ($link): Bad Request - ${result.cause}")
-                        }
-
-                        is ApiResult.Failure.NoSuccess<*> -> {
-                            errorMessages.add("Link ($link): No Success")
-                        }
-
-                        is ApiResult.Failure.Serialization -> {
-                            errorMessages.add("Link ($link): Serialization Error - ${result.cause}")
-                        }
-                    }
+                    errorMessages.add(result.describe("Link ($link)"))
                 } else {
                     successCount++
                 }

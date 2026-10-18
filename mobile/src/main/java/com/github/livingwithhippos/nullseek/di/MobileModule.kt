@@ -5,7 +5,8 @@ import com.github.livingwithhippos.nullseek.NullViewModel
 import com.github.livingwithhippos.nullseek.data.remote.IndexerRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.KodiRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.VlcRemoteClient
-import com.github.livingwithhippos.nullseek.data.repository.DownloadPreferencesRepository
+import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
+import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
 import com.github.livingwithhippos.nullseek.ui.externalservices.IndexersViewModel
@@ -55,7 +56,8 @@ val repositoryMobileModule =
         single { ExternalServicesRepository(get(), get(), get()) }
         single { IndexerRemoteClient(get()) }
         single { IndexersRepository(get(), get()) }
-        single { DownloadPreferencesRepository(get()) }
+        single { PreferencesRepository(get()) }
+        single { DownloadCreator(get()) }
     }
 
 fun mobileModule() =

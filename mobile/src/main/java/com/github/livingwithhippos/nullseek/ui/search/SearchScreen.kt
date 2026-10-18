@@ -1,5 +1,8 @@
 package com.github.livingwithhippos.nullseek.ui.search
 
+import android.widget.Toast
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,12 +83,23 @@ fun SearchScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val selected by viewModel.selectedResult.collectAsStateWithLifecycle()
+    val autoAdd by viewModel.autoAddDownload.collectAsStateWithLifecycle()
+    val adding by viewModel.addingDownload.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    LaunchedEffect(viewModel) {
+        viewModel.downloadEvents.collect { added ->
+            val message =
+                if (added) R.string.search_download_added else R.string.search_download_failed
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
     SearchContent(
         state = state,
         selectedResult = selected,
         onResultClick = viewModel::selectResult,
         onCloseDetails = viewModel::closeDetails,
-        onDownload = onDownload,
+        onDownload = { link -> if (autoAdd) viewModel.addDownload(link) else onDownload(link) },
+        downloadInProgress = adding,
         navigationType = navigationType,
         modifier = modifier,
         onSearch = viewModel::onSearch,
@@ -115,6 +129,7 @@ fun SearchContent(
     onResultClick: (SearchResult) -> Unit = {},
     onCloseDetails: () -> Unit = {},
     onDownload: (link: String) -> Unit = {},
+    downloadInProgress: Boolean = false,
     initialSheetVisible: Boolean = false,
 ) {
     var showSheet by rememberSaveable { mutableStateOf(initialSheetVisible) }
@@ -169,6 +184,7 @@ fun SearchContent(
             result = selectedResult,
             onClose = onCloseDetails,
             onDownload = onDownload,
+            downloadInProgress = downloadInProgress,
             modifier = modifier,
         )
         return

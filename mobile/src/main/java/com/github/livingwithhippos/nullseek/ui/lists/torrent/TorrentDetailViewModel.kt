@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
-import com.github.livingwithhippos.nullseek.data.repository.DownloadPreferencesRepository
+import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
@@ -60,7 +60,7 @@ data class TorrentDetailUiState(
 class TorrentDetailViewModel(
     private val client: TorboxClient,
     private val providerRepository: NullProviderRepository,
-    private val downloadPreferencesRepository: DownloadPreferencesRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val externalServicesRepository: ExternalServicesRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(TorrentDetailUiState())
@@ -146,7 +146,7 @@ class TorrentDetailViewModel(
         }
 
         viewModelScope.launch {
-            when (val mode = downloadPreferencesRepository.getDownloadZipMode()) {
+            when (val mode = preferencesRepository.getDownloadZipMode()) {
                 DownloadZipMode.ASK -> {
                     _uiState.value =
                         _uiState.value.copy(
@@ -173,7 +173,7 @@ class TorrentDetailViewModel(
         _uiState.value = _uiState.value.copy(pendingDownload = null)
         viewModelScope.launch {
             if (rememberChoice) {
-                downloadPreferencesRepository.setDownloadZipMode(mode)
+                preferencesRepository.setDownloadZipMode(mode)
             }
             requestDownloadLink(
                 fileId = pending.fileId,

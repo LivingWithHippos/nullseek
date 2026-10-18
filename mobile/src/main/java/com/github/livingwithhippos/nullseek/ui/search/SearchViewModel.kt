@@ -3,7 +3,12 @@ package com.github.livingwithhippos.nullseek.ui.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.data.model.Indexer
+import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
 import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
+import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
+import com.github.livingwithhippos.torbox.network.ApiResult
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.launch
 import com.github.livingwithhippos.nullseek.data.model.IndexerSearchOutcome
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
 import com.github.livingwithhippos.nullseek.data.model.hasDownloadLink
@@ -102,7 +107,24 @@ fun buildSearchState(
 @KoinViewModel
 class SearchViewModel(
     private val indexersRepository: IndexersRepository,
+    private val preferencesRepository: PreferencesRepository,
+    private val downloadCreator: DownloadCreator,
 ) : ViewModel() {
+    val autoAddDownload: StateFlow<Boolean> =
+        preferencesRepository.searchAutoAddDownload.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            false,
+        )
+
+    private val _addingDownload = MutableStateFlow(false)
+    val addingDownload: StateFlow<Boolean> = _addingDownload
+
+    private val _downloadEvents = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)
+
+    /** Emits true when the download was added, false on failure. */
+    val downloadEvents: SharedFlow<Boolean> = _downloadEvents
+
     private val sort = MutableStateFlow(SearchSort())
     private val progress = MutableStateFlow(SearchProgress())
     private val _selectedResult = MutableStateFlow<SearchResult?>(null)
@@ -155,6 +177,15 @@ class SearchViewModel(
 
     fun closeDetails() {
         _selectedResult.value = null
+    }
+
+    fun addDownload(link: String) {
+        if (!_addingDownload.compareAndSet(expect = false, update = true)) return
+        viewModelScope.launch {
+            val result = runCatching { downloadCreator.createFromLink(link) }.getOrNull()
+            _addingDownload.value = false
+            _downloadEvents.tryEmit(result != null && result !is ApiResult.Failure)
+        }
     }
 
     fun dismissErrors() {

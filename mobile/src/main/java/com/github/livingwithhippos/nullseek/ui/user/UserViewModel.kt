@@ -1,14 +1,10 @@
 package com.github.livingwithhippos.nullseek.ui.user
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
@@ -19,33 +15,21 @@ const val TORBOX_SUBSCRIPTION_URL = "https://torbox.app/subscription"
 
 @KoinViewModel
 class UserViewModel(
-    private val dataStore: DataStore<Preferences>,
+    private val preferencesRepository: PreferencesRepository,
 ) : ViewModel() {
-    private val referralKey = booleanPreferencesKey("include_referral_in_browser")
-
     val includeReferralPreference: StateFlow<Boolean?> =
-        dataStore.data
-            .map { preferences -> preferences[referralKey] }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = null,
-            )
+        preferencesRepository.includeReferral.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null,
+        )
 
     fun setReferralPreference(include: Boolean) {
-        viewModelScope.launch {
-            dataStore.edit { preferences ->
-                preferences[referralKey] = include
-            }
-        }
+        viewModelScope.launch { preferencesRepository.setIncludeReferral(include) }
     }
 
     fun resetReferralPreference() {
-        viewModelScope.launch {
-            dataStore.edit { preferences ->
-                preferences.remove(referralKey)
-            }
-        }
+        viewModelScope.launch { preferencesRepository.resetIncludeReferral() }
     }
 
     fun getTorboxSettingsUrl(): String = TORBOX_BASE_SETTINGS_URL
