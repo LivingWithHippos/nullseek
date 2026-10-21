@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.android.room)
     id("kotlin-parcelize")
+    kotlin("plugin.serialization")
 }
 
 android {
@@ -49,7 +50,11 @@ dependencies {
 
     implementation(libs.square.logcat)
 
+    implementation(libs.kotlin.serialization.core)
+    implementation(libs.kotlin.serialization.json)
+
     implementation(libs.jsoup)
+    implementation(libs.okhttp)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)

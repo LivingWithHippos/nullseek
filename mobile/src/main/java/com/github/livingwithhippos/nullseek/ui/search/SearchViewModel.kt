@@ -2,6 +2,7 @@ package com.github.livingwithhippos.nullseek.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.livingwithhippos.nullseek.core.data.stremio.AddonSearchHelper
 import com.github.livingwithhippos.nullseek.data.model.Indexer
 import com.github.livingwithhippos.nullseek.data.model.IndexerSearchOutcome
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
@@ -56,6 +57,7 @@ data class SearchProgress(
     val total: Int = 0,
     val outcomes: List<IndexerSearchOutcome> = emptyList(),
     val started: Boolean = false,
+    val addonResults: List<SearchResult> = emptyList(),
 ) {
     val completed: Int get() = outcomes.size
     val isLoading: Boolean get() = started && completed < total
@@ -99,6 +101,7 @@ fun buildSearchState(
             .filterIsInstance<IndexerSearchOutcome.Success>()
             .flatMap { it.results }
             .filter { it.hasDownloadLink() }
+            .plus(progress.addonResults) // Add Stremio addon results
             .applySort(sort)
     val failed = order.filterIsInstance<IndexerSearchOutcome.Failure>().map { it.indexer.name }
     val status =
@@ -116,6 +119,7 @@ class SearchViewModel(
     private val indexersRepository: IndexersRepository,
     private val preferencesRepository: PreferencesRepository,
     private val downloadCreator: DownloadCreator,
+    private val addonSearchHelper: AddonSearchHelper,
 ) : ViewModel() {
     val autoAddDownload: StateFlow<Boolean> =
         preferencesRepository.searchAutoAddDownload.stateIn(
@@ -177,6 +181,41 @@ class SearchViewModel(
             errorsDismissed.value = false
             var current = SearchProgress(query, active.size, emptyList(), started = true)
             emit(current)
+
+            // Search with Stremio addons if query contains IMDB ID
+            if (addonSearchHelper.canSearchWithAddons(query)) {
+                // todo: check why we get no magnets, only links
+                //  check if it can find things other than movies/imdb
+                //  check how to search imdb id to pass to this
+                //  check why they have no name
+                addonSearchHelper
+                    .searchWithAddons(query, "movie")
+                    .onSuccess { scrapedItems ->
+                        val addonResults =
+                            scrapedItems.mapNotNull { item ->
+                                val magnetLink = item.magnets.firstOrNull()
+                                val downloadLink = item.hosting.firstOrNull()
+                                if (magnetLink != null || downloadLink != null) {
+                                    SearchResult(
+                                        title = item.name,
+                                        indexerName = "Stremio Addons",
+                                        sizeBytes = item.parsedSize?.toLong() ?: 0L,
+                                        seeders = item.seeders?.toIntOrNull() ?: 0,
+                                        peers = item.leechers?.toIntOrNull() ?: 0,
+                                        publishedAt = null,
+                                        magnetLink = magnetLink,
+                                        downloadLink = downloadLink,
+                                        infoUrl = item.link,
+                                    )
+                                } else {
+                                    null
+                                }
+                            }
+                        current = current.copy(addonResults = addonResults)
+                        emit(current)
+                    }
+            }
+
             indexersRepository.search(active, query).collect { outcome ->
                 current = current.copy(outcomes = current.outcomes + outcome)
                 emit(current)

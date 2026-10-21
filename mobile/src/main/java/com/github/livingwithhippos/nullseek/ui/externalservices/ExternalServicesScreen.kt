@@ -76,6 +76,7 @@ import com.github.livingwithhippos.nullseek.data.model.Indexer
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.ui.addons.AddonsViewModel
 import com.github.livingwithhippos.nullseek.utils.openWebPage
 import org.koin.androidx.compose.koinViewModel
 
@@ -109,12 +110,15 @@ fun ExternalServicesScreen(
     modifier: Modifier = Modifier,
     viewModel: ExternalServicesViewModel = koinViewModel(),
     indexersViewModel: IndexersViewModel = koinViewModel(),
+    addonsViewModel: AddonsViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
     val services by viewModel.services.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val indexers by indexersViewModel.indexers.collectAsStateWithLifecycle()
     val indexersState by indexersViewModel.uiState.collectAsStateWithLifecycle()
+    val addons by addonsViewModel.addons.collectAsStateWithLifecycle()
+    val addonsUiState by addonsViewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var hasPermission by remember { mutableStateOf(hasLocalNetworkPermission(context)) }
@@ -135,6 +139,9 @@ fun ExternalServicesScreen(
     var isAddingIndexer by remember { mutableStateOf(false) }
     var indexerToEdit by remember { mutableStateOf<Indexer?>(null) }
     var indexerToDelete by remember { mutableStateOf<Indexer?>(null) }
+    var isAddingAddon by remember { mutableStateOf(false) }
+    var addonToEdit by remember { mutableStateOf<com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity?>(null) }
+    var addonToDelete by remember { mutableStateOf<com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity?>(null) }
 
     LaunchedEffect(Unit) {
         indexersViewModel.events.collect { event ->
@@ -148,6 +155,20 @@ fun ExternalServicesScreen(
                 is ExternalServicesEvent.ShowMessage ->
                     snackbarHostState.showSnackbar(event.message)
             }
+        }
+    }
+
+    LaunchedEffect(addonsUiState.error) {
+        addonsUiState.error?.let { error ->
+            snackbarHostState.showSnackbar(error)
+            addonsViewModel.clearError()
+        }
+    }
+
+    LaunchedEffect(addonsUiState.installSuccess) {
+        if (addonsUiState.installSuccess) {
+            snackbarHostState.showSnackbar("Addon installed successfully")
+            addonsViewModel.clearInstallSuccess()
         }
     }
 
@@ -284,6 +305,18 @@ fun ExternalServicesScreen(
                     onEdit = { indexerToEdit = it },
                     onDelete = { indexerToDelete = it },
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                AddonsSection(
+                    addons = addons,
+                    onAdd = { isAddingAddon = true },
+                    onToggleEnabled = { addon, enabled ->
+                        addonsViewModel.toggleAddonEnabled(addon.manifestUrl, enabled)
+                    },
+                    onEdit = { addonToEdit = it },
+                    onDelete = { addonToDelete = it },
+                )
             }
         }
     }
@@ -392,6 +425,33 @@ fun ExternalServicesScreen(
                     Text(text = stringResource(id = R.string.cancel))
                 }
             },
+        )
+    }
+
+    if (isAddingAddon || addonToEdit != null) {
+        AddonEditDialog(
+            initialAddon = addonToEdit,
+            isInstalling = addonsUiState.isLoading,
+            onDismiss = {
+                isAddingAddon = false
+                addonToEdit = null
+            },
+            onSave = { manifestUrl ->
+                addonsViewModel.installAddon(manifestUrl)
+                isAddingAddon = false
+                addonToEdit = null
+            },
+        )
+    }
+
+    addonToDelete?.let { addon ->
+        AddonDeleteDialog(
+            addon = addon,
+            onConfirm = {
+                addonsViewModel.uninstallAddon(addon.manifestUrl)
+                addonToDelete = null
+            },
+            onDismiss = { addonToDelete = null },
         )
     }
 }

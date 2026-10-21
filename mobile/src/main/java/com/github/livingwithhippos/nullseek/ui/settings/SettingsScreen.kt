@@ -90,6 +90,7 @@ fun SettingsScreen(
     onSearchAutoAddDownloadChanged: (Boolean) -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
+    onNavigateToAddons: () -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
     var pageSizeInput by rememberSaveable { mutableStateOf(pagingLoadSize.toString()) }
@@ -171,6 +172,41 @@ fun SettingsScreen(
                         )
                         Text(
                             text = stringResource(id = R.string.external_services_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_open_in_new),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+
+            OutlinedCard(
+                onClick = onNavigateToAddons,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = "Stremio Addons",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = "Install and manage Stremio addons for content discovery",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

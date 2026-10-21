@@ -6,21 +6,25 @@ import androidx.room3.RoomDatabase
 import com.github.livingwithhippos.nullseek.core.data.database.dao.ExternalServiceDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.IndexerDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.NullProviderDao
+import com.github.livingwithhippos.nullseek.core.data.database.dao.StremioAddonDao
 import com.github.livingwithhippos.nullseek.core.data.database.model.ExternalServiceEntity
 import com.github.livingwithhippos.nullseek.core.data.database.model.IndexerEntity
 import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
+import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity
 
 @Database(
     entities = [
         NullProvider::class,
         ExternalServiceEntity::class,
         IndexerEntity::class,
+        StremioAddonEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
+        AutoMigration(from = 3, to = 4),
     ],
 )
 abstract class NullDatabase : RoomDatabase() {
@@ -29,4 +33,6 @@ abstract class NullDatabase : RoomDatabase() {
     abstract fun externalService(): ExternalServiceDao
 
     abstract fun indexer(): IndexerDao
+
+    abstract fun stremioAddon(): StremioAddonDao
 }

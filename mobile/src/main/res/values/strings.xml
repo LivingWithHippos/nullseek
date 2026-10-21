@@ -300,4 +300,20 @@
     <string name="search_detail_link_copied">Link copied</string>
     <string name="search_detail_open_info">Open info page</string>
     <string name="search_detail_download">Download</string>
+
+    <!-- Stremio Addons -->
+    <string name="stremio_addons_title">Stremio Addons</string>
+    <string name="stremio_addons_description">Content discovery via Stremio addons</string>
+    <string name="stremio_addons_empty">No addons installed. Tap Add to install a Stremio addon.</string>
+    <string name="stremio_addon_add">Add Stremio Addon</string>
+    <string name="stremio_addon_edit">Edit Addon</string>
+    <string name="stremio_addon_url_hint">Enter the addon manifest URL</string>
+    <string name="manifest_url">Manifest URL</string>
+    <string name="enabled">Enabled</string>
+    <string name="disabled">Disabled</string>
+    <string name="installing">Installing…</string>
+    <string name="version_format">Version %s</string>
+    <string name="stremio_addon_delete_title">Delete Addon</string>
+    <string name="stremio_addon_delete_message">Are you sure you want to delete %s?</string>
+    <string name="delete">Delete</string>
 </resources>

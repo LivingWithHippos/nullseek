@@ -2,6 +2,7 @@ package com.github.livingwithhippos.nullseek.di
 
 import com.github.livingwithhippos.nullseek.NullRootViewModel
 import com.github.livingwithhippos.nullseek.NullViewModel
+import com.github.livingwithhippos.nullseek.core.data.stremio.AddonSearchHelper
 import com.github.livingwithhippos.nullseek.data.remote.IndexerRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.KodiRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.VlcRemoteClient
@@ -9,6 +10,7 @@ import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
+import com.github.livingwithhippos.nullseek.ui.addons.AddonsViewModel
 import com.github.livingwithhippos.nullseek.ui.externalservices.ExternalServicesViewModel
 import com.github.livingwithhippos.nullseek.ui.externalservices.IndexersViewModel
 import com.github.livingwithhippos.nullseek.ui.lists.ListsViewModel
@@ -40,6 +42,7 @@ val viewModelMobileModule =
         viewModel<IndexersViewModel>()
         viewModel<ProvidersViewModel>()
         viewModel<SearchViewModel>()
+        viewModel<AddonsViewModel>()
     }
 
 val repositoryMobileModule =
@@ -58,6 +61,7 @@ val repositoryMobileModule =
         single { IndexersRepository(get(), get()) }
         single { PreferencesRepository(get()) }
         single { DownloadCreator(get()) }
+        single { AddonSearchHelper(get()) }
     }
 
 fun mobileModule() =
