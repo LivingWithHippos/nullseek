@@ -50,8 +50,7 @@ class IndexersViewModel(
         }
     }
 
-    fun addIndexer(indexer: Indexer) =
-        launchCatching("Failed to add indexer", "Added ${indexer.name}") { repository.addIndexer(indexer) }
+    fun addIndexer(indexer: Indexer) = launchCatching("Failed to add indexer", "Added ${indexer.name}") { repository.addIndexer(indexer) }
 
     fun updateIndexer(indexer: Indexer) =
         launchCatching("Failed to update indexer", "Updated ${indexer.type.displayName} indexer ${indexer.name}") {

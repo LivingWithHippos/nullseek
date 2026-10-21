@@ -9,7 +9,9 @@ import kotlinx.serialization.Serializable
 import org.jsoup.Jsoup
 import org.jsoup.parser.Parser
 
-@Serializable data class Indexers(@SerialName("indexer") val indexers: List<Indexer>)
+@Serializable data class Indexers(
+    @SerialName("indexer") val indexers: List<Indexer>,
+)
 
 @Serializable
 data class Indexer(
@@ -23,7 +25,6 @@ data class Indexer(
 )
 
 fun parseIndexers(body: String): Indexers? {
-
     val document = Jsoup.parse(body, "", Parser.xmlParser())
     val indexers =
         document.directChild("indexers")

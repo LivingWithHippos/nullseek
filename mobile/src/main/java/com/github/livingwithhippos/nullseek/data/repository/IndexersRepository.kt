@@ -2,12 +2,12 @@ package com.github.livingwithhippos.nullseek.data.repository
 
 import com.github.livingwithhippos.nullseek.core.data.repository.IndexerRepository
 import com.github.livingwithhippos.nullseek.data.model.Indexer
-import com.github.livingwithhippos.nullseek.data.remote.IndexerRemoteClient
 import com.github.livingwithhippos.nullseek.data.model.IndexerSearchOutcome
+import com.github.livingwithhippos.nullseek.data.remote.IndexerRemoteClient
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 class IndexersRepository(
     private val coreRepository: IndexerRepository,

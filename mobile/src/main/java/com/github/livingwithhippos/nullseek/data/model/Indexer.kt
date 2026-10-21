@@ -11,8 +11,7 @@ enum class IndexerType(
     ;
 
     companion object {
-        fun fromString(value: String): IndexerType =
-            entries.firstOrNull { it.name.equals(value, ignoreCase = true) } ?: JACKETT
+        fun fromString(value: String): IndexerType = entries.firstOrNull { it.name.equals(value, ignoreCase = true) } ?: JACKETT
     }
 }
 

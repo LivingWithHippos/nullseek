@@ -52,7 +52,12 @@ data class JackettResultDto(
             magnetLink = magnetUri?.takeIf { it.isNotBlank() },
             downloadLink = link?.takeIf { it.isNotBlank() },
             infoUrl = details?.takeIf { it.isNotBlank() },
-            categories = categoryDesc?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty(),
+            categories =
+                categoryDesc
+                    ?.split(",")
+                    ?.map { it.trim() }
+                    ?.filter { it.isNotEmpty() }
+                    .orEmpty(),
         )
 }
 
@@ -93,7 +98,9 @@ internal fun parseJackettResults(
     body: String,
     fallbackIndexer: String,
 ): List<SearchResult> =
-    searchJson.decodeFromString<JackettResponseDto>(body).results
+    searchJson
+        .decodeFromString<JackettResponseDto>(body)
+        .results
         .filter { !it.title.isNullOrBlank() }
         .map { it.toSearchResult(fallbackIndexer) }
 
@@ -101,6 +108,7 @@ internal fun parseProwlarrResults(
     body: String,
     fallbackIndexer: String,
 ): List<SearchResult> =
-    searchJson.decodeFromString<List<ProwlarrResultDto>>(body)
+    searchJson
+        .decodeFromString<List<ProwlarrResultDto>>(body)
         .filter { !it.title.isNullOrBlank() }
         .map { it.toSearchResult(fallbackIndexer) }

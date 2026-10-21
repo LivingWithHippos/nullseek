@@ -10,12 +10,15 @@ import com.github.livingwithhippos.nullseek.core.utils.isTorrent
 import com.github.livingwithhippos.nullseek.core.utils.parseCommonSize
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import logcat.logcat
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.parser.Parser
-import logcat.logcat
 
-@Serializable data class SearchRSS(val version: String, val channel: Channel)
+@Serializable data class SearchRSS(
+    val version: String,
+    val channel: Channel,
+)
 
 @Serializable
 data class Channel(
@@ -43,9 +46,16 @@ data class Item(
     val torznabAttributes: List<TorznabAttribute> = emptyList(),
 )
 
-@Serializable data class Enclosure(val url: String, val length: String, val type: String)
+@Serializable data class Enclosure(
+    val url: String,
+    val length: String,
+    val type: String,
+)
 
-@Serializable data class TorznabAttribute(val name: String, val value: String)
+@Serializable data class TorznabAttribute(
+    val name: String,
+    val value: String,
+)
 
 fun parseSearchRss(body: String): SearchRSS {
     val document = Jsoup.parse(body, "", Parser.xmlParser())
@@ -109,14 +119,22 @@ fun rssToScrapedItems(rss: SearchRSS): Pair<List<ScrapedItem>, Int> {
                     .firstOrNull { it.name.equals("magneturl", ignoreCase = true) }
                     ?.value
             if (magnet == null) {
-                if (item.link.isMagnet()) magnet = item.link
-                else if (item.guid.isMagnet()) magnet = item.guid
-                else if (item.enclosure.url.isMagnet()) magnet = item.enclosure.url
+                if (item.link.isMagnet()) {
+                    magnet = item.link
+                } else if (item.guid.isMagnet()) {
+                    magnet = item.guid
+                } else if (item.enclosure.url.isMagnet()) {
+                    magnet = item.enclosure.url
+                }
             }
 
-            if (item.link.isTorrent()) torrent = item.link
-            else if (item.guid.isTorrent()) torrent = item.guid
-            else if (item.enclosure.url.isTorrent()) torrent = item.enclosure.url
+            if (item.link.isTorrent()) {
+                torrent = item.link
+            } else if (item.guid.isTorrent()) {
+                torrent = item.guid
+            } else if (item.enclosure.url.isTorrent()) {
+                torrent = item.enclosure.url
+            }
 
             if (magnet != null || torrent != null) {
                 scraped.add(
@@ -132,15 +150,18 @@ fun rssToScrapedItems(rss: SearchRSS): Pair<List<ScrapedItem>, Int> {
                                 .firstOrNull { it.name.equals("leechers", ignoreCase = true) }
                                 ?.value,
                         size =
-                            if (sizeLong !== null) convertToSize(sizeLong)
-                            else item.size,
+                            if (sizeLong !== null) {
+                                convertToSize(sizeLong)
+                            } else {
+                                item.size
+                            },
                         addedDate = item.pubDate,
                         parsedSize = parseCommonSize(item.size),
                         // todo: add better recognition of links
                         magnets = if (magnet != null) listOf(magnet) else emptyList(),
                         torrents = if (torrent != null) listOf(torrent) else emptyList(),
                         hosting = emptyList(),
-                    )
+                    ),
                 )
             }
         } catch (ex: Exception) {

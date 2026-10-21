@@ -35,7 +35,8 @@ class SearchSortTest {
         val i3 = Indexer(3, "Three", IndexerType.PROWLARR, "z")
         val progress =
             SearchProgress(
-                "q", 3,
+                "q",
+                3,
                 listOf(
                     IndexerSearchOutcome.Success(i2, listOf(c)),
                     IndexerSearchOutcome.Failure(i3, RuntimeException()),

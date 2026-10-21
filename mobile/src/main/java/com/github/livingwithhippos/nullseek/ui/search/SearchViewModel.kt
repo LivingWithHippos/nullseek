@@ -3,32 +3,32 @@ package com.github.livingwithhippos.nullseek.ui.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.data.model.Indexer
+import com.github.livingwithhippos.nullseek.data.model.IndexerSearchOutcome
+import com.github.livingwithhippos.nullseek.data.model.SearchResult
+import com.github.livingwithhippos.nullseek.data.model.hasDownloadLink
 import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
 import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.torbox.network.ApiResult
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.launch
-import com.github.livingwithhippos.nullseek.data.model.IndexerSearchOutcome
-import com.github.livingwithhippos.nullseek.data.model.SearchResult
-import com.github.livingwithhippos.nullseek.data.model.hasDownloadLink
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -42,7 +42,10 @@ data class SearchSort(
 sealed interface SearchStatus {
     data object Idle : SearchStatus
 
-    data class Loading(val completed: Int, val total: Int) : SearchStatus
+    data class Loading(
+        val completed: Int,
+        val total: Int,
+    ) : SearchStatus
 
     data object Results : SearchStatus
 }
@@ -92,7 +95,11 @@ fun buildSearchState(
 ): SearchUiState {
     val order = progress.outcomes.sortedBy { o -> active.indexOfFirst { it.id == o.indexer.id }.let { if (it < 0) Int.MAX_VALUE else it } }
     val results =
-        order.filterIsInstance<IndexerSearchOutcome.Success>().flatMap { it.results }.filter { it.hasDownloadLink() }.applySort(sort)
+        order
+            .filterIsInstance<IndexerSearchOutcome.Success>()
+            .flatMap { it.results }
+            .filter { it.hasDownloadLink() }
+            .applySort(sort)
     val failed = order.filterIsInstance<IndexerSearchOutcome.Failure>().map { it.indexer.name }
     val status =
         when {

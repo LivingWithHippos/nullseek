@@ -13,7 +13,6 @@ import java.util.regex.Pattern
 import kotlin.time.Clock
 import kotlin.time.Instant
 
-
 const val MAGNET_PATTERN: String = "magnet:\\?xt=urn:btih:([a-zA-Z0-9]{32,})"
 const val TORRENT_PATTERN: String = "https?://[^\\s]{7,}\\.torrent"
 
@@ -104,7 +103,6 @@ fun isDateNotInPast(datetime: String?): Boolean {
         }
     }
 }
-
 
 val kbPattern = "\\s*(\\d+\\.?\\d*)\\s*[kK]".toRegex()
 val mbPattern = "\\s*(\\d+\\.?\\d*)\\s*[mM]".toRegex()

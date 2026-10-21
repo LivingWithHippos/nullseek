@@ -24,13 +24,17 @@ class DownloadCreator(
         allowZipped: Boolean = true,
     ): ApiResult<*> =
         when (linkType(link)) {
-            LinkType.MAGNET ->
+            LinkType.MAGNET -> {
                 client.torrent.create(magnet = link, seed = seedingOption, allowZip = allowZipped)
+            }
 
-            LinkType.NZB ->
+            LinkType.NZB -> {
                 client.usenet.create(link = link, password = password, postProcessing = usenetOption)
+            }
 
-            LinkType.WEB -> client.web.create(link = link, password = password)
+            LinkType.WEB -> {
+                client.web.create(link = link, password = password)
+            }
         }
 
     companion object {

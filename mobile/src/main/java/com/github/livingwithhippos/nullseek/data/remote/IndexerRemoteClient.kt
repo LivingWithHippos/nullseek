@@ -38,17 +38,21 @@ class IndexerRemoteClient(
         when (type) {
             IndexerType.JACKETT -> {
                 val url =
-                    "${normalizeBaseUrl(address)}/api/v2.0/indexers/all/results/torznab/api".toHttpUrl().newBuilder()
+                    "${normalizeBaseUrl(address)}/api/v2.0/indexers/all/results/torznab/api"
+                        .toHttpUrl()
+                        .newBuilder()
                         .addQueryParameter("apikey", apiToken)
                         .build()
                 Request.Builder().url(url).build()
             }
 
-            IndexerType.PROWLARR ->
-                Request.Builder()
+            IndexerType.PROWLARR -> {
+                Request
+                    .Builder()
                     .url("${normalizeBaseUrl(address)}/api/v1/system/status")
                     .header("X-Api-Key", apiToken)
                     .build()
+            }
         }
 
     suspend fun testConnection(
@@ -72,7 +76,11 @@ class IndexerRemoteClient(
         }
 
     private val searchClient: OkHttpClient by lazy {
-        client.newBuilder().readTimeout(60, TimeUnit.SECONDS).callTimeout(90, TimeUnit.SECONDS).build()
+        client
+            .newBuilder()
+            .readTimeout(60, TimeUnit.SECONDS)
+            .callTimeout(90, TimeUnit.SECONDS)
+            .build()
     }
 
     private fun buildSearchRequest(
@@ -82,24 +90,32 @@ class IndexerRemoteClient(
         query: String,
     ): Request =
         when (type) {
-            IndexerType.JACKETT ->
-                Request.Builder()
+            IndexerType.JACKETT -> {
+                Request
+                    .Builder()
                     .url(
-                        "${normalizeBaseUrl(address)}/api/v2.0/indexers/all/results".toHttpUrl().newBuilder()
+                        "${normalizeBaseUrl(address)}/api/v2.0/indexers/all/results"
+                            .toHttpUrl()
+                            .newBuilder()
                             .addQueryParameter("apikey", apiToken)
                             .addQueryParameter("Query", query)
                             .build(),
                     ).build()
+            }
 
-            IndexerType.PROWLARR ->
-                Request.Builder()
+            IndexerType.PROWLARR -> {
+                Request
+                    .Builder()
                     .url(
-                        "${normalizeBaseUrl(address)}/api/v1/search".toHttpUrl().newBuilder()
+                        "${normalizeBaseUrl(address)}/api/v1/search"
+                            .toHttpUrl()
+                            .newBuilder()
                             .addQueryParameter("query", query)
                             .addQueryParameter("type", "search")
                             .build(),
                     ).header("X-Api-Key", apiToken)
                     .build()
+            }
         }
 
     private suspend fun Call.await(): Response =

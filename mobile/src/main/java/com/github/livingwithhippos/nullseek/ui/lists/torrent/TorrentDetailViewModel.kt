@@ -6,9 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
-import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
+import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.nullseek.utils.saveFileToPublicDownloads
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
@@ -83,12 +83,16 @@ class TorrentDetailViewModel(
             initialValue = emptyList(),
         )
 
-    fun playOnMedia(service: ExternalService, url: String, setAsDefault: Boolean = false) {
+    fun playOnMedia(
+        service: ExternalService,
+        url: String,
+        setAsDefault: Boolean = false,
+    ) {
         viewModelScope.launch {
             if (setAsDefault) {
                 externalServicesRepository.setDefault(
                     service.id,
-                    ExternalServiceCategory.MEDIA_PLAYER
+                    ExternalServiceCategory.MEDIA_PLAYER,
                 )
             }
             _events.emit(TorrentDetailEvent.ShowMessage("Sending to ${service.name}…"))
@@ -197,19 +201,30 @@ class TorrentDetailViewModel(
         fileName: String?,
     ): Boolean =
         when (mode) {
-            DownloadZipMode.ASK, DownloadZipMode.ZIP -> true
-            DownloadZipMode.UNCOMPRESSED -> false
+            DownloadZipMode.ASK, DownloadZipMode.ZIP -> {
+                true
+            }
+
+            DownloadZipMode.UNCOMPRESSED -> {
+                false
+            }
+
             DownloadZipMode.ZIP_NON_MEDIA -> {
-                val files = _uiState.value.torrent?.files.orEmpty()
+                val files =
+                    _uiState.value.torrent
+                        ?.files
+                        .orEmpty()
                 val target =
                     when {
                         fileId != null -> files.firstOrNull { it.id == fileId }
                         files.size == 1 -> files.first()
                         else -> null
                     }
-                fileId == null && target == null || !isStreamableOrSubtitle(
-                    target?.name ?: fileName.orEmpty(), target?.mimetype
-                )
+                target == null ||
+                    !isStreamableOrSubtitle(
+                        target.name,
+                        target.mimetype,
+                    )
             }
         }
 
@@ -252,9 +267,13 @@ class TorrentDetailViewModel(
                     if (zipLink) {
                         if (baseName.endsWith(
                                 ".zip",
-                                ignoreCase = true
+                                ignoreCase = true,
                             )
-                        ) baseName else "$baseName.zip"
+                        ) {
+                            baseName
+                        } else {
+                            "$baseName.zip"
+                        }
                     } else {
                         baseName
                     }
@@ -317,11 +336,12 @@ class TorrentDetailViewModel(
                             } else {
                                 "${torrent.name}.torrent"
                             }
-                        val savedUri = saveFileToPublicDownloads(
-                            context = context,
-                            fileName = fileName,
-                            bytes = result.bytes
-                        )
+                        val savedUri =
+                            saveFileToPublicDownloads(
+                                context = context,
+                                fileName = fileName,
+                                bytes = result.bytes,
+                            )
                         if (savedUri != null) {
                             _events.emit(TorrentDetailEvent.ShowMessage("Torrent saved to Downloads"))
                         } else {

@@ -76,7 +76,7 @@ class NewDownloadViewModel(
                                 fileBytes = bytes,
                                 fileName = name,
                                 seed = seedingOption,
-                                allowZip = allowZipped
+                                allowZip = allowZipped,
                             )
                         }
 
@@ -85,7 +85,7 @@ class NewDownloadViewModel(
                                 fileBytes = bytes,
                                 fileName = name,
                                 password = password,
-                                postProcessing = usenetOption
+                                postProcessing = usenetOption,
                             )
                         }
 

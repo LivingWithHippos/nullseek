@@ -28,7 +28,9 @@ sealed interface Route {
 
     /** [links] optionally prefills the links field. */
     @Serializable
-    data class NewDownload(val links: String? = null) : Route
+    data class NewDownload(
+        val links: String? = null,
+    ) : Route
 }
 
 data class TopLevelDestination(
@@ -104,5 +106,4 @@ val NEW_DOWNLOAD_DESTINATION =
  *
  * This is used to de-duplicate navigation events.
  */
-private fun NavBackStackEntry.lifecycleIsResumed() =
-    this.lifecycle.currentState == Lifecycle.State.RESUMED
+private fun NavBackStackEntry.lifecycleIsResumed() = this.lifecycle.currentState == Lifecycle.State.RESUMED

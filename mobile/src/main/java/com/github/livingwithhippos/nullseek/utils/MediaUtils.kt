@@ -128,18 +128,20 @@ private fun String.fileExtension(): String = substringAfterLast('.', "").lowerca
 fun isVideoFile(
     name: String,
     mimetype: String? = null,
-): Boolean = mimetype?.startsWith(
-    "video/",
-    ignoreCase = true
-) == true || name.fileExtension() in VIDEO_EXTENSIONS
+): Boolean =
+    mimetype?.startsWith(
+        "video/",
+        ignoreCase = true,
+    ) == true || name.fileExtension() in VIDEO_EXTENSIONS
 
 fun isAudioFile(
     name: String,
     mimetype: String? = null,
-): Boolean = mimetype?.startsWith(
-    "audio/",
-    ignoreCase = true
-) == true || name.fileExtension() in AUDIO_EXTENSIONS
+): Boolean =
+    mimetype?.startsWith(
+        "audio/",
+        ignoreCase = true,
+    ) == true || name.fileExtension() in AUDIO_EXTENSIONS
 
 fun isSubtitleFile(name: String): Boolean = name.fileExtension() in SUBTITLE_EXTENSIONS
 
@@ -148,39 +150,39 @@ fun isDocumentFile(
     mimetype: String? = null,
 ): Boolean =
     name.fileExtension() in DOCUMENT_EXTENSIONS ||
-            mimetype?.equals("application/pdf", ignoreCase = true) == true ||
-            mimetype?.startsWith("text/", ignoreCase = true) == true
+        mimetype?.equals("application/pdf", ignoreCase = true) == true ||
+        mimetype?.startsWith("text/", ignoreCase = true) == true
 
 fun isBookFile(
     name: String,
     mimetype: String? = null,
 ): Boolean =
     name.fileExtension() in BOOK_EXTENSIONS ||
-            mimetype?.equals("application/epub+zip", ignoreCase = true) == true ||
-            mimetype?.equals("application/x-mobipocket-ebook", ignoreCase = true) == true
+        mimetype?.equals("application/epub+zip", ignoreCase = true) == true ||
+        mimetype?.equals("application/x-mobipocket-ebook", ignoreCase = true) == true
 
 fun isArchiveFile(
     name: String,
     mimetype: String? = null,
 ): Boolean =
     name.fileExtension() in ARCHIVE_EXTENSIONS ||
-            mimetype?.equals("application/zip", ignoreCase = true) == true ||
-            mimetype?.equals("application/x-rar-compressed", ignoreCase = true) == true ||
-            mimetype?.equals("application/x-7z-compressed", ignoreCase = true) == true ||
-            mimetype?.equals("application/x-tar", ignoreCase = true) == true ||
-            mimetype?.equals("application/gzip", ignoreCase = true) == true
+        mimetype?.equals("application/zip", ignoreCase = true) == true ||
+        mimetype?.equals("application/x-rar-compressed", ignoreCase = true) == true ||
+        mimetype?.equals("application/x-7z-compressed", ignoreCase = true) == true ||
+        mimetype?.equals("application/x-tar", ignoreCase = true) == true ||
+        mimetype?.equals("application/gzip", ignoreCase = true) == true
 
 fun isExecutableFile(
     name: String,
     mimetype: String? = null,
 ): Boolean =
     name.fileExtension() in EXECUTABLE_EXTENSIONS ||
-            mimetype?.equals(
-                "application/vnd.android.package-archive",
-                ignoreCase = true
-            ) == true ||
-            mimetype?.equals("application/x-msdownload", ignoreCase = true) == true ||
-            mimetype?.equals("application/x-executable", ignoreCase = true) == true
+        mimetype?.equals(
+            "application/vnd.android.package-archive",
+            ignoreCase = true,
+        ) == true ||
+        mimetype?.equals("application/x-msdownload", ignoreCase = true) == true ||
+        mimetype?.equals("application/x-executable", ignoreCase = true) == true
 
 fun detectFileTypeCategory(
     name: String,

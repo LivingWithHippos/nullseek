@@ -21,8 +21,7 @@ enum class ExternalServiceType(
     ;
 
     companion object {
-        fun fromString(value: String): ExternalServiceType =
-            entries.firstOrNull { it.name.equals(value, ignoreCase = true) } ?: KODI
+        fun fromString(value: String): ExternalServiceType = entries.firstOrNull { it.name.equals(value, ignoreCase = true) } ?: KODI
     }
 }
 

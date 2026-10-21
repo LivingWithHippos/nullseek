@@ -24,10 +24,11 @@ fun saveFileToPublicDownloads(
                     put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
                     put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
                 }
-            val uri = context.contentResolver.insert(
-                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
-                contentValues
-            )
+            val uri =
+                context.contentResolver.insert(
+                    MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                    contentValues,
+                )
             if (uri != null) {
                 context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(bytes)

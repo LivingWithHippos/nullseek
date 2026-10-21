@@ -5,9 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
-import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
+import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.model.WebDownloadDto
@@ -86,7 +86,7 @@ class WebDownloadDetailViewModel(
             if (setAsDefault) {
                 externalServicesRepository.setDefault(
                     service.id,
-                    ExternalServiceCategory.MEDIA_PLAYER
+                    ExternalServiceCategory.MEDIA_PLAYER,
                 )
             }
             _events.emit(WebDownloadDetailEvent.ShowMessage("Sending to ${service.name}…"))
@@ -261,9 +261,13 @@ class WebDownloadDetailViewModel(
                     if (zipLink) {
                         if (baseName.endsWith(
                                 ".zip",
-                                ignoreCase = true
+                                ignoreCase = true,
                             )
-                        ) baseName else "$baseName.zip"
+                        ) {
+                            baseName
+                        } else {
+                            "$baseName.zip"
+                        }
                     } else {
                         baseName
                     }

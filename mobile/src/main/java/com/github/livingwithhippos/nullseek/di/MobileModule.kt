@@ -6,11 +6,11 @@ import com.github.livingwithhippos.nullseek.data.remote.IndexerRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.KodiRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.VlcRemoteClient
 import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
-import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
-import com.github.livingwithhippos.nullseek.ui.externalservices.IndexersViewModel
+import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.nullseek.ui.externalservices.ExternalServicesViewModel
+import com.github.livingwithhippos.nullseek.ui.externalservices.IndexersViewModel
 import com.github.livingwithhippos.nullseek.ui.lists.ListsViewModel
 import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentDetailViewModel
 import com.github.livingwithhippos.nullseek.ui.lists.usenet.UsenetDetailViewModel
