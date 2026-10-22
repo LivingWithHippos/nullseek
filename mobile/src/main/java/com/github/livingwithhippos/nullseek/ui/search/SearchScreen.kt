@@ -59,10 +59,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.NullRootUiState
 import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.Indexer
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.data.model.IndexerType
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
+import com.github.livingwithhippos.nullseek.data.model.isDirectStreamResult
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.ExtendableFabMenu
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -86,11 +88,18 @@ fun SearchScreen(
     val selected by viewModel.selectedResult.collectAsStateWithLifecycle()
     val autoAdd by viewModel.autoAddDownload.collectAsStateWithLifecycle()
     val adding by viewModel.addingDownload.collectAsStateWithLifecycle()
+    val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
+    val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
     val context = LocalContext.current
     LaunchedEffect(viewModel) {
         viewModel.downloadEvents.collect { added ->
             val message =
                 if (added) R.string.search_download_added else R.string.search_download_failed
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+    LaunchedEffect(viewModel) {
+        viewModel.playbackEvents.collect { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
@@ -101,6 +110,9 @@ fun SearchScreen(
         onCloseDetails = viewModel::closeDetails,
         onDownload = { link -> if (autoAdd) viewModel.addDownload(link) else onDownload(link) },
         downloadInProgress = adding,
+        defaultPlayer = defaultPlayer,
+        mediaPlayers = mediaPlayers,
+        onPlayMedia = viewModel::playOnMedia,
         navigationType = navigationType,
         modifier = modifier,
         onSearch = viewModel::onSearch,
@@ -131,6 +143,9 @@ fun SearchContent(
     onCloseDetails: () -> Unit = {},
     onDownload: (link: String) -> Unit = {},
     downloadInProgress: Boolean = false,
+    defaultPlayer: ExternalService? = null,
+    mediaPlayers: List<ExternalService> = emptyList(),
+    onPlayMedia: (ExternalService, String, Boolean) -> Unit = { _, _, _ -> },
     initialSheetVisible: Boolean = false,
 ) {
     var showSheet by rememberSaveable { mutableStateOf(initialSheetVisible) }
@@ -181,13 +196,25 @@ fun SearchContent(
         }
 
     if (selectedResult != null) {
-        SearchResultDetailScreen(
-            result = selectedResult,
-            onClose = onCloseDetails,
-            onDownload = onDownload,
-            downloadInProgress = downloadInProgress,
-            modifier = modifier,
-        )
+        if (selectedResult.isDirectStreamResult()) {
+            SearchStreamDetailScreen(
+                result = selectedResult,
+                onClose = onCloseDetails,
+                defaultPlayer = defaultPlayer,
+                mediaPlayers = mediaPlayers,
+                onPlayMedia = onPlayMedia,
+                onNavigateToExternalServices = onNavigateToExternalServices,
+                modifier = modifier,
+            )
+        } else {
+            SearchResultDetailScreen(
+                result = selectedResult,
+                onClose = onCloseDetails,
+                onDownload = onDownload,
+                downloadInProgress = downloadInProgress,
+                modifier = modifier,
+            )
+        }
         return
     }
 

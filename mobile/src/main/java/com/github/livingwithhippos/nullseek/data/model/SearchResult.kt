@@ -12,9 +12,13 @@ data class SearchResult(
     val downloadLink: String? = null,
     val infoUrl: String? = null,
     val categories: List<String> = emptyList(),
+    val isDirectStream: Boolean = false,
 )
 
 fun SearchResult.hasDownloadLink(): Boolean = !magnetLink.isNullOrBlank() || !downloadLink.isNullOrBlank()
+
+/** True when this result represents a direct playable/downloadable stream rather than a torrent/magnet/NZB. */
+fun SearchResult.isDirectStreamResult(): Boolean = isDirectStream && !downloadLink.isNullOrBlank()
 
 /** The magnet link if present, otherwise the torrent download link. */
 fun SearchResult.preferredLink(): String? = magnetLink?.takeIf { it.isNotBlank() } ?: downloadLink?.takeIf { it.isNotBlank() }

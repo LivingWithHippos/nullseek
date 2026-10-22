@@ -19,3 +19,4 @@ local.properties
 /extra/docker/jackett
 /extra/voiden/.voiden/history
 /extra/torbox/.voiden
+extra/manifest.example.json

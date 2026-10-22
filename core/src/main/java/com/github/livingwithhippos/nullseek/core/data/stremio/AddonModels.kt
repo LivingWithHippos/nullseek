@@ -3,18 +3,96 @@ package com.github.livingwithhippos.nullseek.core.data.stremio
 import android.os.Parcelable
 import androidx.annotation.Keep
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+
+/**
+ * Serializer for [AddonResource] that supports both Stremio string resources (`"stream"`)
+ * and object resources (`{"name": "stream", "types": [...], "idPrefixes": [...]}`).
+ */
+object AddonResourceSerializer : KSerializer<AddonResource> {
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor("AddonResource") {
+            element<String>("name")
+            element<List<String>>("types", isOptional = true)
+            element<List<String>>("idPrefixes", isOptional = true)
+        }
+
+    override fun deserialize(decoder: Decoder): AddonResource {
+        val jsonDecoder = decoder as? JsonDecoder ?: error("AddonResourceSerializer only supports JSON")
+        return when (val element = jsonDecoder.decodeJsonElement()) {
+            is JsonPrimitive -> {
+                AddonResource(
+                    name = element.contentOrNull.orEmpty(),
+                    types = emptyList(),
+                    idPrefixes = null,
+                )
+            }
+
+            else -> {
+                val obj = element.jsonObject
+                val name = obj["name"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                val types =
+                    (obj["types"] as? JsonArray)
+                        ?.mapNotNull { it.jsonPrimitive.contentOrNull?.takeIf(String::isNotBlank) }
+                        .orEmpty()
+                val idPrefixes =
+                    (obj["idPrefixes"] as? JsonArray)
+                        ?.mapNotNull { it.jsonPrimitive.contentOrNull?.takeIf(String::isNotBlank) }
+                AddonResource(
+                    name = name,
+                    types = types,
+                    idPrefixes = idPrefixes,
+                )
+            }
+        }
+    }
+
+    override fun serialize(
+        encoder: Encoder,
+        value: AddonResource,
+    ) {
+        val jsonEncoder = encoder as? JsonEncoder ?: error("AddonResourceSerializer only supports JSON")
+        val jsonObj =
+            buildJsonObject {
+                put("name", value.name)
+                put("types", JsonArray(value.types.map { JsonPrimitive(it) }))
+                if (value.idPrefixes != null) {
+                    put("idPrefixes", JsonArray(value.idPrefixes.map { JsonPrimitive(it) }))
+                } else {
+                    put("idPrefixes", JsonNull)
+                }
+            }
+        jsonEncoder.encodeJsonElement(jsonObj)
+    }
+}
 
 /**
  * Stremio addon resource definition
  */
 @Keep
-@Serializable
+@Serializable(with = AddonResourceSerializer::class)
 @Parcelize
 data class AddonResource(
     @SerialName("name") val name: String,
-    @SerialName("types") val types: List<String>,
+    @SerialName("types") val types: List<String> = emptyList(),
     @SerialName("idPrefixes") val idPrefixes: List<String>? = null,
 ) : Parcelable
 
@@ -28,17 +106,36 @@ data class AddonResource(
 data class AddonManifest(
     @SerialName("id") val id: String,
     @SerialName("name") val name: String,
-    @SerialName("description") val description: String,
+    @SerialName("description") val description: String = "",
     @SerialName("version") val version: String,
     @SerialName("resources") val resources: List<AddonResource>,
-    @SerialName("types") val types: List<String>,
+    @SerialName("types") val types: List<String> = emptyList(),
     @SerialName("catalogs") val catalogs: List<AddonCatalog> = emptyList(),
     @SerialName("idPrefixes") val idPrefixes: List<String>? = null,
     @SerialName("background") val background: String? = null,
     @SerialName("logo") val logo: String? = null,
     @SerialName("contactEmail") val contactEmail: String? = null,
     @SerialName("behaviorHints") val behaviorHints: AddonBehaviorHints? = null,
-) : Parcelable
+) : Parcelable {
+    /**
+     * Returns resources with fallback `types` and `idPrefixes` inherited from the root manifest.
+     */
+    fun normalizedResources(): List<AddonResource> =
+        resources
+            .filter { it.name.isNotBlank() }
+            .map { resource ->
+                AddonResource(
+                    name = resource.name,
+                    types = resource.types.ifEmpty { types },
+                    idPrefixes =
+                        if (resource.idPrefixes.isNullOrEmpty()) {
+                            idPrefixes
+                        } else {
+                            resource.idPrefixes
+                        },
+                )
+            }
+}
 
 @Keep
 @Serializable
@@ -82,8 +179,10 @@ data class AddonStream(
     @SerialName("ytId") val ytId: String? = null,
     @SerialName("infoHash") val infoHash: String? = null,
     @SerialName("fileIdx") val fileIdx: Int? = null,
+    @SerialName("title") val title: String? = null,
     @SerialName("name") val name: String? = null,
     @SerialName("description") val description: String? = null,
+    @SerialName("externalUrl") val externalUrl: String? = null,
     @SerialName("sources") val sources: List<String>? = null,
     @SerialName("behaviorHints") val behaviorHints: StreamBehaviorHints? = null,
 ) : Parcelable

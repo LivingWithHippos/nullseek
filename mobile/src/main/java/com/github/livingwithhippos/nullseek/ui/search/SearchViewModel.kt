@@ -3,11 +3,14 @@ package com.github.livingwithhippos.nullseek.ui.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.data.stremio.AddonSearchHelper
+import com.github.livingwithhippos.nullseek.data.model.ExternalService
+import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
 import com.github.livingwithhippos.nullseek.data.model.Indexer
 import com.github.livingwithhippos.nullseek.data.model.IndexerSearchOutcome
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
 import com.github.livingwithhippos.nullseek.data.model.hasDownloadLink
 import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
+import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.torbox.network.ApiResult
@@ -120,12 +123,27 @@ class SearchViewModel(
     private val preferencesRepository: PreferencesRepository,
     private val downloadCreator: DownloadCreator,
     private val addonSearchHelper: AddonSearchHelper,
+    private val externalServicesRepository: ExternalServicesRepository,
 ) : ViewModel() {
     val autoAddDownload: StateFlow<Boolean> =
         preferencesRepository.searchAutoAddDownload.stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000),
             false,
+        )
+
+    val defaultMediaPlayer: StateFlow<ExternalService?> =
+        externalServicesRepository.defaultMediaPlayer.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null,
+        )
+
+    val mediaPlayerServices: StateFlow<List<ExternalService>> =
+        externalServicesRepository.mediaPlayerServices.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList(),
         )
 
     private val _addingDownload = MutableStateFlow(false)
@@ -135,6 +153,9 @@ class SearchViewModel(
 
     /** Emits true when the download was added, false on failure. */
     val downloadEvents: SharedFlow<Boolean> = _downloadEvents
+
+    private val _playbackEvents = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val playbackEvents: SharedFlow<String> = _playbackEvents
 
     private val sort: StateFlow<SearchSort> =
         combine(
@@ -184,18 +205,16 @@ class SearchViewModel(
 
             // Search with Stremio addons if query contains IMDB ID
             if (addonSearchHelper.canSearchWithAddons(query)) {
-                // todo: check why we get no magnets, only links
-                //  check if it can find things other than movies/imdb
-                //  check how to search imdb id to pass to this
-                //  check why they have no name
+                // todo: check how to search imdb id to pass to this
                 addonSearchHelper
-                    .searchWithAddons(query, "movie")
+                    .searchWithAddons(query)
                     .onSuccess { scrapedItems ->
                         val addonResults =
                             scrapedItems.mapNotNull { item ->
                                 val magnetLink = item.magnets.firstOrNull()
                                 val downloadLink = item.hosting.firstOrNull()
                                 if (magnetLink != null || downloadLink != null) {
+                                    val isDirectStream = magnetLink.isNullOrBlank() && !downloadLink.isNullOrBlank()
                                     SearchResult(
                                         title = item.name,
                                         indexerName = "Stremio Addons",
@@ -205,7 +224,8 @@ class SearchViewModel(
                                         publishedAt = null,
                                         magnetLink = magnetLink,
                                         downloadLink = downloadLink,
-                                        infoUrl = item.link,
+                                        infoUrl = if (isDirectStream) null else item.link,
+                                        isDirectStream = isDirectStream,
                                     )
                                 } else {
                                     null
@@ -221,6 +241,31 @@ class SearchViewModel(
                 emit(current)
             }
         }
+
+    fun playOnMedia(
+        service: ExternalService,
+        url: String,
+        setAsDefault: Boolean = false,
+    ) {
+        viewModelScope.launch {
+            if (setAsDefault) {
+                externalServicesRepository.setDefault(
+                    service.id,
+                    ExternalServiceCategory.MEDIA_PLAYER,
+                )
+            }
+            _playbackEvents.tryEmit("Sending to ${service.name}…")
+            val result = externalServicesRepository.playMedia(service, url)
+            result.fold(
+                onSuccess = {
+                    _playbackEvents.tryEmit("Playing on ${service.name}")
+                },
+                onFailure = { error ->
+                    _playbackEvents.tryEmit("Failed to play on ${service.name}: ${error.message}")
+                },
+            )
+        }
+    }
 
     fun setSortOption(option: SearchSortOption) {
         viewModelScope.launch { preferencesRepository.setSearchSortOption(option.name) }

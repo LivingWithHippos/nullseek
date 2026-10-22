@@ -37,7 +37,7 @@ class AddonManager(
                     name = manifest.name,
                     description = manifest.description,
                     version = manifest.version,
-                    resources = json.encodeToString(manifest.resources),
+                    resources = json.encodeToString(manifest.normalizedResources()),
                     types = json.encodeToString(manifest.types),
                     logo = manifest.logo,
                     background = manifest.background,
@@ -97,11 +97,15 @@ class AddonManager(
                 try {
                     // Parse addon resources
                     val addonResources = json.decodeFromString<List<AddonResource>>(addon.resources)
+                    val defaultTypes =
+                        runCatching { json.decodeFromString<List<String>>(addon.types) }
+                            .getOrDefault(emptyList())
 
                     // Find stream resources that match the content type
                     val matchingStreamResources =
                         addonResources.filter { resource ->
-                            resource.name == "stream" && resource.types.contains(type)
+                            resource.name == "stream" &&
+                                resource.types.ifEmpty { defaultTypes }.contains(type)
                         }
 
                     if (matchingStreamResources.isEmpty()) {
@@ -109,13 +113,9 @@ class AddonManager(
                     }
 
                     // Check ID prefix compatibility
-                    val idPrefix = extractIdPrefix(id)
                     val compatibleResource =
                         matchingStreamResources.firstOrNull { resource ->
-                            // If no idPrefixes specified, accept all IDs
-                            resource.idPrefixes.isNullOrEmpty() ||
-                                // Otherwise, check if our ID prefix is supported
-                                resource.idPrefixes.contains(idPrefix)
+                            matchesIdPrefix(id, resource.idPrefixes)
                         }
 
                     if (compatibleResource == null) {
@@ -149,16 +149,35 @@ class AddonManager(
         }
 
     /**
+     * Check whether [id] matches the allowed [idPrefixes] for a Stremio addon resource.
+     * Supports prefix matching via `startsWith` (per stremio-addon-client / NuvioMobile) as well as extracted prefix.
+     */
+    internal fun matchesIdPrefix(
+        id: String,
+        idPrefixes: List<String>?,
+    ): Boolean {
+        if (idPrefixes.isNullOrEmpty()) return true
+        val extracted = extractIdPrefix(id)
+        return idPrefixes.any { prefix ->
+            id.startsWith(prefix) || (extracted.isNotEmpty() && prefix == extracted)
+        }
+    }
+
+    /**
      * Extract ID prefix from content ID
      * Examples: tt1254207 -> tt, kitsu:12345 -> kitsu, imdb:tt123 -> imdb
      */
-    private fun extractIdPrefix(id: String): String {
+    internal fun extractIdPrefix(id: String): String {
         // Check for colon-separated prefix (e.g., "kitsu:12345", "imdb:tt123")
-        if (id.contains(":")) {
-            return id.substringBefore(":")
+        val firstColon = id.indexOf(':')
+        if (firstColon > 0) {
+            val beforeColon = id.substring(0, firstColon)
+            if (beforeColon.all { it.isLetter() }) {
+                return beforeColon
+            }
         }
 
-        // Check for letter prefix (e.g., "tt1254207")
+        // Check for letter prefix (e.g., "tt1254207" or "tt1254207:1:2")
         val prefix = id.takeWhile { it.isLetter() }
         if (prefix.isNotEmpty()) {
             return prefix
@@ -202,25 +221,36 @@ class AddonManager(
 
         // Handle different stream types
         when {
-            stream.infoHash != null -> {
+            !stream.url.isNullOrBlank() -> {
+                if (stream.url.startsWith("magnet:", ignoreCase = true)) {
+                    magnets.add(stream.url)
+                } else {
+                    // Direct URL stream
+                    hosting.add(stream.url)
+                }
+            }
+
+            !stream.infoHash.isNullOrBlank() -> {
                 // Torrent stream
                 val magnetLink = buildMagnetLink(stream.infoHash, stream.sources)
                 magnets.add(magnetLink)
             }
 
-            stream.url != null -> {
-                // Direct URL stream
-                hosting.add(stream.url)
-            }
-
-            stream.ytId != null -> {
+            !stream.ytId.isNullOrBlank() -> {
                 // YouTube stream
                 hosting.add("https://www.youtube.com/watch?v=${stream.ytId}")
             }
         }
 
+        val resolvedName =
+            stream.behaviorHints?.filename?.takeIf { it.isNotBlank() }
+                ?: stream.description?.takeIf { it.isNotBlank() }
+                ?: stream.title?.takeIf { it.isNotBlank() }
+                ?: stream.name?.takeIf { it.isNotBlank() }
+                ?: contentName
+
         return com.github.livingwithhippos.nullseek.core.data.ScrapedItem(
-            name = stream.behaviorHints?.filename ?: (stream.description ?: contentName),
+            name = resolvedName,
             link = hosting.firstOrNull(),
             seeders = null,
             leechers = null,
@@ -233,14 +263,25 @@ class AddonManager(
         )
     }
 
-    private fun buildMagnetLink(
+    internal fun buildMagnetLink(
         infoHash: String,
         trackers: List<String>?,
     ): String {
-        val magnetUri = StringBuilder("magnet:?xt=urn:btih:$infoHash")
-        trackers?.forEach { tracker ->
-            magnetUri.append("&tr=").append(tracker)
-        }
+        val magnetUri = StringBuilder("magnet:?xt=urn:btih:${infoHash.trim()}")
+        trackers
+            ?.mapNotNull { source ->
+                val trimmed = source.trim()
+                when {
+                    trimmed.startsWith("dht:", ignoreCase = true) -> null
+                    trimmed.startsWith("tracker:", ignoreCase = true) ->
+                        trimmed.substring("tracker:".length).takeIf { it.isNotBlank() }
+                    trimmed.isNotBlank() -> trimmed
+                    else -> null
+                }
+            }?.distinct()
+            ?.forEach { tracker ->
+                magnetUri.append("&tr=").append(tracker)
+            }
         return magnetUri.toString()
     }
 
