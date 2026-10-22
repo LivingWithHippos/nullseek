@@ -2,7 +2,12 @@ package com.github.livingwithhippos.nullseek.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity
+import com.github.livingwithhippos.nullseek.core.data.stremio.AddonScrapedItem
 import com.github.livingwithhippos.nullseek.core.data.stremio.AddonSearchHelper
+import com.github.livingwithhippos.nullseek.core.data.stremio.ImdbTitleResult
+import com.github.livingwithhippos.nullseek.core.data.stremio.ImdbUtils
+import com.github.livingwithhippos.nullseek.core.data.stremio.SeriesEpisodeItem
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
 import com.github.livingwithhippos.nullseek.data.model.Indexer
@@ -16,6 +21,7 @@ import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepositor
 import com.github.livingwithhippos.torbox.network.ApiResult
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +42,8 @@ import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 import kotlin.time.Duration.Companion.milliseconds
 
+enum class SearchMode { INDEXERS, STREMIO_ADDONS }
+
 enum class SearchSortOption { RELEVANCE, SIZE, SEEDERS, PEERS, AGE, NAME }
 
 data class SearchSort(
@@ -52,6 +60,47 @@ sealed interface SearchStatus {
     ) : SearchStatus
 
     data object Results : SearchStatus
+}
+
+enum class StremioStage {
+    IDLE,
+    TITLES,
+    EPISODES,
+    STREAMS,
+}
+
+data class StremioSearchState(
+    val stage: StremioStage = StremioStage.IDLE,
+    val query: String = "",
+    val isSearchingTitles: Boolean = false,
+    val titles: List<ImdbTitleResult> = emptyList(),
+    val selectedTitle: ImdbTitleResult? = null,
+    val isLoadingEpisodes: Boolean = false,
+    val episodes: List<SeriesEpisodeItem> = emptyList(),
+    val selectedSeason: Int = 1,
+    val selectedEpisode: SeriesEpisodeItem? = null,
+    val activeStreamImdbId: String = "",
+    val activeStreamLabel: String = "",
+    val isLoadingStreams: Boolean = false,
+    val streamResults: List<SearchResult> = emptyList(),
+) {
+    val availableSeasons: List<Int>
+        get() =
+            episodes
+                .map { it.season }
+                .distinct()
+                .sortedWith(compareBy { if (it == 0) Int.MAX_VALUE else it })
+
+    val episodesForSelectedSeason: List<SeriesEpisodeItem>
+        get() = episodes.filter { it.season == selectedSeason }.sortedBy { it.episode }
+
+    val canNavigateBack: Boolean
+        get() =
+            when (stage) {
+                StremioStage.STREAMS -> selectedTitle != null || titles.isNotEmpty()
+                StremioStage.EPISODES -> titles.isNotEmpty()
+                else -> false
+            }
 }
 
 /** Raw, unsorted progress of the current search. */
@@ -72,8 +121,18 @@ data class SearchUiState(
     val status: SearchStatus = SearchStatus.Idle,
     val results: List<SearchResult> = emptyList(),
     val failedIndexers: List<String> = emptyList(),
+    val searchMode: SearchMode = SearchMode.INDEXERS,
+    val activeAddons: List<StremioAddonEntity> = emptyList(),
+    val stremioState: StremioSearchState = StremioSearchState(),
 ) {
     val hasActiveIndexers: Boolean get() = activeIndexers.isNotEmpty()
+    val hasActiveAddons: Boolean get() = activeAddons.isNotEmpty()
+    val canSearch: Boolean
+        get() =
+            when (searchMode) {
+                SearchMode.INDEXERS -> hasActiveIndexers
+                SearchMode.STREMIO_ADDONS -> hasActiveAddons
+            }
 }
 
 fun List<Indexer>.activeOnly(): List<Indexer> = filter { it.active }
@@ -92,11 +151,33 @@ fun List<SearchResult>.applySort(sort: SearchSort): List<SearchResult> {
     return if (sort.ascending) sorted else sorted.reversed()
 }
 
+internal fun AddonScrapedItem.toSearchResultOrNull(): SearchResult? {
+    val magnetLink = scrapedItem.magnets.firstOrNull()
+    val downloadLink = scrapedItem.hosting.firstOrNull()
+    if (magnetLink == null && downloadLink == null) return null
+    val isDirectStream = magnetLink.isNullOrBlank() && !downloadLink.isNullOrBlank()
+    return SearchResult(
+        title = scrapedItem.name,
+        indexerName = addonName.ifBlank { "Stremio Addons" },
+        sizeBytes = scrapedItem.parsedSize?.toLong() ?: 0L,
+        seeders = scrapedItem.seeders?.toIntOrNull() ?: 0,
+        peers = scrapedItem.leechers?.toIntOrNull() ?: 0,
+        publishedAt = null,
+        magnetLink = magnetLink,
+        downloadLink = downloadLink,
+        infoUrl = if (isDirectStream) null else scrapedItem.link,
+        isDirectStream = isDirectStream,
+    )
+}
+
 /** Combines the per-indexer outcomes, in indexers order, into a single sorted state. */
 fun buildSearchState(
     progress: SearchProgress,
     sort: SearchSort,
     active: List<Indexer>,
+    searchMode: SearchMode = SearchMode.INDEXERS,
+    activeAddons: List<StremioAddonEntity> = emptyList(),
+    stremioState: StremioSearchState = StremioSearchState(),
 ): SearchUiState {
     val order = progress.outcomes.sortedBy { o -> active.indexOfFirst { it.id == o.indexer.id }.let { if (it < 0) Int.MAX_VALUE else it } }
     val results =
@@ -104,7 +185,7 @@ fun buildSearchState(
             .filterIsInstance<IndexerSearchOutcome.Success>()
             .flatMap { it.results }
             .filter { it.hasDownloadLink() }
-            .plus(progress.addonResults) // Add Stremio addon results
+            .plus(progress.addonResults)
             .applySort(sort)
     val failed = order.filterIsInstance<IndexerSearchOutcome.Failure>().map { it.indexer.name }
     val status =
@@ -113,7 +194,20 @@ fun buildSearchState(
             progress.isLoading -> SearchStatus.Loading(progress.completed, progress.total)
             else -> SearchStatus.Results
         }
-    return SearchUiState(sort, active, status, results, failed)
+    val sortedStremioState =
+        stremioState.copy(
+            streamResults = stremioState.streamResults.applySort(sort),
+        )
+    return SearchUiState(
+        sort = sort,
+        activeIndexers = active,
+        status = status,
+        results = results,
+        failedIndexers = failed,
+        searchMode = searchMode,
+        activeAddons = activeAddons,
+        stremioState = sortedStremioState,
+    )
 }
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
@@ -167,7 +261,17 @@ class SearchViewModel(
                 ascending = ascending,
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, SearchSort())
+
+    private val searchMode: StateFlow<SearchMode> =
+        preferencesRepository.searchMode
+            .map { modeName ->
+                SearchMode.entries.firstOrNull { it.name == modeName } ?: SearchMode.INDEXERS
+            }.stateIn(viewModelScope, SharingStarted.Eagerly, SearchMode.INDEXERS)
+
     private val progress = MutableStateFlow(SearchProgress())
+    private val stremioState = MutableStateFlow(StremioSearchState())
+    private var stremioJob: Job? = null
+
     private val _selectedResult = MutableStateFlow<SearchResult?>(null)
     val selectedResult: StateFlow<SearchResult?> = _selectedResult
     private val errorsDismissed = MutableStateFlow(false)
@@ -176,26 +280,37 @@ class SearchViewModel(
 
     val uiState: StateFlow<SearchUiState> =
         combine(
-            sort,
-            indexersRepository.indexers.map { it.activeOnly() },
-            progress,
-            errorsDismissed,
-        ) { s, active, p, dismissed ->
-            val state = buildSearchState(p, s, active)
-            if (dismissed) state.copy(failedIndexers = emptyList()) else state
+            combine(
+                sort,
+                indexersRepository.indexers.map { it.activeOnly() },
+                progress,
+                errorsDismissed,
+            ) { s, active, p, dismissed ->
+                val base = buildSearchState(p, s, active)
+                if (dismissed) base.copy(failedIndexers = emptyList()) else base
+            },
+            searchMode,
+            addonSearchHelper.getEnabledAddons(),
+            stremioState,
+        ) { baseState, mode, addons, stremio ->
+            baseState.copy(
+                searchMode = mode,
+                activeAddons = addons,
+                stremioState = stremio.copy(streamResults = stremio.streamResults.applySort(baseState.sort)),
+            )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchUiState())
 
     init {
-        // Bursts of submits are coalesced; flatMapLatest cancels the in-flight search (and its HTTP calls).
+        // Bursts of submits are coalesced; flatMapLatest cancels the in-flight indexer search (and its HTTP calls).
         submissions
             .debounce(SEARCH_DEBOUNCE_MS.milliseconds)
             .filter { it.isNotBlank() }
-            .flatMapLatest { query -> searchFlow(query) }
+            .flatMapLatest { query -> indexerSearchFlow(query) }
             .onEach { progress.value = it }
             .launchIn(viewModelScope)
     }
 
-    private fun searchFlow(query: String) =
+    private fun indexerSearchFlow(query: String) =
         flow {
             val active = indexersRepository.getAll().activeOnly()
             if (active.isEmpty()) return@flow
@@ -203,43 +318,233 @@ class SearchViewModel(
             var current = SearchProgress(query, active.size, emptyList(), started = true)
             emit(current)
 
-            // Search with Stremio addons if query contains IMDB ID
-            if (addonSearchHelper.canSearchWithAddons(query)) {
-                // todo: check how to search imdb id to pass to this
-                addonSearchHelper
-                    .searchWithAddons(query)
-                    .onSuccess { scrapedItems ->
-                        val addonResults =
-                            scrapedItems.mapNotNull { item ->
-                                val magnetLink = item.magnets.firstOrNull()
-                                val downloadLink = item.hosting.firstOrNull()
-                                if (magnetLink != null || downloadLink != null) {
-                                    val isDirectStream = magnetLink.isNullOrBlank() && !downloadLink.isNullOrBlank()
-                                    SearchResult(
-                                        title = item.name,
-                                        indexerName = "Stremio Addons",
-                                        sizeBytes = item.parsedSize?.toLong() ?: 0L,
-                                        seeders = item.seeders?.toIntOrNull() ?: 0,
-                                        peers = item.leechers?.toIntOrNull() ?: 0,
-                                        publishedAt = null,
-                                        magnetLink = magnetLink,
-                                        downloadLink = downloadLink,
-                                        infoUrl = if (isDirectStream) null else item.link,
-                                        isDirectStream = isDirectStream,
-                                    )
-                                } else {
-                                    null
-                                }
-                            }
-                        current = current.copy(addonResults = addonResults)
-                        emit(current)
-                    }
-            }
-
             indexersRepository.search(active, query).collect { outcome ->
                 current = current.copy(outcomes = current.outcomes + outcome)
                 emit(current)
             }
+        }
+
+    private fun executeStremioQuery(query: String) {
+        stremioJob?.cancel()
+        val directImdbId = ImdbUtils.extractImdbId(query)
+        if (directImdbId != null) {
+            stremioState.value =
+                StremioSearchState(
+                    stage = StremioStage.STREAMS,
+                    query = query,
+                    activeStreamImdbId = directImdbId,
+                    activeStreamLabel = directImdbId,
+                    isLoadingStreams = true,
+                )
+            stremioJob =
+                viewModelScope.launch {
+                    val streamResults =
+                        addonSearchHelper
+                            .searchStreamsWithAddonInfo(directImdbId)
+                            .getOrDefault(emptyList())
+                            .mapNotNull { it.toSearchResultOrNull() }
+                    stremioState.update {
+                        it.copy(
+                            isLoadingStreams = false,
+                            streamResults = streamResults,
+                        )
+                    }
+                }
+        } else {
+            stremioState.value =
+                StremioSearchState(
+                    stage = StremioStage.TITLES,
+                    query = query,
+                    isSearchingTitles = true,
+                )
+            stremioJob =
+                viewModelScope.launch {
+                    val titles =
+                        addonSearchHelper
+                            .searchTitles(query)
+                            .getOrDefault(emptyList())
+                    stremioState.update {
+                        it.copy(
+                            isSearchingTitles = false,
+                            titles = titles,
+                        )
+                    }
+                }
+        }
+    }
+
+    fun selectImdbTitle(title: ImdbTitleResult) {
+        stremioJob?.cancel()
+        if (title.isSeries) {
+            stremioState.update {
+                it.copy(
+                    stage = StremioStage.EPISODES,
+                    selectedTitle = title,
+                    selectedEpisode = null,
+                    isLoadingEpisodes = true,
+                    episodes = emptyList(),
+                    selectedSeason = 1,
+                )
+            }
+            stremioJob =
+                viewModelScope.launch {
+                    val episodes =
+                        addonSearchHelper
+                            .getSeriesEpisodes(title.imdbId)
+                            .getOrDefault(emptyList())
+                    val firstSeason =
+                        episodes.firstOrNull { it.season > 0 }?.season
+                            ?: episodes.firstOrNull()?.season
+                            ?: 1
+                    stremioState.update {
+                        it.copy(
+                            isLoadingEpisodes = false,
+                            episodes = episodes,
+                            selectedSeason = firstSeason,
+                        )
+                    }
+                }
+        } else {
+            fetchStremioStreams(
+                imdbId = title.imdbId,
+                type = title.type,
+                contentName = title.title,
+                selectedTitle = title,
+                selectedEpisode = null,
+                streamLabel = buildTitleSummary(title),
+            )
+        }
+    }
+
+    fun selectSeason(season: Int) {
+        stremioState.update { it.copy(selectedSeason = season) }
+    }
+
+    fun selectSeriesEpisode(episode: SeriesEpisodeItem) {
+        val currentTitle = stremioState.value.selectedTitle ?: return
+        val episodeCode = "S%02dE%02d".format(episode.season, episode.episode)
+        fetchStremioStreams(
+            imdbId = episode.id,
+            type = "series",
+            contentName = "${currentTitle.title} $episodeCode",
+            selectedTitle = currentTitle,
+            selectedEpisode = episode,
+            streamLabel = "$episodeCode · ${episode.title}",
+        )
+    }
+
+    fun searchManualSeriesEpisode(
+        season: Int,
+        episode: Int,
+    ) {
+        if (season < 0 || episode <= 0) return
+        val currentTitle = stremioState.value.selectedTitle ?: return
+        val manualEpisode =
+            SeriesEpisodeItem(
+                id = "${currentTitle.imdbId}:$season:$episode",
+                season = season,
+                episode = episode,
+                title = "Episode $episode",
+            )
+        selectSeriesEpisode(manualEpisode)
+    }
+
+    fun searchWholeSeries() {
+        val currentTitle = stremioState.value.selectedTitle ?: return
+        fetchStremioStreams(
+            imdbId = currentTitle.imdbId,
+            type = "series",
+            contentName = currentTitle.title,
+            selectedTitle = currentTitle,
+            selectedEpisode = null,
+            streamLabel = buildTitleSummary(currentTitle),
+        )
+    }
+
+    fun navigateBackInStremio() {
+        stremioJob?.cancel()
+        stremioState.update { current ->
+            when (current.stage) {
+                StremioStage.STREAMS -> {
+                    if (current.selectedTitle?.isSeries == true) {
+                        current.copy(
+                            stage = StremioStage.EPISODES,
+                            isLoadingStreams = false,
+                            selectedEpisode = null,
+                            streamResults = emptyList(),
+                        )
+                    } else if (current.titles.isNotEmpty()) {
+                        current.copy(
+                            stage = StremioStage.TITLES,
+                            isLoadingStreams = false,
+                            selectedTitle = null,
+                            selectedEpisode = null,
+                            streamResults = emptyList(),
+                        )
+                    } else {
+                        StremioSearchState()
+                    }
+                }
+                StremioStage.EPISODES -> {
+                    if (current.titles.isNotEmpty()) {
+                        current.copy(
+                            stage = StremioStage.TITLES,
+                            isLoadingEpisodes = false,
+                            selectedTitle = null,
+                            episodes = emptyList(),
+                        )
+                    } else {
+                        StremioSearchState()
+                    }
+                }
+                else -> StremioSearchState()
+            }
+        }
+    }
+
+    private fun fetchStremioStreams(
+        imdbId: String,
+        type: String?,
+        contentName: String,
+        selectedTitle: ImdbTitleResult?,
+        selectedEpisode: SeriesEpisodeItem?,
+        streamLabel: String,
+    ) {
+        stremioJob?.cancel()
+        stremioState.update {
+            it.copy(
+                stage = StremioStage.STREAMS,
+                selectedTitle = selectedTitle,
+                selectedEpisode = selectedEpisode,
+                activeStreamImdbId = imdbId,
+                activeStreamLabel = streamLabel,
+                isLoadingStreams = true,
+                streamResults = emptyList(),
+            )
+        }
+        stremioJob =
+            viewModelScope.launch {
+                val results =
+                    addonSearchHelper
+                        .searchStreamsWithAddonInfo(
+                            query = imdbId,
+                            type = type,
+                            contentName = contentName,
+                        ).getOrDefault(emptyList())
+                        .mapNotNull { it.toSearchResultOrNull() }
+                stremioState.update {
+                    it.copy(
+                        isLoadingStreams = false,
+                        streamResults = results,
+                    )
+                }
+            }
+    }
+
+    private fun buildTitleSummary(title: ImdbTitleResult): String =
+        buildString {
+            append(title.title)
+            title.year?.let { append(" (").append(it).append(")") }
         }
 
     fun playOnMedia(
@@ -265,6 +570,10 @@ class SearchViewModel(
                 },
             )
         }
+    }
+
+    fun setSearchMode(mode: SearchMode) {
+        viewModelScope.launch { preferencesRepository.setSearchMode(mode.name) }
     }
 
     fun setSortOption(option: SearchSortOption) {
@@ -298,7 +607,11 @@ class SearchViewModel(
 
     fun onSearch(query: String) {
         val trimmed = query.trim()
-        if (trimmed.isNotEmpty()) submissions.tryEmit(trimmed)
+        if (trimmed.isEmpty()) return
+        when (searchMode.value) {
+            SearchMode.INDEXERS -> submissions.tryEmit(trimmed)
+            SearchMode.STREMIO_ADDONS -> executeStremioQuery(trimmed)
+        }
     }
 
     private companion object {

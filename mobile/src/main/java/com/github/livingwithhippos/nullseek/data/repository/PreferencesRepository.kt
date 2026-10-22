@@ -30,6 +30,7 @@ class PreferencesRepository(
 
     private val searchSortOptionKey = stringPreferencesKey("search_sort_option")
     private val searchSortAscendingKey = booleanPreferencesKey("search_sort_ascending")
+    private val searchModeKey = stringPreferencesKey("search_mode")
 
     // null means the user has not chosen yet
     val includeReferral: Flow<Boolean?> =
@@ -41,6 +42,10 @@ class PreferencesRepository(
 
     val searchSortAscending: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[searchSortAscendingKey] ?: false }
+
+    /** Stored as the SearchMode name; unknown or missing values fall back to INDEXERS. */
+    val searchMode: Flow<String?> =
+        dataStore.data.map { preferences -> preferences[searchModeKey] }
 
     val searchAutoAddDownload: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[searchAutoAddDownloadKey] ?: false }
@@ -109,5 +114,9 @@ class PreferencesRepository(
 
     suspend fun setSearchSortAscending(ascending: Boolean) {
         dataStore.edit { preferences -> preferences[searchSortAscendingKey] = ascending }
+    }
+
+    suspend fun setSearchMode(name: String) {
+        dataStore.edit { preferences -> preferences[searchModeKey] = name }
     }
 }

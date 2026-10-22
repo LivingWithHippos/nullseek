@@ -85,6 +85,130 @@ class AddonClient(
         }
 
     /**
+     * Search IMDb titles by text query using IMDb's suggestion endpoint with Cinemeta catalog fallback.
+     */
+    suspend fun searchImdbTitles(query: String): Result<List<ImdbTitleResult>> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val trimmed = query.trim()
+                if (trimmed.isEmpty()) return@runCatching emptyList()
+
+                val imdbResults =
+                    runCatching {
+                        val encoded = trimmed.encodeAddonPathSegment()
+                        val url = "$IMDB_SUGGESTION_BASE_URL/$encoded.json?includeVideos=0"
+                        val request =
+                            Request
+                                .Builder()
+                                .url(url)
+                                .header("Accept", "application/json")
+                                .build()
+                        httpClient.newCall(request).execute().use { response ->
+                            if (!response.isSuccessful) {
+                                throw AddonException("Failed to search IMDb suggestions: HTTP ${response.code}")
+                            }
+                            parseImdbSuggestionResponse(response.body.string())
+                        }
+                    }.getOrNull()
+
+                if (!imdbResults.isNullOrEmpty()) {
+                    return@runCatching imdbResults
+                }
+
+                // Fallback to Stremio Cinemeta catalog search for movie & series
+                val encodedSearch = "search=${trimmed.encodeAddonPathSegment()}"
+                val combined = mutableListOf<ImdbTitleResult>()
+                for (type in listOf("movie", "series")) {
+                    val url =
+                        buildAddonResourceUrl(
+                            manifestUrl = CINEMETA_MANIFEST_URL,
+                            resource = "catalog",
+                            type = type,
+                            id = "top",
+                            extraPathSegment = encodedSearch,
+                        )
+                    runCatching {
+                        val request =
+                            Request
+                                .Builder()
+                                .url(url)
+                                .header("Accept", "application/json")
+                                .build()
+                        httpClient.newCall(request).execute().use { response ->
+                            if (response.isSuccessful) {
+                                combined.addAll(parseCinemetaCatalogResponse(response.body.string(), type))
+                            }
+                        }
+                    }
+                }
+                combined.distinctBy { "${it.type}:${it.imdbId}" }
+            }
+        }
+
+    /**
+     * Fetch episodes for a series from Stremio Cinemeta (/meta/series/{imdbId}.json).
+     */
+    suspend fun getSeriesEpisodes(imdbId: String): Result<List<SeriesEpisodeItem>> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val baseImdbId = imdbId.trim().substringBefore(":")
+                val url =
+                    buildAddonResourceUrl(
+                        manifestUrl = CINEMETA_MANIFEST_URL,
+                        resource = "meta",
+                        type = "series",
+                        id = baseImdbId,
+                    )
+                val request =
+                    Request
+                        .Builder()
+                        .url(url)
+                        .header("Accept", "application/json")
+                        .build()
+
+                httpClient.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        throw AddonException("Failed to fetch series episodes: HTTP ${response.code}")
+                    }
+                    parseCinemetaSeriesEpisodes(response.body.string(), baseImdbId)
+                }
+            }
+        }
+
+    internal fun parseImdbSuggestionResponse(body: String): List<ImdbTitleResult> {
+        val decoded = json.decodeFromString<ImdbSuggestionResponse>(body)
+        return decoded.items
+            .mapNotNull { it.toImdbTitleResultOrNull() }
+            .distinctBy { it.imdbId }
+    }
+
+    internal fun parseCinemetaCatalogResponse(
+        body: String,
+        defaultType: String,
+    ): List<ImdbTitleResult> {
+        val decoded = json.decodeFromString<CinemetaCatalogResponse>(body)
+        return decoded.metas
+            .mapNotNull { it.toImdbTitleResultOrNull(defaultType) }
+            .distinctBy { it.imdbId }
+    }
+
+    internal fun parseCinemetaSeriesEpisodes(
+        body: String,
+        seriesImdbId: String,
+    ): List<SeriesEpisodeItem> {
+        val decoded = json.decodeFromString<CinemetaMetaResponse>(body)
+        return decoded.meta
+            ?.videos
+            .orEmpty()
+            .mapNotNull { it.toSeriesEpisodeItemOrNull(seriesImdbId) }
+            .distinctBy { "${it.season}:${it.episode}" }
+            .sortedWith(
+                compareBy<SeriesEpisodeItem> { if (it.season == 0) Int.MAX_VALUE else it.season }
+                    .thenBy { it.episode },
+            )
+    }
+
+    /**
      * Normalize manifest URL to ensure it uses http(s) and ends with /manifest.json (preserving query parameters)
      */
     internal fun normalizeManifestUrl(rawUrl: String): String {
@@ -140,6 +264,8 @@ class AddonClient(
 
     companion object {
         private const val ADDON_URL_HEX = "0123456789ABCDEF"
+        internal const val IMDB_SUGGESTION_BASE_URL = "https://v3.sg.media-imdb.com/suggestion/x"
+        internal const val CINEMETA_MANIFEST_URL = "https://v3-cinemeta.strem.io/manifest.json"
 
         internal fun String.encodeAddonPathSegment(): String =
             buildString {

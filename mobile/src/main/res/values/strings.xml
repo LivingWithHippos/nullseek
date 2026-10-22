@@ -300,6 +300,31 @@
     <string name="search_detail_link_copied">Link copied</string>
     <string name="search_detail_open_info">Open info page</string>
     <string name="search_detail_download">Download</string>
+    <string name="search_mode_label">Search mode</string>
+    <string name="search_mode_indexers">Indexers</string>
+    <string name="search_mode_stremio_addons">Stremio Addons</string>
+    <string name="search_hint_stremio">Search IMDb title or tt ID</string>
+    <string name="search_prompt_stremio">Search for a movie or series title on IMDb to find streams from your Stremio addons</string>
+    <plurals name="search_active_addons">
+        <item quantity="one">%d active Stremio addon</item>
+        <item quantity="other">%d active Stremio addons</item>
+    </plurals>
+    <string name="search_no_stremio_addons">No Stremio addons enabled. Add or enable Stremio addons in External services</string>
+    <string name="search_imdb_searching">Searching IMDb titles…</string>
+    <string name="search_imdb_no_titles">No matching titles found on IMDb</string>
+    <string name="search_imdb_type_movie">Movie</string>
+    <string name="search_imdb_type_series">Series</string>
+    <string name="search_stremio_back_titles">Back to titles</string>
+    <string name="search_stremio_back_episodes">Back to episodes</string>
+    <string name="search_stremio_season">Season %1$d</string>
+    <string name="search_stremio_specials">Specials</string>
+    <string name="search_stremio_whole_series">Search full series</string>
+    <string name="search_stremio_manual_season">Season</string>
+    <string name="search_stremio_manual_episode">Episode</string>
+    <string name="search_stremio_manual_search">Search episode</string>
+    <string name="search_stremio_loading_episodes">Loading episodes…</string>
+    <string name="search_stremio_loading_streams">Searching Stremio addons…</string>
+    <string name="search_stremio_no_episodes">Episode list unavailable. Enter season and episode above or search full series.</string>
 
     <!-- Stremio Addons -->
     <string name="stremio_addons_title">Stremio Addons</string>

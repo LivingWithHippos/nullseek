@@ -79,6 +79,18 @@ class AddonManager(
     fun getEnabledAddons(): Flow<List<StremioAddonEntity>> = repository.getEnabledAddons()
 
     /**
+     * Search IMDb titles by text query
+     */
+    suspend fun searchImdbTitles(query: String): Result<List<ImdbTitleResult>> =
+        addonClient.searchImdbTitles(query)
+
+    /**
+     * Fetch episodes for a series by its IMDb ID
+     */
+    suspend fun getSeriesEpisodes(imdbId: String): Result<List<SeriesEpisodeItem>> =
+        addonClient.getSeriesEpisodes(imdbId)
+
+    /**
      * Search for streams across all enabled addons
      * @param type Content type (movie, series, etc.)
      * @param id Content ID (e.g., tt1254207 for IMDB)

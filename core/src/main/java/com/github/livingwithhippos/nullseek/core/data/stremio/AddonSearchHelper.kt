@@ -1,6 +1,8 @@
 package com.github.livingwithhippos.nullseek.core.data.stremio
 
 import com.github.livingwithhippos.nullseek.core.data.ScrapedItem
+import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Helper functions to convert between IMDB IDs and other formats
@@ -55,11 +57,77 @@ object ImdbUtils {
 }
 
 /**
+ * Scraped item paired with the Stremio addon metadata that produced it.
+ */
+data class AddonScrapedItem(
+    val scrapedItem: ScrapedItem,
+    val addonName: String,
+    val addonId: String,
+)
+
+/**
  * Utility class to help with Stremio addon integration in search
  */
 class AddonSearchHelper(
     private val addonManager: AddonManager,
 ) {
+    /**
+     * Observe enabled Stremio addons
+     */
+    fun getEnabledAddons(): Flow<List<StremioAddonEntity>> = addonManager.getEnabledAddons()
+
+    /**
+     * Search IMDb / Cinemeta titles by text query
+     */
+    suspend fun searchTitles(query: String): Result<List<ImdbTitleResult>> =
+        addonManager.searchImdbTitles(query)
+
+    /**
+     * Fetch episodes for a series by its IMDb ID
+     */
+    suspend fun getSeriesEpisodes(imdbId: String): Result<List<SeriesEpisodeItem>> =
+        addonManager.getSeriesEpisodes(imdbId)
+
+    /**
+     * Search for content using Stremio addons, preserving the source addon name for each stream.
+     * @param query Search query (can be IMDB ID or episode ID tt1234567:1:2)
+     * @param type Optional explicit content type (movie, series). If null, detected from ID or both movie and series are queried.
+     * @param contentName Optional display title fallback when stream does not specify a name.
+     */
+    suspend fun searchStreamsWithAddonInfo(
+        query: String,
+        type: String? = null,
+        contentName: String? = null,
+    ): Result<List<AddonScrapedItem>> =
+        runCatching {
+            val imdbId = ImdbUtils.extractImdbId(query) ?: return@runCatching emptyList()
+
+            val typesToQuery =
+                when {
+                    !type.isNullOrBlank() -> listOf(type)
+                    else -> ImdbUtils.detectContentType(imdbId)?.let { listOf(it) } ?: listOf("movie", "series")
+                }
+
+            val results =
+                typesToQuery.flatMap { contentType ->
+                    addonManager
+                        .searchStreams(contentType, imdbId)
+                        .getOrElse { emptyList() }
+                }
+
+            results.map { streamResult ->
+                AddonScrapedItem(
+                    scrapedItem =
+                        addonManager.streamToScrapedItem(
+                            streamResult = streamResult,
+                            contentName = contentName ?: query,
+                        ),
+                    addonName = streamResult.addonName,
+                    addonId = streamResult.addonId,
+                )
+            }
+        }
+
     /**
      * Search for content using Stremio addons
      * @param query Search query (can be IMDB ID or title)
@@ -70,37 +138,8 @@ class AddonSearchHelper(
         query: String,
         type: String? = null,
     ): Result<List<ScrapedItem>> =
-        runCatching {
-            // Try to extract IMDB ID
-            val imdbId = ImdbUtils.extractImdbId(query)
-
-            if (imdbId == null) {
-                // If no IMDB ID, return empty list
-                // Stremio addons work best with IMDB IDs
-                return@runCatching emptyList()
-            }
-
-            val typesToQuery =
-                when {
-                    !type.isNullOrBlank() -> listOf(type)
-                    else -> ImdbUtils.detectContentType(imdbId)?.let { listOf(it) } ?: listOf("movie", "series")
-                }
-
-            // Search across all enabled addons for each applicable type
-            val results =
-                typesToQuery.flatMap { contentType ->
-                    addonManager
-                        .searchStreams(contentType, imdbId)
-                        .getOrElse { emptyList() }
-                }
-
-            // Convert to ScrapedItem format
-            results.map { streamResult ->
-                addonManager.streamToScrapedItem(
-                    streamResult = streamResult,
-                    contentName = query,
-                )
-            }
+        searchStreamsWithAddonInfo(query, type).map { items ->
+            items.map { it.scrapedItem }
         }
 
     /**
