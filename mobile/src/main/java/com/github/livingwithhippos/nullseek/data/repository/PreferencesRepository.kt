@@ -31,6 +31,9 @@ class PreferencesRepository(
     private val searchSortOptionKey = stringPreferencesKey("search_sort_option")
     private val searchSortAscendingKey = booleanPreferencesKey("search_sort_ascending")
     private val searchModeKey = stringPreferencesKey("search_mode")
+    private val stremioShowFilterBarKey = booleanPreferencesKey("stremio_show_filter_bar")
+    private val stremioSortOptionKey = stringPreferencesKey("stremio_sort_option")
+    private val stremioSortAscendingKey = booleanPreferencesKey("stremio_sort_ascending")
 
     // null means the user has not chosen yet
     val includeReferral: Flow<Boolean?> =
@@ -46,6 +49,15 @@ class PreferencesRepository(
     /** Stored as the SearchMode name; unknown or missing values fall back to INDEXERS. */
     val searchMode: Flow<String?> =
         dataStore.data.map { preferences -> preferences[searchModeKey] }
+
+    val stremioShowFilterBar: Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[stremioShowFilterBarKey] ?: true }
+
+    val stremioSortOption: Flow<String?> =
+        dataStore.data.map { preferences -> preferences[stremioSortOptionKey] }
+
+    val stremioSortAscending: Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[stremioSortAscendingKey] ?: false }
 
     val searchAutoAddDownload: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[searchAutoAddDownloadKey] ?: false }
@@ -118,5 +130,17 @@ class PreferencesRepository(
 
     suspend fun setSearchMode(name: String) {
         dataStore.edit { preferences -> preferences[searchModeKey] = name }
+    }
+
+    suspend fun setStremioShowFilterBar(enabled: Boolean) {
+        dataStore.edit { preferences -> preferences[stremioShowFilterBarKey] = enabled }
+    }
+
+    suspend fun setStremioSortOption(name: String) {
+        dataStore.edit { preferences -> preferences[stremioSortOptionKey] = name }
+    }
+
+    suspend fun setStremioSortAscending(ascending: Boolean) {
+        dataStore.edit { preferences -> preferences[stremioSortAscendingKey] = ascending }
     }
 }

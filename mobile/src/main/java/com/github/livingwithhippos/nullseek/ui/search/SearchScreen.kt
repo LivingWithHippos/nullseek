@@ -47,6 +47,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSearchBarState
@@ -136,6 +137,10 @@ fun SearchScreen(
         onSearchMode = viewModel::setSearchMode,
         onSortOption = viewModel::setSortOption,
         onAscending = viewModel::setAscending,
+        onStremioFilterQuery = viewModel::setStremioFilterQuery,
+        onStremioShowFilterBar = viewModel::setStremioShowFilterBar,
+        onStremioSortOption = viewModel::setStremioSortOption,
+        onStremioAscending = viewModel::setStremioAscending,
         onDismissErrors = viewModel::dismissErrors,
         onSelectImdbTitle = viewModel::selectImdbTitle,
         onSelectSeason = viewModel::selectSeason,
@@ -159,6 +164,10 @@ fun SearchContent(
     onSearchMode: (SearchMode) -> Unit = {},
     onSortOption: (SearchSortOption) -> Unit = {},
     onAscending: (Boolean) -> Unit = {},
+    onStremioFilterQuery: (String) -> Unit = {},
+    onStremioShowFilterBar: (Boolean) -> Unit = {},
+    onStremioSortOption: (SearchSortOption) -> Unit = {},
+    onStremioAscending: (Boolean) -> Unit = {},
     onDismissErrors: () -> Unit = {},
     onSelectImdbTitle: (ImdbTitleResult) -> Unit = {},
     onSelectSeason: (Int) -> Unit = {},
@@ -351,6 +360,7 @@ fun SearchContent(
                             onSelectEpisode = onSelectEpisode,
                             onSearchManualEpisode = onSearchManualEpisode,
                             onSearchWholeSeries = onSearchWholeSeries,
+                            onStremioFilterQuery = onStremioFilterQuery,
                             onStremioBack = onStremioBack,
                             onResultClick = onResultClick,
                         )
@@ -382,6 +392,11 @@ fun SearchContent(
             sort = state.sort,
             onSortOption = onSortOption,
             onAscending = onAscending,
+            stremioSort = state.stremioState.sort,
+            onStremioSortOption = onStremioSortOption,
+            onStremioAscending = onStremioAscending,
+            stremioShowFilterBar = state.stremioState.showFilterBar,
+            onStremioShowFilterBar = onStremioShowFilterBar,
             onDismiss = { showSheet = false },
         )
     }
@@ -432,6 +447,7 @@ private fun StremioSearchContentSection(
     onSelectEpisode: (SeriesEpisodeItem) -> Unit,
     onSearchManualEpisode: (Int, Int) -> Unit,
     onSearchWholeSeries: () -> Unit,
+    onStremioFilterQuery: (String) -> Unit,
     onStremioBack: () -> Unit,
     onResultClick: (SearchResult) -> Unit,
 ) {
@@ -456,6 +472,7 @@ private fun StremioSearchContentSection(
         StremioStage.STREAMS -> {
             StremioStreamsSection(
                 stremioState = stremioState,
+                onFilterQueryChange = onStremioFilterQuery,
                 onBack = onStremioBack,
                 onResultClick = onResultClick,
             )
@@ -839,6 +856,7 @@ private fun SeriesEpisodeCard(
 @Composable
 private fun StremioStreamsSection(
     stremioState: StremioSearchState,
+    onFilterQueryChange: (String) -> Unit,
     onBack: () -> Unit,
     onResultClick: (SearchResult) -> Unit,
 ) {
@@ -906,6 +924,36 @@ private fun StremioStreamsSection(
             }
         }
 
+        if (stremioState.showFilterBar && (!stremioState.isLoadingStreams && stremioState.streamResults.isNotEmpty() || stremioState.filterQuery.isNotEmpty())) {
+            OutlinedTextField(
+                value = stremioState.filterQuery,
+                onValueChange = onFilterQueryChange,
+                placeholder = { Text(stringResource(R.string.search_stremio_filter_hint)) },
+                singleLine = true,
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_search),
+                        contentDescription = null,
+                    )
+                },
+                trailingIcon = {
+                    if (stremioState.filterQuery.isNotEmpty()) {
+                        IconButton(onClick = { onFilterQueryChange("") }) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_close),
+                                contentDescription = stringResource(R.string.search_clear),
+                            )
+                        }
+                    }
+                },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+            )
+        }
+
+        val displayedStreams = stremioState.filteredStreamResults
         if (stremioState.isLoadingStreams) {
             LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
             Text(
@@ -917,6 +965,13 @@ private fun StremioStreamsSection(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
                     text = stringResource(R.string.search_no_results),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
+        } else if (displayedStreams.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = stringResource(R.string.search_stremio_no_filtered_results),
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
@@ -932,7 +987,7 @@ private fun StremioStreamsSection(
                     ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(stremioState.streamResults) { result ->
+                items(displayedStreams) { result ->
                     SearchResultCard(
                         result = result,
                         onClick = { onResultClick(result) },
@@ -1093,6 +1148,11 @@ fun SearchSortSheet(
     onDismiss: () -> Unit,
     searchMode: SearchMode = SearchMode.INDEXERS,
     onSearchMode: (SearchMode) -> Unit = {},
+    stremioSort: SearchSort = SearchSort(),
+    onStremioSortOption: (SearchSortOption) -> Unit = {},
+    onStremioAscending: (Boolean) -> Unit = {},
+    stremioShowFilterBar: Boolean = true,
+    onStremioShowFilterBar: (Boolean) -> Unit = {},
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -1126,47 +1186,58 @@ fun SearchSortSheet(
 
             HorizontalDivider(modifier = Modifier.padding(bottom = 16.dp))
 
-            Text(
-                text = stringResource(R.string.search_sort_by),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
-            SearchSortOption.entries.forEach { option ->
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .selectable(
-                                selected = sort.option == option,
-                                onClick = { onSortOption(option) },
-                                role = Role.RadioButton,
-                            ),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    RadioButton(selected = sort.option == option, onClick = null)
-                    Text(
-                        option.label(),
-                        modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
+            when (searchMode) {
+                SearchMode.INDEXERS -> {
+                    SortOptionsSection(
+                        options = SearchSortOption.entries,
+                        sort = sort,
+                        onSortOption = onSortOption,
+                        onAscending = onAscending,
+                    )
+                }
+
+                SearchMode.STREMIO_ADDONS -> {
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onStremioShowFilterBar(!stremioShowFilterBar) }
+                                .padding(bottom = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.search_stremio_show_filter_bar),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = stringResource(R.string.search_stremio_show_filter_bar_summary),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = stremioShowFilterBar,
+                            onCheckedChange = onStremioShowFilterBar,
+                        )
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(bottom = 16.dp))
+
+                    SortOptionsSection(
+                        options = STREMIO_SORT_OPTIONS,
+                        sort = stremioSort,
+                        onSortOption = onStremioSortOption,
+                        onAscending = onStremioAscending,
                     )
                 }
             }
-            SingleChoiceSegmentedButtonRow(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp),
-            ) {
-                SegmentedButton(
-                    selected = sort.ascending,
-                    onClick = { onAscending(true) },
-                    shape = SegmentedButtonDefaults.itemShape(0, 2),
-                ) { Text(stringResource(R.string.search_order_ascending)) }
-                SegmentedButton(
-                    selected = !sort.ascending,
-                    onClick = { onAscending(false) },
-                    shape = SegmentedButtonDefaults.itemShape(1, 2),
-                ) { Text(stringResource(R.string.search_order_descending)) }
-            }
+
             TextButton(
                 onClick = onDismiss,
                 modifier =
@@ -1175,6 +1246,56 @@ fun SearchSortSheet(
                         .padding(top = 8.dp),
             ) { Text(stringResource(R.string.search_done)) }
         }
+    }
+}
+
+@Composable
+private fun SortOptionsSection(
+    options: List<SearchSortOption>,
+    sort: SearchSort,
+    onSortOption: (SearchSortOption) -> Unit,
+    onAscending: (Boolean) -> Unit,
+) {
+    Text(
+        text = stringResource(R.string.search_sort_by),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+    options.forEach { option ->
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = sort.option == option,
+                        onClick = { onSortOption(option) },
+                        role = Role.RadioButton,
+                    ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RadioButton(selected = sort.option == option, onClick = null)
+            Text(
+                option.label(),
+                modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
+            )
+        }
+    }
+    SingleChoiceSegmentedButtonRow(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+    ) {
+        SegmentedButton(
+            selected = sort.ascending,
+            onClick = { onAscending(true) },
+            shape = SegmentedButtonDefaults.itemShape(0, 2),
+        ) { Text(stringResource(R.string.search_order_ascending)) }
+        SegmentedButton(
+            selected = !sort.ascending,
+            onClick = { onAscending(false) },
+            shape = SegmentedButtonDefaults.itemShape(1, 2),
+        ) { Text(stringResource(R.string.search_order_descending)) }
     }
 }
 

@@ -303,7 +303,7 @@
     <string name="search_mode_label">Search mode</string>
     <string name="search_mode_indexers">Indexers</string>
     <string name="search_mode_stremio_addons">Stremio Addons</string>
-    <string name="search_hint_stremio">Search IMDb title or tt ID</string>
+    <string name="search_hint_stremio">Search title or IMDb ID</string>
     <string name="search_prompt_stremio">Search for a movie or series title on IMDb to find streams from your Stremio addons</string>
     <plurals name="search_active_addons">
         <item quantity="one">%d active Stremio addon</item>
@@ -325,6 +325,10 @@
     <string name="search_stremio_loading_episodes">Loading episodes…</string>
     <string name="search_stremio_loading_streams">Searching Stremio addons…</string>
     <string name="search_stremio_no_episodes">Episode list unavailable. Enter season and episode above or search full series.</string>
+    <string name="search_stremio_show_filter_bar">Show results filter bar</string>
+    <string name="search_stremio_show_filter_bar_summary">Display an input bar to filter stream results by title</string>
+    <string name="search_stremio_filter_hint">Filter results titles…</string>
+    <string name="search_stremio_no_filtered_results">No results match your filter</string>
 
     <!-- Stremio Addons -->
     <string name="stremio_addons_title">Stremio Addons</string>

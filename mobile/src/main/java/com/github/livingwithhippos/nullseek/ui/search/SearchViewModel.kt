@@ -46,6 +46,13 @@ enum class SearchMode { INDEXERS, STREMIO_ADDONS }
 
 enum class SearchSortOption { RELEVANCE, SIZE, SEEDERS, PEERS, AGE, NAME }
 
+val STREMIO_SORT_OPTIONS =
+    listOf(
+        SearchSortOption.RELEVANCE,
+        SearchSortOption.SIZE,
+        SearchSortOption.NAME,
+    )
+
 data class SearchSort(
     val option: SearchSortOption = SearchSortOption.RELEVANCE,
     val ascending: Boolean = false,
@@ -83,6 +90,9 @@ data class StremioSearchState(
     val activeStreamLabel: String = "",
     val isLoadingStreams: Boolean = false,
     val streamResults: List<SearchResult> = emptyList(),
+    val filterQuery: String = "",
+    val showFilterBar: Boolean = true,
+    val sort: SearchSort = SearchSort(),
 ) {
     val availableSeasons: List<Int>
         get() =
@@ -93,6 +103,22 @@ data class StremioSearchState(
 
     val episodesForSelectedSeason: List<SeriesEpisodeItem>
         get() = episodes.filter { it.season == selectedSeason }.sortedBy { it.episode }
+
+    val filteredStreamResults: List<SearchResult>
+        get() {
+            val activeFilter = filterQuery.trim()
+            val filtered =
+                if (showFilterBar && activeFilter.isNotEmpty()) {
+                    val tokens = activeFilter.lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }
+                    streamResults.filter { result ->
+                        val target = "${result.title} ${result.indexerName}".lowercase()
+                        tokens.all { token -> target.contains(token) }
+                    }
+                } else {
+                    streamResults
+                }
+            return filtered.applySort(sort)
+        }
 
     val canNavigateBack: Boolean
         get() =
@@ -196,7 +222,7 @@ fun buildSearchState(
         }
     val sortedStremioState =
         stremioState.copy(
-            streamResults = stremioState.streamResults.applySort(sort),
+            streamResults = stremioState.streamResults.applySort(stremioState.sort),
         )
     return SearchUiState(
         sort = sort,
@@ -262,6 +288,24 @@ class SearchViewModel(
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, SearchSort())
 
+    private val stremioSort: StateFlow<SearchSort> =
+        combine(
+            preferencesRepository.stremioSortOption,
+            preferencesRepository.stremioSortAscending,
+        ) { option, ascending ->
+            SearchSort(
+                option = STREMIO_SORT_OPTIONS.firstOrNull { it.name == option } ?: SearchSortOption.RELEVANCE,
+                ascending = ascending,
+            )
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, SearchSort())
+
+    private val stremioShowFilterBar: StateFlow<Boolean> =
+        preferencesRepository.stremioShowFilterBar.stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            true,
+        )
+
     private val searchMode: StateFlow<SearchMode> =
         preferencesRepository.searchMode
             .map { modeName ->
@@ -291,12 +335,18 @@ class SearchViewModel(
             },
             searchMode,
             addonSearchHelper.getEnabledAddons(),
-            stremioState,
+            combine(stremioState, stremioSort, stremioShowFilterBar) { stremio, sSort, showFilter ->
+                stremio.copy(
+                    sort = sSort,
+                    showFilterBar = showFilter,
+                    streamResults = stremio.streamResults.applySort(sSort),
+                )
+            },
         ) { baseState, mode, addons, stremio ->
             baseState.copy(
                 searchMode = mode,
                 activeAddons = addons,
-                stremioState = stremio.copy(streamResults = stremio.streamResults.applySort(baseState.sort)),
+                stremioState = stremio,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchUiState())
 
@@ -472,6 +522,7 @@ class SearchViewModel(
                             isLoadingStreams = false,
                             selectedEpisode = null,
                             streamResults = emptyList(),
+                            filterQuery = "",
                         )
                     } else if (current.titles.isNotEmpty()) {
                         current.copy(
@@ -480,6 +531,7 @@ class SearchViewModel(
                             selectedTitle = null,
                             selectedEpisode = null,
                             streamResults = emptyList(),
+                            filterQuery = "",
                         )
                     } else {
                         StremioSearchState()
@@ -520,6 +572,7 @@ class SearchViewModel(
                 activeStreamLabel = streamLabel,
                 isLoadingStreams = true,
                 streamResults = emptyList(),
+                filterQuery = "",
             )
         }
         stremioJob =
@@ -574,6 +627,22 @@ class SearchViewModel(
 
     fun setSearchMode(mode: SearchMode) {
         viewModelScope.launch { preferencesRepository.setSearchMode(mode.name) }
+    }
+
+    fun setStremioFilterQuery(query: String) {
+        stremioState.update { it.copy(filterQuery = query) }
+    }
+
+    fun setStremioShowFilterBar(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setStremioShowFilterBar(enabled) }
+    }
+
+    fun setStremioSortOption(option: SearchSortOption) {
+        viewModelScope.launch { preferencesRepository.setStremioSortOption(option.name) }
+    }
+
+    fun setStremioAscending(ascending: Boolean) {
+        viewModelScope.launch { preferencesRepository.setStremioSortAscending(ascending) }
     }
 
     fun setSortOption(option: SearchSortOption) {

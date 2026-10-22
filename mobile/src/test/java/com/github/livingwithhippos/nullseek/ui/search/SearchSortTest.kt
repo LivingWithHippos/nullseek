@@ -84,7 +84,7 @@ class SearchSortTest {
         val stremioModeWithAddon =
             buildSearchState(
                 progress = SearchProgress(),
-                sort = SearchSort(SearchSortOption.SIZE, ascending = false),
+                sort = SearchSort(),
                 active = emptyList(),
                 searchMode = SearchMode.STREMIO_ADDONS,
                 activeAddons = listOf(addon),
@@ -93,10 +93,31 @@ class SearchSortTest {
                         stage = StremioStage.STREAMS,
                         selectedTitle = ImdbTitleResult("tt1375666", "Inception", "2010", "movie"),
                         streamResults = listOf(a, b, c),
+                        sort = SearchSort(SearchSortOption.SIZE, ascending = false),
                     ),
             )
         assertTrue(stremioModeWithAddon.canSearch)
         assertEquals(listOf(b, c, a), stremioModeWithAddon.stremioState.streamResults)
+    }
+
+    @Test
+    fun stremioStreamFilterBarFiltersAndRespectsVisibility() {
+        val s1 = SearchResult("Inception.2010.2160p.REMUX.HEVC.mkv", "Torrentio", sizeBytes = 40_000, magnetLink = "magnet:?xt=1")
+        val s2 = SearchResult("Inception.2010.1080p.BluRay.x264.mkv", "Torrentio", sizeBytes = 10_000, magnetLink = "magnet:?xt=2")
+        val s3 = SearchResult("Inception.2010.1080p.WEB-DL.mp4", "Comet", sizeBytes = 8_000, magnetLink = "magnet:?xt=3")
+
+        val stateWithFilter =
+            StremioSearchState(
+                stage = StremioStage.STREAMS,
+                streamResults = listOf(s1, s2, s3),
+                filterQuery = "1080p comet",
+                showFilterBar = true,
+            )
+        assertEquals(listOf(s3), stateWithFilter.filteredStreamResults)
+
+        // When showFilterBar is false, all results are returned regardless of filterQuery
+        val stateHiddenFilter = stateWithFilter.copy(showFilterBar = false)
+        assertEquals(listOf(s1, s2, s3), stateHiddenFilter.filteredStreamResults)
     }
 
     @Test
