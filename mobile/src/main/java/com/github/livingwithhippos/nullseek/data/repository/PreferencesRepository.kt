@@ -44,6 +44,22 @@ enum class DownloadZipMode {
     ZIP_NON_MEDIA,
 }
 
+enum class ThemeMode {
+    SYSTEM,
+    LIGHT,
+    DARK,
+}
+
+enum class ThemeColor {
+    SYSTEM,
+    PURPLE,
+    BLUE,
+    TEAL,
+    GREEN,
+    ORANGE,
+    RED,
+}
+
 class PreferencesRepository(
     private val dataStore: DataStore<Preferences>,
 ) {
@@ -60,6 +76,8 @@ class PreferencesRepository(
     private val stremioSortOptionKey = stringPreferencesKey("stremio_sort_option")
     private val stremioSortAscendingKey = booleanPreferencesKey("stremio_sort_ascending")
     private val searchHistoryKey = stringPreferencesKey("search_history")
+    private val themeModeKey = stringPreferencesKey("theme_mode")
+    private val themeColorKey = stringPreferencesKey("theme_color")
 
     // null means the user has not chosen yet
     val includeReferral: Flow<Boolean?> =
@@ -109,6 +127,38 @@ class PreferencesRepository(
         dataStore.data.map { preferences ->
             preferences[pagingLoadSizeKey] ?: DEFAULT_PAGING_LOAD_SIZE
         }
+
+    val themeMode: Flow<ThemeMode> =
+        dataStore.data.map { preferences ->
+            val raw = preferences[themeModeKey]
+            ThemeMode.entries.firstOrNull { it.name == raw } ?: ThemeMode.SYSTEM
+        }
+
+    val themeColor: Flow<ThemeColor> =
+        dataStore.data.map { preferences ->
+            val raw = preferences[themeColorKey]
+            ThemeColor.entries.firstOrNull { it.name == raw } ?: ThemeColor.SYSTEM
+        }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        dataStore.edit { preferences ->
+            if (mode == ThemeMode.SYSTEM) {
+                preferences.remove(themeModeKey)
+            } else {
+                preferences[themeModeKey] = mode.name
+            }
+        }
+    }
+
+    suspend fun setThemeColor(color: ThemeColor) {
+        dataStore.edit { preferences ->
+            if (color == ThemeColor.SYSTEM) {
+                preferences.remove(themeColorKey)
+            } else {
+                preferences[themeColorKey] = color.name
+            }
+        }
+    }
 
     suspend fun getDownloadZipMode(): DownloadZipMode = downloadZipMode.first()
 

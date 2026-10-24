@@ -1,9 +1,14 @@
 package com.github.livingwithhippos.nullseek.ui.settings
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,7 +51,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
+import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
+import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.shouldUseDarkTheme
+import com.github.livingwithhippos.nullseek.ui.theme.swatchColor
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import org.koin.androidx.compose.koinViewModel
@@ -66,6 +75,8 @@ fun SettingsScreen(
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
     val pagingLoadSize by viewModel.pagingLoadSize.collectAsStateWithLifecycle()
     val searchAutoAddDownload by viewModel.searchAutoAddDownload.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
 
     SettingsScreen(
         downloadZipMode = downloadZipMode,
@@ -74,6 +85,10 @@ fun SettingsScreen(
         onPagingLoadSizeSelected = { viewModel.setPagingLoadSize(it) },
         searchAutoAddDownload = searchAutoAddDownload,
         onSearchAutoAddDownloadChanged = { viewModel.setSearchAutoAddDownload(it) },
+        themeMode = themeMode,
+        onThemeModeSelected = { viewModel.setThemeMode(it) },
+        themeColor = themeColor,
+        onThemeColorSelected = { viewModel.setThemeColor(it) },
         onNavigateToExternalServices = onNavigateToExternalServices,
         onNavigateToProviders = onNavigateToProviders,
         onNavigateToAddons = onNavigateToAddons,
@@ -81,6 +96,7 @@ fun SettingsScreen(
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     downloadZipMode: DownloadZipMode,
@@ -90,6 +106,10 @@ fun SettingsScreen(
     onPagingLoadSizeSelected: (Int) -> Unit = {},
     searchAutoAddDownload: Boolean = false,
     onSearchAutoAddDownloadChanged: (Boolean) -> Unit = {},
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    onThemeModeSelected: (ThemeMode) -> Unit = {},
+    themeColor: ThemeColor = ThemeColor.SYSTEM,
+    onThemeColorSelected: (ThemeColor) -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
     onNavigateToAddons: () -> Unit = {},
@@ -218,6 +238,89 @@ fun SettingsScreen(
                         contentDescription = null,
                         modifier = Modifier.size(20.dp),
                     )
+                }
+            }
+
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                val resolvedDarkTheme = shouldUseDarkTheme(themeMode)
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.theme_preference_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = stringResource(id = R.string.theme_preference_summary),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = stringResource(id = R.string.theme_dark_mode_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        ThemeMode.entries.forEach { mode ->
+                            FilterChip(
+                                selected = themeMode == mode,
+                                onClick = { onThemeModeSelected(mode) },
+                                label = { Text(text = stringResource(id = mode.labelRes())) },
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = stringResource(id = R.string.theme_color_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        ThemeColor.entries.forEach { colorOption ->
+                            val swatch = colorOption.swatchColor(resolvedDarkTheme)
+                            FilterChip(
+                                selected = themeColor == colorOption,
+                                onClick = { onThemeColorSelected(colorOption) },
+                                leadingIcon =
+                                    if (swatch != null) {
+                                        {
+                                            Box(
+                                                modifier =
+                                                    Modifier
+                                                        .size(12.dp)
+                                                        .background(swatch)
+                                                        .border(
+                                                            width = 1.dp,
+                                                            color = MaterialTheme.colorScheme.outline,
+                                                        ),
+                                            )
+                                        }
+                                    } else {
+                                        null
+                                    },
+                                label = { Text(text = stringResource(id = colorOption.labelRes())) },
+                            )
+                        }
+                    }
                 }
             }
 
@@ -399,6 +502,24 @@ private fun DownloadZipModeOption(
         )
     }
 }
+
+private fun ThemeMode.labelRes(): Int =
+    when (this) {
+        ThemeMode.SYSTEM -> R.string.theme_mode_system
+        ThemeMode.LIGHT -> R.string.theme_mode_light
+        ThemeMode.DARK -> R.string.theme_mode_dark
+    }
+
+private fun ThemeColor.labelRes(): Int =
+    when (this) {
+        ThemeColor.SYSTEM -> R.string.theme_color_system
+        ThemeColor.PURPLE -> R.string.theme_color_purple
+        ThemeColor.BLUE -> R.string.theme_color_blue
+        ThemeColor.TEAL -> R.string.theme_color_teal
+        ThemeColor.GREEN -> R.string.theme_color_green
+        ThemeColor.ORANGE -> R.string.theme_color_orange
+        ThemeColor.RED -> R.string.theme_color_red
+    }
 
 @Preview
 @Composable

@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
+import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
+import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
+import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
@@ -14,7 +17,9 @@ import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import com.github.livingwithhippos.torbox.network.ApiResult
 import com.github.livingwithhippos.torbox.network.TorboxClientConfig
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 
@@ -22,9 +27,24 @@ import org.koin.core.annotation.KoinViewModel
 class NullRootViewModel(
     private val client: TorboxClient,
     val providerRepository: NullProviderRepository,
+    preferencesRepository: PreferencesRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(NullRootUiState(loading = true))
     val uiState: StateFlow<NullRootUiState> = _uiState
+
+    val themeMode: StateFlow<ThemeMode> =
+        preferencesRepository.themeMode.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ThemeMode.SYSTEM,
+        )
+
+    val themeColor: StateFlow<ThemeColor> =
+        preferencesRepository.themeColor.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ThemeColor.SYSTEM,
+        )
 
     // todo: decide if we should have a factory method for temp clients
     private val tempClient =

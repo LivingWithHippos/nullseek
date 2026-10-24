@@ -363,4 +363,20 @@
     <string name="stremio_addon_delete_title">Delete Addon</string>
     <string name="stremio_addon_delete_message">Are you sure you want to delete addon \"%s\"?</string>
     <string name="delete">Delete</string>
+
+    <!-- Theme & Appearance -->
+    <string name="theme_preference_title">Theme &amp; Appearance</string>
+    <string name="theme_preference_summary">Customize dark mode behavior and color palette</string>
+    <string name="theme_dark_mode_label">Dark mode</string>
+    <string name="theme_mode_system">System</string>
+    <string name="theme_mode_light">Light</string>
+    <string name="theme_mode_dark">Dark</string>
+    <string name="theme_color_label">Theme color</string>
+    <string name="theme_color_system">System</string>
+    <string name="theme_color_purple">Purple</string>
+    <string name="theme_color_blue">Blue</string>
+    <string name="theme_color_teal">Teal</string>
+    <string name="theme_color_green">Green</string>
+    <string name="theme_color_orange">Orange</string>
+    <string name="theme_color_red">Red</string>
 </resources>

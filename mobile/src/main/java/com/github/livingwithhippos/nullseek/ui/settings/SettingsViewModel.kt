@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
+import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
+import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -36,6 +38,20 @@ class SettingsViewModel(
             initialValue = false,
         )
 
+    val themeMode: StateFlow<ThemeMode> =
+        preferencesRepository.themeMode.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ThemeMode.SYSTEM,
+        )
+
+    val themeColor: StateFlow<ThemeColor> =
+        preferencesRepository.themeColor.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ThemeColor.SYSTEM,
+        )
+
     fun setSearchAutoAddDownload(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setSearchAutoAddDownload(enabled) }
     }
@@ -49,6 +65,18 @@ class SettingsViewModel(
     fun setPagingLoadSize(size: Int) {
         viewModelScope.launch {
             preferencesRepository.setPagingLoadSize(size)
+        }
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch {
+            preferencesRepository.setThemeMode(mode)
+        }
+    }
+
+    fun setThemeColor(color: ThemeColor) {
+        viewModelScope.launch {
+            preferencesRepository.setThemeColor(color)
         }
     }
 }
