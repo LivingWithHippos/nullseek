@@ -187,17 +187,19 @@ fun NullNavigationRail(
                     )
                 },
             )
-            FloatingActionButton(
-                onClick = { navigateToTopLevelDestination(NEW_DOWNLOAD_DESTINATION) },
-                modifier = Modifier.padding(top = 8.dp),
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-            ) {
-                Icon(
-                    painter = painterResource(id = NEW_DOWNLOAD_DESTINATION.selectedIcon),
-                    contentDescription = stringResource(id = NEW_DOWNLOAD_DESTINATION.iconTextId),
-                    modifier = Modifier.size(18.dp),
-                )
+            if (isUserLoaded) {
+                FloatingActionButton(
+                    onClick = { navigateToTopLevelDestination(NEW_DOWNLOAD_DESTINATION) },
+                    modifier = Modifier.padding(top = 8.dp),
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                ) {
+                    Icon(
+                        painter = painterResource(id = NEW_DOWNLOAD_DESTINATION.selectedIcon),
+                        contentDescription = stringResource(id = NEW_DOWNLOAD_DESTINATION.iconTextId),
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
             FloatingActionButton(
                 onClick = { navigateToTopLevelDestination(SETTINGS_DESTINATION) },
@@ -301,24 +303,26 @@ fun PermanentNavigationDrawerContent(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )
-                    ExtendedFloatingActionButton(
-                        onClick = { navigateToTopLevelDestination(NEW_DOWNLOAD_DESTINATION) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                    ) {
-                        Icon(
-                            painter = painterResource(id = NEW_DOWNLOAD_DESTINATION.selectedIcon),
-                            contentDescription = stringResource(id = NEW_DOWNLOAD_DESTINATION.iconTextId),
-                            modifier = Modifier.size(24.dp),
-                        )
-                        Text(
-                            text = stringResource(id = NEW_DOWNLOAD_DESTINATION.iconTextId),
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Center,
-                        )
+                    if (isUserLoaded) {
+                        ExtendedFloatingActionButton(
+                            onClick = { navigateToTopLevelDestination(NEW_DOWNLOAD_DESTINATION) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                        ) {
+                            Icon(
+                                painter = painterResource(id = NEW_DOWNLOAD_DESTINATION.selectedIcon),
+                                contentDescription = stringResource(id = NEW_DOWNLOAD_DESTINATION.iconTextId),
+                                modifier = Modifier.size(24.dp),
+                            )
+                            Text(
+                                text = stringResource(id = NEW_DOWNLOAD_DESTINATION.iconTextId),
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
                     ExtendedFloatingActionButton(
                         onClick = { navigateToTopLevelDestination(SETTINGS_DESTINATION) },
@@ -422,24 +426,26 @@ fun ModalNavigationDrawerContent(
                         }
                     }
 
-                    ExtendedFloatingActionButton(
-                        onClick = { navigateToTopLevelDestination(NEW_DOWNLOAD_DESTINATION) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                    ) {
-                        Icon(
-                            painter = painterResource(id = NEW_DOWNLOAD_DESTINATION.selectedIcon),
-                            contentDescription = stringResource(id = NEW_DOWNLOAD_DESTINATION.iconTextId),
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Text(
-                            text = stringResource(id = NEW_DOWNLOAD_DESTINATION.iconTextId),
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Center,
-                        )
+                    if (isUserLoaded) {
+                        ExtendedFloatingActionButton(
+                            onClick = { navigateToTopLevelDestination(NEW_DOWNLOAD_DESTINATION) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                        ) {
+                            Icon(
+                                painter = painterResource(id = NEW_DOWNLOAD_DESTINATION.selectedIcon),
+                                contentDescription = stringResource(id = NEW_DOWNLOAD_DESTINATION.iconTextId),
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(
+                                text = stringResource(id = NEW_DOWNLOAD_DESTINATION.iconTextId),
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
                     ExtendedFloatingActionButton(
                         onClick = { navigateToTopLevelDestination(SETTINGS_DESTINATION) },

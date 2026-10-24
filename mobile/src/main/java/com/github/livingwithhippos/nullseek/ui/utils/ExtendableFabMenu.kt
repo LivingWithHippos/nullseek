@@ -29,6 +29,7 @@ fun ExtendableFabMenu(
     onNewDownload: () -> Unit,
     showSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    showNewDownload: Boolean = true,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
 
@@ -48,24 +49,26 @@ fun ExtendableFabMenu(
         },
         modifier = modifier.padding(16.dp),
     ) {
-        FloatingActionButtonMenuItem(
-            onClick = {
-                expanded = false
-                onNewDownload()
-            },
-            icon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_add),
-                    contentDescription = stringResource(id = R.string.new_download),
-                )
-            },
-            text = {
-                Text(
-                    text = stringResource(id = R.string.new_download),
-                )
-            },
-            modifier = Modifier.widthIn(min = 210.dp)
-        )
+        if (showNewDownload) {
+            FloatingActionButtonMenuItem(
+                onClick = {
+                    expanded = false
+                    onNewDownload()
+                },
+                icon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_add),
+                        contentDescription = stringResource(id = R.string.new_download),
+                    )
+                },
+                text = {
+                    Text(
+                        text = stringResource(id = R.string.new_download),
+                    )
+                },
+                modifier = Modifier.widthIn(min = 210.dp),
+            )
+        }
         FloatingActionButtonMenuItem(
             onClick = {
                 expanded = false

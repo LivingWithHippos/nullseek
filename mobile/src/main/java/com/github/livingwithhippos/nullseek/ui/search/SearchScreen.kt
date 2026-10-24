@@ -160,6 +160,7 @@ fun SearchScreen(
         onClearHistory = viewModel::clearSearchHistory,
         onNewDownload = onNewDownload,
         showSettings = showSettings,
+        showNewDownload = !uiState.setup && uiState.user != null,
         onNavigateToExternalServices = onNavigateToExternalServices,
     )
 }
@@ -189,6 +190,7 @@ fun SearchContent(
     onClearHistory: () -> Unit = {},
     onNewDownload: () -> Unit = {},
     showSettings: () -> Unit = {},
+    showNewDownload: Boolean = true,
     onNavigateToExternalServices: () -> Unit = {},
     selectedResult: SearchResult? = null,
     onResultClick: (SearchResult) -> Unit = {},
@@ -455,6 +457,7 @@ fun SearchContent(
             ExtendableFabMenu(
                 onNewDownload = onNewDownload,
                 showSettings = showSettings,
+                showNewDownload = showNewDownload,
                 modifier = Modifier.align(Alignment.BottomEnd),
             )
         }
