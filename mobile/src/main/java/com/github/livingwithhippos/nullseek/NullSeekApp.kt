@@ -21,6 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.ui.externalservices.ExternalServicesScreen
+import com.github.livingwithhippos.nullseek.ui.addons.AddonsScreen
 import com.github.livingwithhippos.nullseek.ui.home.HomeScreen
 import com.github.livingwithhippos.nullseek.ui.lists.ListsScreen
 import com.github.livingwithhippos.nullseek.ui.navigation.NavigationActions
@@ -200,6 +201,14 @@ private fun NullNavHost(
                 onNavigateToExternalServices = {
                     navController.navigate(Route.ExternalServices)
                 },
+                onNavigateToAddons = {
+                    navController.navigate(Route.StremioAddons)
+                },
+            )
+        }
+        composable<Route.StremioAddons> {
+            AddonsScreen(
+                onNavigateBack = { navController.popBackStack() },
             )
         }
         composable<Route.ExternalServices> {

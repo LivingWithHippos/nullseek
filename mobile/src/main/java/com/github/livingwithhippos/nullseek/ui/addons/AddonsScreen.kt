@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.R
@@ -73,12 +74,12 @@ fun AddonsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Stremio Addons") },
+                title = { Text(stringResource(id = R.string.stremio_addons_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_delete),
-                            contentDescription = "Back",
+                            painter = painterResource(id = R.drawable.ic_close),
+                            contentDescription = stringResource(id = R.string.close),
                         )
                     }
                 },

@@ -60,6 +60,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onNavigateToExternalServices: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
+    onNavigateToAddons: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
@@ -75,6 +76,7 @@ fun SettingsScreen(
         onSearchAutoAddDownloadChanged = { viewModel.setSearchAutoAddDownload(it) },
         onNavigateToExternalServices = onNavigateToExternalServices,
         onNavigateToProviders = onNavigateToProviders,
+        onNavigateToAddons = onNavigateToAddons,
         modifier = modifier,
     )
 }
@@ -201,12 +203,12 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
-                            text = "Stremio Addons",
+                            text = stringResource(id = R.string.stremio_addons_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = "Install and manage Stremio addons for content discovery",
+                            text = stringResource(id = R.string.stremio_addons_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
