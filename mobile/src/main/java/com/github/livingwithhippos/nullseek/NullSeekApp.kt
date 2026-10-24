@@ -200,6 +200,7 @@ private fun NullNavHost(
                 onNavigateToExternalServices = {
                     navController.navigate(Route.ExternalServices)
                 },
+                onProvidersChanged = reloadProviders,
             )
         }
         composable<Route.ExternalServices> {

@@ -1,5 +1,8 @@
 package com.github.livingwithhippos.nullseek.ui.settings
 
+import android.annotation.SuppressLint
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,22 +29,26 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Switch
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import com.github.livingwithhippos.nullseek.ui.theme.Button
-import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
-import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -56,15 +63,31 @@ import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
 import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
+import com.github.livingwithhippos.nullseek.ui.theme.Button
+import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
+import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.theme.shouldUseDarkTheme
 import com.github.livingwithhippos.nullseek.ui.theme.swatchColor
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private val PAGING_LOAD_SIZE_PRESETS = listOf(100, 500, 1000, 5000)
 
+private fun defaultBackupFileName(): String {
+    val formatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
+    return "nullseek_backup_${formatter.format(Date())}.json"
+}
+
+@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 fun SettingsScreen(
     contentType: NullContentType,
@@ -72,32 +95,115 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onNavigateToExternalServices: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
+    onProvidersChanged: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val currentOnProvidersChanged by rememberUpdatedState(onProvidersChanged)
+
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
     val pagingLoadSize by viewModel.pagingLoadSize.collectAsStateWithLifecycle()
     val searchAutoAddDownload by viewModel.searchAutoAddDownload.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
     val externalDisclaimerAccepted by viewModel.externalDisclaimerAccepted.collectAsStateWithLifecycle()
+    val isBackupBusy by viewModel.isBackupBusy.collectAsStateWithLifecycle()
 
-    SettingsScreen(
-        downloadZipMode = downloadZipMode,
-        onDownloadZipModeSelected = { viewModel.setDownloadZipMode(it) },
-        pagingLoadSize = pagingLoadSize,
-        onPagingLoadSizeSelected = { viewModel.setPagingLoadSize(it) },
-        searchAutoAddDownload = searchAutoAddDownload,
-        onSearchAutoAddDownloadChanged = { viewModel.setSearchAutoAddDownload(it) },
-        themeMode = themeMode,
-        onThemeModeSelected = { viewModel.setThemeMode(it) },
-        themeColor = themeColor,
-        onThemeColorSelected = { viewModel.setThemeColor(it) },
-        externalDisclaimerAccepted = externalDisclaimerAccepted,
-        onAcceptExternalDisclaimer = { viewModel.acceptExternalDisclaimer() },
-        onNavigateToExternalServices = onNavigateToExternalServices,
-        onNavigateToProviders = onNavigateToProviders,
-        modifier = modifier,
-    )
+    var pendingBackupJson by remember { mutableStateOf<String?>(null) }
+
+    val createBackupLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/json"),
+        ) { uri ->
+            val json = pendingBackupJson
+            pendingBackupJson = null
+            if (uri != null && json != null) {
+                coroutineScope.launch {
+                    val success =
+                        withContext(Dispatchers.IO) {
+                            runCatching {
+                                context.contentResolver.openOutputStream(uri)?.use { stream ->
+                                    stream.write(json.toByteArray(Charsets.UTF_8))
+                                } ?: error("Unable to open output stream")
+                            }.isSuccess
+                        }
+                    viewModel.onBackupWriteCompleted(success)
+                }
+            }
+        }
+
+    val restoreBackupLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            if (uri != null) {
+                coroutineScope.launch {
+                    val rawJson =
+                        withContext(Dispatchers.IO) {
+                            runCatching {
+                                context.contentResolver
+                                    .openInputStream(uri)
+                                    ?.bufferedReader(Charsets.UTF_8)
+                                    ?.use { it.readText() }
+                            }.getOrNull()
+                        }
+                    if (rawJson != null) {
+                        viewModel.importBackup(rawJson)
+                    } else {
+                        viewModel.onBackupReadFailed()
+                    }
+                }
+            }
+        }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is SettingsEvent.ShowMessage -> {
+                    snackbarHostState.showSnackbar(context.getString(event.resId))
+                }
+
+                is SettingsEvent.WriteBackupFile -> {
+                    pendingBackupJson = event.json
+                    createBackupLauncher.launch(defaultBackupFileName())
+                }
+
+                SettingsEvent.BackupRestored -> {
+                    currentOnProvidersChanged()
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        modifier = modifier.fillMaxSize(),
+    ) { innerPadding ->
+        SettingsScreen(
+            downloadZipMode = downloadZipMode,
+            onDownloadZipModeSelected = { viewModel.setDownloadZipMode(it) },
+            pagingLoadSize = pagingLoadSize,
+            onPagingLoadSizeSelected = { viewModel.setPagingLoadSize(it) },
+            searchAutoAddDownload = searchAutoAddDownload,
+            onSearchAutoAddDownloadChanged = { viewModel.setSearchAutoAddDownload(it) },
+            themeMode = themeMode,
+            onThemeModeSelected = { viewModel.setThemeMode(it) },
+            themeColor = themeColor,
+            onThemeColorSelected = { viewModel.setThemeColor(it) },
+            externalDisclaimerAccepted = externalDisclaimerAccepted,
+            onAcceptExternalDisclaimer = { viewModel.acceptExternalDisclaimer() },
+            isBackupBusy = isBackupBusy,
+            onCreateBackup = { viewModel.exportBackup() },
+            onRestoreBackup = {
+                restoreBackupLauncher.launch(arrayOf("application/json", "*/*"))
+            },
+            onNavigateToExternalServices = onNavigateToExternalServices,
+            onNavigateToProviders = onNavigateToProviders,
+            modifier = Modifier.padding(innerPadding),
+        )
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -116,12 +222,16 @@ fun SettingsScreen(
     onThemeColorSelected: (ThemeColor) -> Unit = {},
     externalDisclaimerAccepted: Boolean = false,
     onAcceptExternalDisclaimer: () -> Unit = {},
+    isBackupBusy: Boolean = false,
+    onCreateBackup: () -> Unit = {},
+    onRestoreBackup: () -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
     var pageSizeInput by rememberSaveable { mutableStateOf(pagingLoadSize.toString()) }
     var showExternalDisclaimerDialog by rememberSaveable { mutableStateOf(false) }
+    var showRestoreConfirmDialog by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(pagingLoadSize) {
         pageSizeInput = pagingLoadSize.toString()
@@ -145,6 +255,29 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showExternalDisclaimerDialog = false }) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            },
+        )
+    }
+
+    if (showRestoreConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showRestoreConfirmDialog = false },
+            title = { Text(text = stringResource(id = R.string.backup_restore_confirm_title)) },
+            text = { Text(text = stringResource(id = R.string.backup_restore_confirm_message)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showRestoreConfirmDialog = false
+                        onRestoreBackup()
+                    },
+                ) {
+                    Text(text = stringResource(id = R.string.backup_restore_confirm_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRestoreConfirmDialog = false }) {
                     Text(text = stringResource(id = R.string.cancel))
                 }
             },
@@ -471,6 +604,49 @@ fun SettingsScreen(
                             ),
                         modifier = Modifier.fillMaxWidth(),
                     )
+                }
+            }
+
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.backup_preference_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = stringResource(id = R.string.backup_preference_summary),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Button(
+                            onClick = onCreateBackup,
+                            enabled = !isBackupBusy,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(text = stringResource(id = R.string.backup_create_button))
+                        }
+
+                        OutlinedButton(
+                            onClick = { showRestoreConfirmDialog = true },
+                            enabled = !isBackupBusy,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(text = stringResource(id = R.string.backup_restore_button))
+                        }
+                    }
                 }
             }
         }

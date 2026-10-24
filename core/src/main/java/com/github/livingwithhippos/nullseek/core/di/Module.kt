@@ -11,6 +11,8 @@ import com.github.livingwithhippos.nullseek.core.data.database.dao.ExternalServi
 import com.github.livingwithhippos.nullseek.core.data.database.dao.IndexerDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.NullProviderDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.StremioAddonDao
+import com.github.livingwithhippos.nullseek.core.data.repository.BackupRepository
+import com.github.livingwithhippos.nullseek.core.data.repository.BackupRepositoryImpl
 import com.github.livingwithhippos.nullseek.core.data.repository.ExternalServiceRepository
 import com.github.livingwithhippos.nullseek.core.data.repository.ExternalServiceRepositoryImpl
 import com.github.livingwithhippos.nullseek.core.data.repository.IndexerRepository
@@ -66,6 +68,23 @@ private fun externalServiceRepository(dao: ExternalServiceDao): ExternalServiceR
 
 private fun stremioAddonRepository(dao: StremioAddonDao): StremioAddonRepository = StremioAddonRepositoryImpl(dao)
 
+private fun backupRepository(
+    providerDao: NullProviderDao,
+    externalServiceDao: ExternalServiceDao,
+    indexerDao: IndexerDao,
+    stremioAddonDao: StremioAddonDao,
+    dataStore: DataStore<Preferences>,
+    torboxClient: TorboxClient,
+): BackupRepository =
+    BackupRepositoryImpl(
+        providerDao = providerDao,
+        externalServiceDao = externalServiceDao,
+        indexerDao = indexerDao,
+        stremioAddonDao = stremioAddonDao,
+        dataStore = dataStore,
+        torboxClient = torboxClient,
+    )
+
 private fun datastore(context: Context): DataStore<Preferences> =
     PreferenceDataStoreFactory.create(
         produceFile = { context.preferencesDataStoreFile("settings") },
@@ -92,6 +111,8 @@ private val storageModule =
         single { create(::stremioAddonDao) }
 
         single { create(::stremioAddonRepository) }
+
+        single { create(::backupRepository) }
 
         single {
             AddonManager(

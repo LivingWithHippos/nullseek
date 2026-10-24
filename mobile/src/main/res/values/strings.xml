@@ -384,4 +384,17 @@
     <string name="external_content_disclaimer_title">Disclaimer</string>
     <string name="external_content_disclaimer_message">NullSeek does not host, provide, or endorse any third-party indexers, Stremio addons, or media content.\n\nYou are solely responsible for the external services and addons you configure, the content you search, stream, or download, and for ensuring that your use complies with all applicable laws and copyright regulations in your jurisdiction.</string>
     <string name="external_content_disclaimer_accept">I Understand</string>
+
+    <!-- Backup & Restore -->
+    <string name="backup_preference_title">Backup &amp; Restore</string>
+    <string name="backup_preference_summary">Export or restore app preferences, accounts, media players, indexers, and Stremio addons (includes API keys and passwords in plain text)</string>
+    <string name="backup_create_button">Create backup</string>
+    <string name="backup_restore_button">Restore backup</string>
+    <string name="backup_restore_confirm_title">Restore Backup?</string>
+    <string name="backup_restore_confirm_message">Restoring a backup will replace your current preferences, accounts, media players, indexers, and Stremio addons. Do you want to continue?</string>
+    <string name="backup_restore_confirm_action">Restore</string>
+    <string name="backup_created_success">Backup saved</string>
+    <string name="backup_create_failed">Failed to create backup</string>
+    <string name="backup_restored_success">Backup restored</string>
+    <string name="backup_restore_failed">Failed to restore backup</string>
 </resources>
