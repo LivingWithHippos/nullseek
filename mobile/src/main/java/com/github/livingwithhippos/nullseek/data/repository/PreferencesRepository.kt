@@ -9,8 +9,33 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 const val DEFAULT_PAGING_LOAD_SIZE = 1000
+const val MAX_SEARCH_HISTORY = 20
+
+private val historyJson =
+    Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
+
+internal fun updateSearchHistoryOnAdd(
+    current: List<String>,
+    query: String,
+    maxEntries: Int = MAX_SEARCH_HISTORY,
+): List<String> {
+    val trimmed = query.trim()
+    if (trimmed.isEmpty()) return current
+    val withoutDuplicate = current.filterNot { it.equals(trimmed, ignoreCase = true) }
+    return (listOf(trimmed) + withoutDuplicate).take(maxEntries)
+}
+
+internal fun updateSearchHistoryOnRemove(
+    current: List<String>,
+    query: String,
+): List<String> = current.filterNot { it == query }
 
 enum class DownloadZipMode {
     ASK,
@@ -34,6 +59,7 @@ class PreferencesRepository(
     private val stremioShowFilterBarKey = booleanPreferencesKey("stremio_show_filter_bar")
     private val stremioSortOptionKey = stringPreferencesKey("stremio_sort_option")
     private val stremioSortAscendingKey = booleanPreferencesKey("stremio_sort_ascending")
+    private val searchHistoryKey = stringPreferencesKey("search_history")
 
     // null means the user has not chosen yet
     val includeReferral: Flow<Boolean?> =
@@ -58,6 +84,13 @@ class PreferencesRepository(
 
     val stremioSortAscending: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[stremioSortAscendingKey] ?: false }
+
+    val searchHistory: Flow<List<String>> =
+        dataStore.data.map { preferences ->
+            val raw = preferences[searchHistoryKey] ?: return@map emptyList()
+            runCatching { historyJson.decodeFromString<List<String>>(raw) }
+                .getOrDefault(emptyList())
+        }
 
     val searchAutoAddDownload: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[searchAutoAddDownloadKey] ?: false }
@@ -142,5 +175,39 @@ class PreferencesRepository(
 
     suspend fun setStremioSortAscending(ascending: Boolean) {
         dataStore.edit { preferences -> preferences[stremioSortAscendingKey] = ascending }
+    }
+
+    suspend fun addSearchHistoryQuery(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty()) return
+        dataStore.edit { preferences ->
+            val current =
+                preferences[searchHistoryKey]?.let { raw ->
+                    runCatching { historyJson.decodeFromString<List<String>>(raw) }
+                        .getOrDefault(emptyList())
+                } ?: emptyList()
+            val updated = updateSearchHistoryOnAdd(current, trimmed)
+            preferences[searchHistoryKey] = historyJson.encodeToString(updated)
+        }
+    }
+
+    suspend fun removeSearchHistoryQuery(query: String) {
+        dataStore.edit { preferences ->
+            val current =
+                preferences[searchHistoryKey]?.let { raw ->
+                    runCatching { historyJson.decodeFromString<List<String>>(raw) }
+                        .getOrDefault(emptyList())
+                } ?: emptyList()
+            val updated = updateSearchHistoryOnRemove(current, query)
+            if (updated.isEmpty()) {
+                preferences.remove(searchHistoryKey)
+            } else {
+                preferences[searchHistoryKey] = historyJson.encodeToString(updated)
+            }
+        }
+    }
+
+    suspend fun clearSearchHistory() {
+        dataStore.edit { preferences -> preferences.remove(searchHistoryKey) }
     }
 }

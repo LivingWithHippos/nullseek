@@ -23,6 +23,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -148,6 +149,8 @@ fun SearchScreen(
         onSearchManualEpisode = viewModel::searchManualSeriesEpisode,
         onSearchWholeSeries = viewModel::searchWholeSeries,
         onStremioBack = viewModel::navigateBackInStremio,
+        onRemoveHistoryItem = viewModel::removeSearchHistoryItem,
+        onClearHistory = viewModel::clearSearchHistory,
         onNewDownload = onNewDownload,
         showSettings = showSettings,
         onNavigateToExternalServices = onNavigateToExternalServices,
@@ -175,6 +178,8 @@ fun SearchContent(
     onSearchManualEpisode: (Int, Int) -> Unit = { _, _ -> },
     onSearchWholeSeries: () -> Unit = {},
     onStremioBack: () -> Unit = {},
+    onRemoveHistoryItem: (String) -> Unit = {},
+    onClearHistory: () -> Unit = {},
     onNewDownload: () -> Unit = {},
     showSettings: () -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
@@ -290,7 +295,69 @@ fun SearchContent(
                 ExpandedFullScreenSearchBar(
                     state = searchBarState,
                     inputField = inputField,
-                ) {}
+                ) {
+                    if (state.searchHistory.isNotEmpty()) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.search_history_title),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                TextButton(onClick = onClearHistory) {
+                                    Text(text = stringResource(R.string.search_history_clear_all))
+                                }
+                            }
+                            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                items(state.searchHistory, key = { it }) { historyQuery ->
+                                    Row(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    textFieldState.setTextAndPlaceCursorAtEnd(historyQuery)
+                                                    scope.launch {
+                                                        searchBarState.animateToCollapsed()
+                                                        onSearch(historyQuery)
+                                                    }
+                                                }.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_history),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Text(
+                                            text = historyQuery,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        IconButton(onClick = { onRemoveHistoryItem(historyQuery) }) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.ic_close),
+                                                contentDescription = stringResource(R.string.search_history_remove_item),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(18.dp),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 IconButton(onClick = { showSheet = true }) {
                     Icon(
                         painter = painterResource(R.drawable.ic_tune),

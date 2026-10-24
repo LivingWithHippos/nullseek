@@ -9,6 +9,8 @@ import com.github.livingwithhippos.nullseek.data.model.Indexer
 import com.github.livingwithhippos.nullseek.data.model.IndexerSearchOutcome
 import com.github.livingwithhippos.nullseek.data.model.IndexerType
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
+import com.github.livingwithhippos.nullseek.data.repository.updateSearchHistoryOnAdd
+import com.github.livingwithhippos.nullseek.data.repository.updateSearchHistoryOnRemove
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -186,5 +188,21 @@ class SearchSortTest {
         assertEquals(0, result.seeders)
         assertEquals(0, result.peers)
         assertEquals(0L, result.sizeBytes)
+    }
+
+    @Test
+    fun searchHistoryDeduplicatesCaseInsensitivelyAndCapsSize() {
+        var history = emptyList<String>()
+        history = updateSearchHistoryOnAdd(history, "Inception", maxEntries = 3)
+        history = updateSearchHistoryOnAdd(history, "Interstellar", maxEntries = 3)
+        history = updateSearchHistoryOnAdd(history, "inception", maxEntries = 3)
+        assertEquals(listOf("inception", "Interstellar"), history)
+
+        history = updateSearchHistoryOnAdd(history, "Dune", maxEntries = 3)
+        history = updateSearchHistoryOnAdd(history, "Arrival", maxEntries = 3)
+        assertEquals(listOf("Arrival", "Dune", "inception"), history)
+
+        history = updateSearchHistoryOnRemove(history, "Dune")
+        assertEquals(listOf("Arrival", "inception"), history)
     }
 }

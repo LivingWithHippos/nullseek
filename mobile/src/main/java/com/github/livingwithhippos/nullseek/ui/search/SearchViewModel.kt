@@ -150,6 +150,7 @@ data class SearchUiState(
     val searchMode: SearchMode = SearchMode.INDEXERS,
     val activeAddons: List<StremioAddonEntity> = emptyList(),
     val stremioState: StremioSearchState = StremioSearchState(),
+    val searchHistory: List<String> = emptyList(),
 ) {
     val hasActiveIndexers: Boolean get() = activeIndexers.isNotEmpty()
     val hasActiveAddons: Boolean get() = activeAddons.isNotEmpty()
@@ -343,11 +344,13 @@ class SearchViewModel(
                     streamResults = stremio.streamResults.applySort(sSort),
                 )
             },
-        ) { baseState, mode, addons, stremio ->
+            preferencesRepository.searchHistory,
+        ) { baseState, mode, addons, stremio, history ->
             baseState.copy(
                 searchMode = mode,
                 activeAddons = addons,
                 stremioState = stremio,
+                searchHistory = history,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchUiState())
 
@@ -682,10 +685,19 @@ class SearchViewModel(
     fun onSearch(query: String) {
         val trimmed = query.trim()
         if (trimmed.isEmpty()) return
+        viewModelScope.launch { preferencesRepository.addSearchHistoryQuery(trimmed) }
         when (searchMode.value) {
             SearchMode.INDEXERS -> submissions.tryEmit(trimmed)
             SearchMode.STREMIO_ADDONS -> executeStremioQuery(trimmed)
         }
+    }
+
+    fun removeSearchHistoryItem(query: String) {
+        viewModelScope.launch { preferencesRepository.removeSearchHistoryQuery(query) }
+    }
+
+    fun clearSearchHistory() {
+        viewModelScope.launch { preferencesRepository.clearSearchHistory() }
     }
 
     private companion object {
