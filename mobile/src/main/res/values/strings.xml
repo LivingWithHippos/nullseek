@@ -174,7 +174,7 @@
     <string name="indexers_active_label">Active</string>
     <string name="indexers_delete_confirm_title">Delete Indexer</string>
     <string name="indexers_delete_confirm_message">Are you sure you want to delete %1$s indexer \"%2$s\"?</string>
-    <string name="external_services_summary">Manage remote media players (Kodi, VLC) and file indexers</string>
+    <string name="external_services_summary">Manage remote media players (Kodi, VLC), file indexers, and Stremio addons</string>
     <string name="external_services_media_players_title">Media Players</string>
     <string name="external_services_add_player">Add Media Player</string>
     <string name="external_services_empty">No external services configured yet.</string>

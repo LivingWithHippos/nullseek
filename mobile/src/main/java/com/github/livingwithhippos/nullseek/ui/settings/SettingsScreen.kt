@@ -65,11 +65,6 @@ import org.koin.androidx.compose.koinViewModel
 
 private val PAGING_LOAD_SIZE_PRESETS = listOf(100, 500, 1000, 5000)
 
-private enum class DisclaimerDestination {
-    EXTERNAL_SERVICES,
-    STREMIO_ADDONS,
-}
-
 @Composable
 fun SettingsScreen(
     contentType: NullContentType,
@@ -77,7 +72,6 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onNavigateToExternalServices: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
-    onNavigateToAddons: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
@@ -102,7 +96,6 @@ fun SettingsScreen(
         onAcceptExternalDisclaimer = { viewModel.acceptExternalDisclaimer() },
         onNavigateToExternalServices = onNavigateToExternalServices,
         onNavigateToProviders = onNavigateToProviders,
-        onNavigateToAddons = onNavigateToAddons,
         modifier = modifier,
     )
 }
@@ -125,37 +118,33 @@ fun SettingsScreen(
     onAcceptExternalDisclaimer: () -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
-    onNavigateToAddons: () -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
     var pageSizeInput by rememberSaveable { mutableStateOf(pagingLoadSize.toString()) }
-    var pendingDisclaimerDestination by rememberSaveable { mutableStateOf<DisclaimerDestination?>(null) }
+    var showExternalDisclaimerDialog by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(pagingLoadSize) {
         pageSizeInput = pagingLoadSize.toString()
     }
 
-    pendingDisclaimerDestination?.let { destination ->
+    if (showExternalDisclaimerDialog) {
         AlertDialog(
-            onDismissRequest = { pendingDisclaimerDestination = null },
+            onDismissRequest = { showExternalDisclaimerDialog = false },
             title = { Text(text = stringResource(id = R.string.external_content_disclaimer_title)) },
             text = { Text(text = stringResource(id = R.string.external_content_disclaimer_message)) },
             confirmButton = {
                 Button(
                     onClick = {
                         onAcceptExternalDisclaimer()
-                        pendingDisclaimerDestination = null
-                        when (destination) {
-                            DisclaimerDestination.EXTERNAL_SERVICES -> onNavigateToExternalServices()
-                            DisclaimerDestination.STREMIO_ADDONS -> onNavigateToAddons()
-                        }
+                        showExternalDisclaimerDialog = false
+                        onNavigateToExternalServices()
                     },
                 ) {
                     Text(text = stringResource(id = R.string.external_content_disclaimer_accept))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDisclaimerDestination = null }) {
+                TextButton(onClick = { showExternalDisclaimerDialog = false }) {
                     Text(text = stringResource(id = R.string.cancel))
                 }
             },
@@ -217,7 +206,7 @@ fun SettingsScreen(
                     if (externalDisclaimerAccepted) {
                         onNavigateToExternalServices()
                     } else {
-                        pendingDisclaimerDestination = DisclaimerDestination.EXTERNAL_SERVICES
+                        showExternalDisclaimerDialog = true
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -241,47 +230,6 @@ fun SettingsScreen(
                         )
                         Text(
                             text = stringResource(id = R.string.external_services_summary),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_open_in_new),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
-
-            OutlinedCard(
-                onClick = {
-                    if (externalDisclaimerAccepted) {
-                        onNavigateToAddons()
-                    } else {
-                        pendingDisclaimerDestination = DisclaimerDestination.STREMIO_ADDONS
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.stremio_addons_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = stringResource(id = R.string.stremio_addons_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

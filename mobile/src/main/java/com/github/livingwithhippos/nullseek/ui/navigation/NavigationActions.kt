@@ -26,9 +26,6 @@ sealed interface Route {
     @Serializable
     data object ManageProviders : Route
 
-    @Serializable
-    data object StremioAddons : Route
-
     /** [links] optionally prefills the links field. */
     @Serializable
     data class NewDownload(
