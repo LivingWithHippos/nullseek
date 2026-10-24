@@ -63,6 +63,12 @@ dependencies {
 
     implementation(libs.torbox.client)
 
+    implementation(libs.androidx.paging)
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.compose.runtime)
+    implementation(libs.koin.compose.viewmodel)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

@@ -6,7 +6,7 @@ import android.content.Intent
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.core.net.toUri
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 
 fun openWebPage(
     context: Context?,

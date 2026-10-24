@@ -2,7 +2,6 @@ package com.github.livingwithhippos.nullseek.ui.newdownload
 
 import android.content.Context
 import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -60,7 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.ui.theme.Button
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -69,28 +68,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
-
-fun Context.getFileName(uri: Uri): String {
-    var name = "Unknown file"
-    if (uri.scheme == "content") {
-        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (index != -1) name = cursor.getString(index)
-            }
-        }
-    } else if (uri.scheme == "file") {
-        name = uri.lastPathSegment ?: name
-    }
-    return name
-}
-
-fun isValidDownloadLink(link: String): Boolean {
-    val trimmed = link.trim()
-    return trimmed.startsWith("magnet:?xt=urn:btih:", ignoreCase = true) ||
-            trimmed.startsWith("http://", ignoreCase = true) ||
-            trimmed.startsWith("https://", ignoreCase = true)
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

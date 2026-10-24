@@ -57,7 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.core.utils.mockWebDownload
@@ -209,14 +209,14 @@ private fun WebDownloadDetailScreen(
             }
 
             // Card 3: Download Link Card
-            if (uiState.downloadLinkResult != null) {
+            uiState.downloadLinkResult?.let { linkResult ->
                 WebDownloadLinkCard(
-                    result = uiState.downloadLinkResult,
+                    result = linkResult,
                     context = context,
                     defaultPlayer = defaultPlayer,
                     onPlay = {
                         if (defaultPlayer != null) {
-                            onPlayMedia(defaultPlayer, uiState.downloadLinkResult.url, false)
+                            onPlayMedia(defaultPlayer, linkResult.url, false)
                         } else {
                             showPlayChoiceDialog = true
                         }
@@ -249,19 +249,20 @@ private fun WebDownloadDetailScreen(
         }
     }
 
-    if (uiState.pendingDownload != null) {
+    uiState.pendingDownload?.let { pending ->
         DownloadZipModal(
-            itemName = uiState.pendingDownload.fileName ?: item.name,
+            itemName = pending.fileName ?: item.name,
             onDismiss = onDismissDownloadModal,
             onConfirm = onConfirmDownloadModal,
         )
     }
 
-    if (showPlayChoiceDialog && uiState.downloadLinkResult != null) {
+    val playLink = uiState.downloadLinkResult
+    if (showPlayChoiceDialog && playLink != null) {
         PlayChoiceDialog(
             services = mediaPlayers,
             onSelect = { selected, setAsDefault ->
-                onPlayMedia(selected, uiState.downloadLinkResult.url, setAsDefault)
+                onPlayMedia(selected, playLink.url, setAsDefault)
                 showPlayChoiceDialog = false
             },
             onDismiss = { showPlayChoiceDialog = false },

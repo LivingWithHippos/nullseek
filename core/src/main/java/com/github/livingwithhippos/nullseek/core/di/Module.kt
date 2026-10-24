@@ -26,8 +26,32 @@ import com.github.livingwithhippos.nullseek.core.data.stremio.AddonManager
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.network.TorboxAuthState
 import com.github.livingwithhippos.torbox.network.TorboxClientConfig
+import com.github.livingwithhippos.nullseek.NullRootViewModel
+import com.github.livingwithhippos.nullseek.core.data.stremio.AddonSearchHelper
+import com.github.livingwithhippos.nullseek.data.remote.IndexerRemoteClient
+import com.github.livingwithhippos.nullseek.data.remote.KodiRemoteClient
+import com.github.livingwithhippos.nullseek.data.remote.VlcRemoteClient
+import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
+import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
+import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
+import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
+import com.github.livingwithhippos.nullseek.ui.addons.AddonsViewModel
+import com.github.livingwithhippos.nullseek.ui.externalservices.ExternalServicesViewModel
+import com.github.livingwithhippos.nullseek.ui.externalservices.IndexersViewModel
+import com.github.livingwithhippos.nullseek.ui.lists.ListsViewModel
+import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentDetailViewModel
+import com.github.livingwithhippos.nullseek.ui.lists.usenet.UsenetDetailViewModel
+import com.github.livingwithhippos.nullseek.ui.lists.web.WebDownloadDetailViewModel
+import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadViewModel
+import com.github.livingwithhippos.nullseek.ui.providers.ProvidersViewModel
+import com.github.livingwithhippos.nullseek.ui.search.SearchViewModel
+import com.github.livingwithhippos.nullseek.ui.settings.SettingsViewModel
+import com.github.livingwithhippos.nullseek.ui.user.UserViewModel
+import okhttp3.OkHttpClient
 import org.koin.dsl.module
 import org.koin.plugin.module.dsl.create
+import org.koin.plugin.module.dsl.viewModel
+import java.util.concurrent.TimeUnit
 
 private fun networkModule(logLevel: String = "none") =
     module {
@@ -122,8 +146,47 @@ private val storageModule =
         }
     }
 
+private val repositoryModule =
+    module {
+        single {
+            OkHttpClient
+                .Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(15, TimeUnit.SECONDS)
+                .build()
+        }
+        single { KodiRemoteClient(get()) }
+        single { VlcRemoteClient(get()) }
+        single { ExternalServicesRepository(get(), get(), get()) }
+        single { IndexerRemoteClient(get()) }
+        single { IndexersRepository(get(), get()) }
+        single { PreferencesRepository(get()) }
+        single { DownloadCreator(get()) }
+        single { AddonSearchHelper(get()) }
+    }
+
+/** ViewModels shared by the mobile and TV apps. */
+private val viewModelModule =
+    module {
+        viewModel<NullRootViewModel>()
+        viewModel<ListsViewModel>()
+        viewModel<NewDownloadViewModel>()
+        viewModel<UserViewModel>()
+        viewModel<TorrentDetailViewModel>()
+        viewModel<WebDownloadDetailViewModel>()
+        viewModel<UsenetDetailViewModel>()
+        viewModel<SettingsViewModel>()
+        viewModel<ExternalServicesViewModel>()
+        viewModel<IndexersViewModel>()
+        viewModel<ProvidersViewModel>()
+        viewModel<SearchViewModel>()
+        viewModel<AddonsViewModel>()
+    }
+
 fun appModule(debug: Boolean) =
     module {
         includes(networkModule(logLevel = if (debug) "body" else "none"))
         includes(storageModule)
+        includes(repositoryModule)
+        includes(viewModelModule)
     }

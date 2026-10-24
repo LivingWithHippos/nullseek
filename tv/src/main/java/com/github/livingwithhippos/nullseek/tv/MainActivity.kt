@@ -3,37 +3,38 @@ package com.github.livingwithhippos.nullseek.tv
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.tv.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.tv.material3.ExperimentalTvMaterial3Api
-import androidx.tv.material3.Surface
-import com.github.livingwithhippos.nullseek.tv.ui.theme.NullSeekTheme
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.github.livingwithhippos.nullseek.NullRootViewModel
+import com.github.livingwithhippos.nullseek.tv.ui.navigation.TvNullSeekApp
+import com.github.livingwithhippos.nullseek.tv.ui.theme.TvNullSeekTheme
+import com.github.livingwithhippos.nullseek.tv.ui.theme.shouldUseDarkTheme
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
-    @OptIn(ExperimentalTvMaterial3Api::class)
+    private val viewModel: NullRootViewModel by viewModel()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            NullSeekTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    shape = RectangleShape
-                ) {
-                    Greeting("Android")
-                }
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
+
+            TvNullSeekTheme(
+                darkTheme = shouldUseDarkTheme(themeMode),
+                themeColor = themeColor,
+            ) {
+                TvNullSeekApp(
+                    rootUiState = uiState,
+                    reloadProviders = { viewModel.loadActiveToken() },
+                    checkValidToken = { provider, token -> viewModel.checkValidToken(provider, token) },
+                    loadTorrentDetails = { viewModel.loadTorrentDetails(it, false) },
+                    loadWebDetails = { viewModel.loadWebDetails(it, false) },
+                    loadUsenetDetails = { viewModel.loadUsenetDetails(it, false) },
+                    closeDetails = { viewModel.closeDetails() },
+                )
             }
         }
     }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
 }

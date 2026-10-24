@@ -73,7 +73,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.NullRootUiState
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.data.stremio.ImdbTitleResult
 import com.github.livingwithhippos.nullseek.core.data.stremio.SeriesEpisodeItem
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize

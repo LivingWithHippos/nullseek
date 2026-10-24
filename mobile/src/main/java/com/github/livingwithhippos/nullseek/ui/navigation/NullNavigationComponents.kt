@@ -54,7 +54,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.window.core.layout.WindowSizeClass
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationContentPosition
 import kotlinx.coroutines.launch
 

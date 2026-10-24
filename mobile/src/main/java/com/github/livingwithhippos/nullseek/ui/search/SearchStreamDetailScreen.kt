@@ -38,7 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceType
@@ -349,46 +349,6 @@ fun SearchStreamDetailScreen(
             onDismiss = { showPlayChoiceDialog = false },
             onNavigateToSettings = onNavigateToExternalServices,
         )
-    }
-}
-
-/**
- * Resolves a filename with a media extension from [title] or [url] so MIME type detection and
- * streamable checks recognize Stremio direct streams (even when multi-line descriptions are used).
- */
-internal fun resolveStreamFileName(
-    title: String,
-    url: String,
-): String {
-    val lines = title.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
-    for (line in lines) {
-        val candidate = line.substringAfterLast('/').substringAfterLast('\\').trim()
-        if (isStreamableOrSubtitle(candidate)) {
-            return candidate
-        }
-    }
-
-    val urlPathSegment =
-        url
-            .substringBefore('?')
-            .substringBefore('#')
-            .substringAfterLast('/')
-            .trim()
-    if (isStreamableOrSubtitle(urlPathSegment)) {
-        return urlPathSegment
-    }
-
-    val firstLine =
-        lines
-            .firstOrNull()
-            ?.substringAfterLast('/')
-            ?.substringAfterLast('\\')
-            .orEmpty()
-            .ifBlank { "stream" }
-    return if (detectFileTypeCategory(firstLine) != null) {
-        firstLine
-    } else {
-        "$firstLine.mp4"
     }
 }
 

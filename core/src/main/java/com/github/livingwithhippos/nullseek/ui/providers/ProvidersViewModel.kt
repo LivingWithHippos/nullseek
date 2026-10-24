@@ -3,7 +3,7 @@ package com.github.livingwithhippos.nullseek.ui.providers
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
