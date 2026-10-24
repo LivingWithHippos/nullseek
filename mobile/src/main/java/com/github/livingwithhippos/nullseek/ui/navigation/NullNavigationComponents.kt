@@ -475,8 +475,7 @@ fun ModalNavigationDrawerContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     TOP_LEVEL_DESTINATIONS.forEach { nullDestination ->
-                        val isItemEnabled =
-                            if (nullDestination.route == Route.Lists) isUserLoaded else true
+                        val isItemEnabled = nullDestination.route != Route.Lists || isUserLoaded
                         NavigationDrawerItem(
                             selected = currentDestination.hasRoute(nullDestination),
                             label = {
