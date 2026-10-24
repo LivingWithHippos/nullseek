@@ -39,8 +39,7 @@ object ImdbUtils {
      * Detect the Stremio content type ("movie" or "series") from an IMDB ID if unambiguous.
      * Episode IDs (`tt1234567:1:2`) are always "series"; plain `tt1234567` returns null so both can be queried.
      */
-    fun detectContentType(imdbId: String): String? =
-        if (imdbId.contains(":")) "series" else null
+    fun detectContentType(imdbId: String): String? = if (imdbId.contains(":")) "series" else null
 
     /**
      * Check if a string contains or is an IMDB ID
@@ -79,14 +78,12 @@ class AddonSearchHelper(
     /**
      * Search IMDb / Cinemeta titles by text query
      */
-    suspend fun searchTitles(query: String): Result<List<ImdbTitleResult>> =
-        addonManager.searchImdbTitles(query)
+    suspend fun searchTitles(query: String): Result<List<ImdbTitleResult>> = addonManager.searchImdbTitles(query)
 
     /**
      * Fetch episodes for a series by its IMDb ID
      */
-    suspend fun getSeriesEpisodes(imdbId: String): Result<List<SeriesEpisodeItem>> =
-        addonManager.getSeriesEpisodes(imdbId)
+    suspend fun getSeriesEpisodes(imdbId: String): Result<List<SeriesEpisodeItem>> = addonManager.getSeriesEpisodes(imdbId)
 
     /**
      * Search for content using Stremio addons, preserving the source addon name for each stream.

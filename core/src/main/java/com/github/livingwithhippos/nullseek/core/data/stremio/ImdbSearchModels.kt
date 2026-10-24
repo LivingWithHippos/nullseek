@@ -72,10 +72,20 @@ internal data class ImdbSuggestionItem(
         val resolvedType =
             when {
                 normalizedQid in SERIES_QIDS -> "series"
+
                 normalizedQid in MOVIE_QIDS -> "movie"
+
                 normalizedQ != null && normalizedQ.contains("series") -> "series"
-                normalizedQ != null && (normalizedQ.contains("movie") || normalizedQ.contains("film") || normalizedQ.contains("feature") || normalizedQ.contains("short") || normalizedQ.contains("video")) -> "movie"
+
+                normalizedQ != null &&
+                    (
+                        normalizedQ.contains("movie") || normalizedQ.contains("film") || normalizedQ.contains("feature") ||
+                            normalizedQ.contains("short") ||
+                            normalizedQ.contains("video")
+                    ) -> "movie"
+
                 normalizedQid == null && normalizedQ == null -> return null
+
                 else -> "movie"
             }
 

@@ -216,10 +216,17 @@ class AddonClient(
         val normalizedScheme =
             when {
                 trimmed.startsWith("http://", ignoreCase = true) ||
-                    trimmed.startsWith("https://", ignoreCase = true) -> trimmed
-                trimmed.startsWith("stremio://", ignoreCase = true) ->
+                    trimmed.startsWith("https://", ignoreCase = true) -> {
+                    trimmed
+                }
+
+                trimmed.startsWith("stremio://", ignoreCase = true) -> {
                     "https://${trimmed.substring("stremio://".length)}"
-                else -> "https://$trimmed"
+                }
+
+                else -> {
+                    "https://$trimmed"
+                }
             }
 
         val withoutFragment = normalizedScheme.substringBefore("#")

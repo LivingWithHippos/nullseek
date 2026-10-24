@@ -538,6 +538,7 @@ class SearchViewModel(
                         StremioSearchState()
                     }
                 }
+
                 StremioStage.EPISODES -> {
                     if (current.titles.isNotEmpty()) {
                         current.copy(
@@ -550,7 +551,10 @@ class SearchViewModel(
                         StremioSearchState()
                     }
                 }
-                else -> StremioSearchState()
+
+                else -> {
+                    StremioSearchState()
+                }
             }
         }
     }

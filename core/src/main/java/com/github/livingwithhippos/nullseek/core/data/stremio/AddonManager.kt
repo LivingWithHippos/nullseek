@@ -105,14 +105,12 @@ class AddonManager(
     /**
      * Search IMDb titles by text query
      */
-    suspend fun searchImdbTitles(query: String): Result<List<ImdbTitleResult>> =
-        addonClient.searchImdbTitles(query)
+    suspend fun searchImdbTitles(query: String): Result<List<ImdbTitleResult>> = addonClient.searchImdbTitles(query)
 
     /**
      * Fetch episodes for a series by its IMDb ID
      */
-    suspend fun getSeriesEpisodes(imdbId: String): Result<List<SeriesEpisodeItem>> =
-        addonClient.getSeriesEpisodes(imdbId)
+    suspend fun getSeriesEpisodes(imdbId: String): Result<List<SeriesEpisodeItem>> = addonClient.getSeriesEpisodes(imdbId)
 
     /**
      * Search for streams across all enabled addons
@@ -308,11 +306,21 @@ class AddonManager(
             ?.mapNotNull { source ->
                 val trimmed = source.trim()
                 when {
-                    trimmed.startsWith("dht:", ignoreCase = true) -> null
-                    trimmed.startsWith("tracker:", ignoreCase = true) ->
+                    trimmed.startsWith("dht:", ignoreCase = true) -> {
+                        null
+                    }
+
+                    trimmed.startsWith("tracker:", ignoreCase = true) -> {
                         trimmed.substring("tracker:".length).takeIf { it.isNotBlank() }
-                    trimmed.isNotBlank() -> trimmed
-                    else -> null
+                    }
+
+                    trimmed.isNotBlank() -> {
+                        trimmed
+                    }
+
+                    else -> {
+                        null
+                    }
                 }
             }?.distinct()
             ?.forEach { tracker ->

@@ -16,7 +16,8 @@ import org.junit.Test
 class SearchResultLinkTest {
     private val both = SearchResult("both", "i", magnetLink = "magnet:?xt=a", downloadLink = "http://t/1.torrent")
     private val torrent = SearchResult("torrent", "i", downloadLink = "http://t/2.torrent")
-    private val directStream = SearchResult("Movie.2024.1080p.mkv\n⚡ TorBox", "Stremio Addons", downloadLink = "https://stream/1", isDirectStream = true)
+    private val directStream =
+        SearchResult("Movie.2024.1080p.mkv\n⚡ TorBox", "Stremio Addons", downloadLink = "https://stream/1", isDirectStream = true)
     private val blank = SearchResult("blank", "i", magnetLink = " ", downloadLink = "")
     private val none = SearchResult("none", "i")
 
