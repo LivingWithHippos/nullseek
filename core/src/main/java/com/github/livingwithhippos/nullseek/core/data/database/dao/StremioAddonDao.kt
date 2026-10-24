@@ -31,6 +31,13 @@ interface StremioAddonDao {
         enabled: Boolean,
     )
 
+    @Query("UPDATE stremio_addons SET customName = :customName, isEnabled = :enabled WHERE manifestUrl = :manifestUrl")
+    suspend fun updateAddonDetails(
+        manifestUrl: String,
+        customName: String?,
+        enabled: Boolean,
+    )
+
     @Query("DELETE FROM stremio_addons WHERE manifestUrl = :manifestUrl")
     suspend fun deleteAddon(manifestUrl: String)
 

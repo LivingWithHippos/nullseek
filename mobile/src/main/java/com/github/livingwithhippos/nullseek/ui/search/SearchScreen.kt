@@ -1106,7 +1106,7 @@ fun SearchResultCard(
                     Text(it, style = MaterialTheme.typography.labelMedium)
                 }
             }
-            if (!result.isDirectStream || result.seeders > 0 || result.peers > 0) {
+            if ((!result.isFromStremioAddon && !result.isDirectStream) || result.seeders > 0 || result.peers > 0) {
                 Text(
                     text = stringResource(R.string.search_result_seeders_peers, result.seeders, result.peers),
                     style = MaterialTheme.typography.labelMedium,

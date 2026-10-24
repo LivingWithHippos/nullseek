@@ -24,15 +24,24 @@ class AddonManager(
     /**
      * Install a new addon from its manifest URL
      */
-    suspend fun installAddon(manifestUrl: String): Result<StremioAddonEntity> =
+    suspend fun installAddon(
+        manifestUrl: String,
+        customName: String? = null,
+    ): Result<StremioAddonEntity> =
         runCatching {
+            val trimmedUrl = manifestUrl.trim()
             // Fetch manifest from URL
-            val manifest = addonClient.getManifest(manifestUrl).getOrThrow()
+            val manifest = addonClient.getManifest(trimmedUrl).getOrThrow()
+            val existing = repository.getAddonByUrl(trimmedUrl)
+            val resolvedCustomName =
+                customName?.trim()?.takeIf { it.isNotBlank() }
+                    ?: existing?.customName?.takeIf { it.isNotBlank() }
+                    ?: manifest.name
 
             // Convert to entity
             val entity =
                 StremioAddonEntity(
-                    manifestUrl = manifestUrl.trim(),
+                    manifestUrl = trimmedUrl,
                     id = manifest.id,
                     name = manifest.name,
                     description = manifest.description,
@@ -41,12 +50,27 @@ class AddonManager(
                     types = json.encodeToString(manifest.types),
                     logo = manifest.logo,
                     background = manifest.background,
-                    isEnabled = true,
+                    isEnabled = existing?.isEnabled ?: true,
+                    addedTimestamp = existing?.addedTimestamp ?: System.currentTimeMillis(),
+                    customName = resolvedCustomName,
                 )
 
             // Save to database
             repository.insertAddon(entity)
             entity
+        }
+
+    /**
+     * Update an addon's custom name and enabled state
+     */
+    suspend fun updateAddonDetails(
+        manifestUrl: String,
+        customName: String?,
+        enabled: Boolean,
+    ): Result<Unit> =
+        runCatching {
+            val normalizedName = customName?.trim()?.takeIf { it.isNotBlank() }
+            repository.updateAddonDetails(manifestUrl, normalizedName, enabled)
         }
 
     /**
@@ -142,7 +166,7 @@ class AddonManager(
                                 results.add(
                                     AddonStreamResult(
                                         stream = stream,
-                                        addonName = addon.name,
+                                        addonName = addon.displayName,
                                         addonId = addon.id,
                                     ),
                                 )

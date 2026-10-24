@@ -19,4 +19,8 @@ data class StremioAddonEntity(
     val background: String? = null,
     val isEnabled: Boolean = true,
     val addedTimestamp: Long = System.currentTimeMillis(),
-)
+    val customName: String? = null,
+) {
+    val displayName: String
+        get() = customName?.takeIf { it.isNotBlank() } ?: name
+}

@@ -167,8 +167,16 @@ fun ExternalServicesScreen(
 
     LaunchedEffect(addonsUiState.installSuccess) {
         if (addonsUiState.installSuccess) {
-            snackbarHostState.showSnackbar("Addon installed successfully")
+            isAddingAddon = false
+            addonToEdit = null
             addonsViewModel.clearInstallSuccess()
+        }
+    }
+
+    LaunchedEffect(addonsUiState.message) {
+        addonsUiState.message?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            addonsViewModel.clearMessage()
         }
     }
 
@@ -433,11 +441,16 @@ fun ExternalServicesScreen(
             initialAddon = addonToEdit,
             isInstalling = addonsUiState.isLoading,
             onDismiss = {
-                isAddingAddon = false
-                addonToEdit = null
+                if (!addonsUiState.isLoading) {
+                    isAddingAddon = false
+                    addonToEdit = null
+                }
             },
-            onSave = { manifestUrl ->
-                addonsViewModel.installAddon(manifestUrl)
+            onInstall = { manifestUrl, customName ->
+                addonsViewModel.installAddon(manifestUrl, customName)
+            },
+            onUpdate = { addon, customName, enabled ->
+                addonsViewModel.updateAddonDetails(addon, customName, enabled)
                 isAddingAddon = false
                 addonToEdit = null
             },
@@ -448,7 +461,7 @@ fun ExternalServicesScreen(
         AddonDeleteDialog(
             addon = addon,
             onConfirm = {
-                addonsViewModel.uninstallAddon(addon.manifestUrl)
+                addonsViewModel.uninstallAddon(addon.manifestUrl, addon.displayName)
                 addonToDelete = null
             },
             onDismiss = { addonToDelete = null },

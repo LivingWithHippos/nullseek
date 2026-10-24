@@ -13,6 +13,7 @@ data class SearchResult(
     val infoUrl: String? = null,
     val categories: List<String> = emptyList(),
     val isDirectStream: Boolean = false,
+    val isFromStremioAddon: Boolean = false,
 )
 
 fun SearchResult.hasDownloadLink(): Boolean = !magnetLink.isNullOrBlank() || !downloadLink.isNullOrBlank()

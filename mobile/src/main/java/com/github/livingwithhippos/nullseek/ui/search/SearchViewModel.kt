@@ -193,6 +193,7 @@ internal fun AddonScrapedItem.toSearchResultOrNull(): SearchResult? {
         downloadLink = downloadLink,
         infoUrl = if (isDirectStream) null else scrapedItem.link,
         isDirectStream = isDirectStream,
+        isFromStremioAddon = true,
     )
 }
 

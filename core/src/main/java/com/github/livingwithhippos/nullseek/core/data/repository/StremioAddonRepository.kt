@@ -20,6 +20,12 @@ interface StremioAddonRepository {
         enabled: Boolean,
     )
 
+    suspend fun updateAddonDetails(
+        manifestUrl: String,
+        customName: String?,
+        enabled: Boolean,
+    )
+
     suspend fun deleteAddon(manifestUrl: String)
 
     suspend fun deleteAllAddons()
@@ -44,6 +50,12 @@ class StremioAddonRepositoryImpl(
         manifestUrl: String,
         enabled: Boolean,
     ) = dao.setAddonEnabled(manifestUrl, enabled)
+
+    override suspend fun updateAddonDetails(
+        manifestUrl: String,
+        customName: String?,
+        enabled: Boolean,
+    ) = dao.updateAddonDetails(manifestUrl, customName, enabled)
 
     override suspend fun deleteAddon(manifestUrl: String) = dao.deleteAddon(manifestUrl)
 

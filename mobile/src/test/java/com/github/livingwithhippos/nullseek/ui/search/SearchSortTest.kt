@@ -1,6 +1,8 @@
 package com.github.livingwithhippos.nullseek.ui.search
 
+import com.github.livingwithhippos.nullseek.core.data.ScrapedItem
 import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity
+import com.github.livingwithhippos.nullseek.core.data.stremio.AddonScrapedItem
 import com.github.livingwithhippos.nullseek.core.data.stremio.ImdbTitleResult
 import com.github.livingwithhippos.nullseek.core.data.stremio.SeriesEpisodeItem
 import com.github.livingwithhippos.nullseek.data.model.Indexer
@@ -138,5 +140,51 @@ class SearchSortTest {
             )
         assertEquals(listOf(1, 2, 0), stremioState.availableSeasons)
         assertEquals(listOf("tt1:1:1", "tt1:1:2"), stremioState.episodesForSelectedSeason.map { it.id })
+    }
+
+    @Test
+    fun stremioAddonDisplayNameAndSearchResultFlag() {
+        val defaultAddon =
+            StremioAddonEntity(
+                manifestUrl = "https://torrentio.strem.fun/manifest.json",
+                id = "com.stremio.torrentio.addon",
+                name = "Torrentio",
+                description = "",
+                version = "0.0.15",
+                resources = "[]",
+                types = "[\"movie\"]",
+            )
+        assertEquals("Torrentio", defaultAddon.displayName)
+
+        val customNamedAddon = defaultAddon.copy(customName = "My Torrentio RD")
+        assertEquals("My Torrentio RD", customNamedAddon.displayName)
+
+        val blankCustomNamedAddon = defaultAddon.copy(customName = "   ")
+        assertEquals("Torrentio", blankCustomNamedAddon.displayName)
+
+        val scraped =
+            AddonScrapedItem(
+                scrapedItem =
+                    ScrapedItem(
+                        name = "Sample Movie 1080p",
+                        link = null,
+                        seeders = null,
+                        leechers = null,
+                        size = null,
+                        addedDate = null,
+                        parsedSize = null,
+                        magnets = listOf("magnet:?xt=urn:btih:12345"),
+                        torrents = emptyList(),
+                        hosting = emptyList(),
+                    ),
+                addonName = customNamedAddon.displayName,
+                addonId = customNamedAddon.id,
+            )
+        val result = scraped.toSearchResultOrNull()!!
+        assertTrue(result.isFromStremioAddon)
+        assertEquals("My Torrentio RD", result.indexerName)
+        assertEquals(0, result.seeders)
+        assertEquals(0, result.peers)
+        assertEquals(0L, result.sizeBytes)
     }
 }

@@ -16,6 +16,7 @@ data class AddonsUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val installSuccess: Boolean = false,
+    val message: String? = null,
 )
 
 class AddonsViewModel(
@@ -51,17 +52,21 @@ class AddonsViewModel(
         }
     }
 
-    fun installAddon(manifestUrl: String) {
+    fun installAddon(
+        manifestUrl: String,
+        customName: String? = null,
+    ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null, installSuccess = false)
 
             addonManager
-                .installAddon(manifestUrl)
-                .onSuccess {
+                .installAddon(manifestUrl, customName)
+                .onSuccess { addon ->
                     _uiState.value =
                         _uiState.value.copy(
                             isLoading = false,
                             installSuccess = true,
+                            message = "Added ${addon.displayName}",
                         )
                 }.onFailure { error ->
                     _uiState.value =
@@ -73,9 +78,41 @@ class AddonsViewModel(
         }
     }
 
-    fun uninstallAddon(manifestUrl: String) {
+    fun updateAddonDetails(
+        addon: StremioAddonEntity,
+        customName: String?,
+        enabled: Boolean,
+    ) {
         viewModelScope.launch {
-            addonManager.uninstallAddon(manifestUrl)
+            val resolvedName = customName?.trim()?.takeIf { it.isNotBlank() } ?: addon.name
+            addonManager
+                .updateAddonDetails(addon.manifestUrl, resolvedName, enabled)
+                .onSuccess {
+                    _uiState.value =
+                        _uiState.value.copy(
+                            message = "Updated $resolvedName",
+                        )
+                }.onFailure { error ->
+                    _uiState.value =
+                        _uiState.value.copy(
+                            error = error.message ?: "Failed to update addon",
+                        )
+                }
+        }
+    }
+
+    fun uninstallAddon(
+        manifestUrl: String,
+        name: String? = null,
+    ) {
+        viewModelScope.launch {
+            addonManager
+                .uninstallAddon(manifestUrl)
+                .onSuccess {
+                    if (!name.isNullOrBlank()) {
+                        _uiState.value = _uiState.value.copy(message = "Deleted $name")
+                    }
+                }
         }
     }
 
@@ -94,5 +131,9 @@ class AddonsViewModel(
 
     fun clearInstallSuccess() {
         _uiState.value = _uiState.value.copy(installSuccess = false)
+    }
+
+    fun clearMessage() {
+        _uiState.value = _uiState.value.copy(message = null)
     }
 }

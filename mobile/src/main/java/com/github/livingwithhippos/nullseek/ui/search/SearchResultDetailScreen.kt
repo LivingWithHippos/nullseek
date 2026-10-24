@@ -86,17 +86,21 @@ fun SearchResultDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 AssistChip(onClick = {}, label = { Text(result.indexerName) })
-                AssistChip(onClick = {}, label = { Text(convertToSize(result.sizeBytes)) })
+                if (result.sizeBytes > 0) {
+                    AssistChip(onClick = {}, label = { Text(convertToSize(result.sizeBytes)) })
+                }
             }
-            Text(
-                text = stringResource(
-                    R.string.search_result_seeders_peers,
-                    result.seeders,
-                    result.peers
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            if ((!result.isFromStremioAddon && !result.isDirectStream) || result.seeders > 0 || result.peers > 0) {
+                Text(
+                    text = stringResource(
+                        R.string.search_result_seeders_peers,
+                        result.seeders,
+                        result.peers
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
             result.publishedAt?.let { published ->
                 val absolute = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
                     .format(Date(published))

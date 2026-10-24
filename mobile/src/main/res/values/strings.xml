@@ -333,16 +333,23 @@
     <!-- Stremio Addons -->
     <string name="stremio_addons_title">Stremio Addons</string>
     <string name="stremio_addons_description">Content discovery via Stremio addons</string>
-    <string name="stremio_addons_empty">No addons installed. Tap Add to install a Stremio addon.</string>
+    <string name="stremio_addons_empty">No Stremio addons installed yet.</string>
+    <string name="stremio_addons_empty_hint">Tap \"Add\" to install a Stremio addon from its manifest URL.</string>
     <string name="stremio_addon_add">Add Stremio Addon</string>
-    <string name="stremio_addon_edit">Edit Addon</string>
+    <string name="stremio_addon_edit">Addon Details</string>
     <string name="stremio_addon_url_hint">Enter the addon manifest URL</string>
+    <string name="stremio_addon_custom_name_label">Name</string>
+    <string name="stremio_addon_custom_name_optional_label">Custom name (optional)</string>
+    <string name="stremio_addon_custom_name_hint">Defaults to the official addon name</string>
+    <string name="stremio_addon_official_name_label">Official name</string>
+    <string name="stremio_addon_description_label">Description</string>
+    <string name="stremio_addon_types_label">Supported types</string>
     <string name="manifest_url">Manifest URL</string>
     <string name="enabled">Enabled</string>
     <string name="disabled">Disabled</string>
     <string name="installing">Installing…</string>
-    <string name="version_format">Version %s</string>
+    <string name="version_format">v%s</string>
     <string name="stremio_addon_delete_title">Delete Addon</string>
-    <string name="stremio_addon_delete_message">Are you sure you want to delete %s?</string>
+    <string name="stremio_addon_delete_message">Are you sure you want to delete addon \"%s\"?</string>
     <string name="delete">Delete</string>
 </resources>
