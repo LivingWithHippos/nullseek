@@ -107,6 +107,7 @@ fun UsenetDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
+    val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
     val currentItem = uiState.usenet ?: item
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -135,6 +136,7 @@ fun UsenetDetailScreen(
             uiState = uiState,
             defaultPlayer = defaultPlayer,
             mediaPlayers = mediaPlayers,
+            filterFilesFullPath = filterFilesFullPath,
             onPlayMedia = { service, url, setAsDefault ->
                 viewModel.playOnMedia(service, url, setAsDefault)
             },
@@ -160,6 +162,7 @@ private fun UsenetDetailScreen(
     uiState: UsenetDetailUiState,
     defaultPlayer: ExternalService? = null,
     mediaPlayers: List<ExternalService> = emptyList(),
+    filterFilesFullPath: Boolean = false,
     onPlayMedia: (ExternalService, String, Boolean) -> Unit = { _, _, _ -> },
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
@@ -236,6 +239,7 @@ private fun UsenetDetailScreen(
                 UsenetFilesCard(
                     files = item.files,
                     isCached = item.cached,
+                    filterFilesFullPath = filterFilesFullPath,
                     onDownloadFile = onDownloadFile,
                 )
             }
@@ -909,6 +913,7 @@ private fun UsenetDownloadFileDto.isSubtitle(): Boolean = isSubtitleFile(name)
 private fun UsenetFilesCard(
     files: List<UsenetDownloadFileDto>,
     isCached: Boolean,
+    filterFilesFullPath: Boolean = false,
     onDownloadFile: (Int, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -918,22 +923,28 @@ private fun UsenetFilesCard(
     var filterSubtitles by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    val filteredFiles = remember(files, searchQuery, filterVideo, filterAudio, filterSubtitles) {
-        files.filter { file ->
-            val matchesSearch = searchQuery.isBlank() || file.name.contains(
-                searchQuery,
-                ignoreCase = true
-            ) || file.shortName.contains(searchQuery, ignoreCase = true)
+    val filteredFiles =
+        remember(files, searchQuery, filterFilesFullPath, filterVideo, filterAudio, filterSubtitles) {
+            files.filter { file ->
+                val fileNameOnly =
+                    file.shortName.ifBlank {
+                        file.name.substringAfterLast('/').substringAfterLast('\\')
+                    }
+                val matchesSearch =
+                    searchQuery.isBlank() ||
+                        fileNameOnly.contains(searchQuery, ignoreCase = true) ||
+                        (filterFilesFullPath && file.name.contains(searchQuery, ignoreCase = true))
 
-            val anyFilterActive = filterVideo || filterAudio || filterSubtitles
-            val matchesType = !anyFilterActive ||
-                    (filterVideo && file.isVideo()) ||
-                    (filterAudio && file.isAudio()) ||
-                    (filterSubtitles && file.isSubtitle())
+                val anyFilterActive = filterVideo || filterAudio || filterSubtitles
+                val matchesType =
+                    !anyFilterActive ||
+                        (filterVideo && file.isVideo()) ||
+                        (filterAudio && file.isAudio()) ||
+                        (filterSubtitles && file.isSubtitle())
 
-            matchesSearch && matchesType
+                matchesSearch && matchesType
+            }
         }
-    }
 
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),

@@ -107,6 +107,7 @@ fun TorrentDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
+    val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
     val currentItem = uiState.torrent ?: item
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -131,6 +132,7 @@ fun TorrentDetailScreen(
             uiState = uiState,
             defaultPlayer = defaultPlayer,
             mediaPlayers = mediaPlayers,
+            filterFilesFullPath = filterFilesFullPath,
             onPlayMedia = { service, url, setAsDefault ->
                 viewModel.playOnMedia(service, url, setAsDefault)
             },
@@ -162,6 +164,7 @@ private fun TorrentDetailScreen(
     uiState: TorrentDetailUiState,
     defaultPlayer: ExternalService?,
     mediaPlayers: List<ExternalService>,
+    filterFilesFullPath: Boolean = false,
     onPlayMedia: (ExternalService, String, Boolean) -> Unit,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
@@ -248,6 +251,7 @@ private fun TorrentDetailScreen(
                 TorrentFilesCard(
                     files = item.files!!,
                     isCached = item.cached,
+                    filterFilesFullPath = filterFilesFullPath,
                     onDownloadFile = onDownloadFile,
                 )
             }
@@ -1111,6 +1115,18 @@ private fun formatFileNameDisplay(fullName: String, shortName: String): String {
     return if (rawName.length > 90) "…${rawName.takeLast(85)}" else rawName
 }
 
+private fun formatFilePathDisplay(fullName: String, shortName: String): String {
+    val normalized = fullName.replace('\\', '/').trim()
+    val fileName = shortName.ifBlank { normalized.substringAfterLast('/') }
+    val rawPath =
+        if (fileName.isNotEmpty() && normalized.endsWith(fileName)) {
+            normalized.removeSuffix(fileName).trimEnd('/')
+        } else {
+            normalized.substringBeforeLast('/', "")
+        }
+    return rawPath.ifBlank { "/" }
+}
+
 private fun TorrentFileDto.isVideo(): Boolean = isVideoFile(name, mimetype)
 
 private fun TorrentFileDto.isAudio(): Boolean = isAudioFile(name, mimetype)
@@ -1121,6 +1137,7 @@ private fun TorrentFileDto.isSubtitle(): Boolean = isSubtitleFile(name)
 private fun TorrentFilesCard(
     files: List<TorrentFileDto>,
     isCached: Boolean,
+    filterFilesFullPath: Boolean = false,
     onDownloadFile: (Int, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1130,22 +1147,28 @@ private fun TorrentFilesCard(
     var filterSubtitles by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    val filteredFiles = remember(files, searchQuery, filterVideo, filterAudio, filterSubtitles) {
-        files.filter { file ->
-            val matchesSearch = searchQuery.isBlank() || file.name.contains(
-                searchQuery,
-                ignoreCase = true
-            ) || file.shortName.contains(searchQuery, ignoreCase = true)
+    val filteredFiles =
+        remember(files, searchQuery, filterFilesFullPath, filterVideo, filterAudio, filterSubtitles) {
+            files.filter { file ->
+                val fileNameOnly =
+                    file.shortName.ifBlank {
+                        file.name.substringAfterLast('/').substringAfterLast('\\')
+                    }
+                val matchesSearch =
+                    searchQuery.isBlank() ||
+                        fileNameOnly.contains(searchQuery, ignoreCase = true) ||
+                        (filterFilesFullPath && file.name.contains(searchQuery, ignoreCase = true))
 
-            val anyFilterActive = filterVideo || filterAudio || filterSubtitles
-            val matchesType = !anyFilterActive ||
-                    (filterVideo && file.isVideo()) ||
-                    (filterAudio && file.isAudio()) ||
-                    (filterSubtitles && file.isSubtitle())
+                val anyFilterActive = filterVideo || filterAudio || filterSubtitles
+                val matchesType =
+                    !anyFilterActive ||
+                        (filterVideo && file.isVideo()) ||
+                        (filterAudio && file.isAudio()) ||
+                        (filterSubtitles && file.isSubtitle())
 
-            matchesSearch && matchesType
+                matchesSearch && matchesType
+            }
         }
-    }
 
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
@@ -1280,6 +1303,13 @@ private fun TorrentFilesCard(
                                     FileTypeBadge(category = category)
                                 }
                             }
+                            Text(
+                                text = formatFilePathDisplay(file.name, file.shortName),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 5,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
 
                         if (isCached) {

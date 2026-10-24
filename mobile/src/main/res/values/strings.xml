@@ -399,4 +399,8 @@
     <string name="backup_restore_failed">Failed to restore backup</string>
     <string name="setup_restore_title">Have a Backup?</string>
     <string name="setup_restore_description">If you previously exported a NullSeek backup, you can restore your accounts, preferences, external services, indexers, and Stremio addons directly from your backup file.</string>
+
+    <!-- File Filter Scope -->
+    <string name="filter_files_full_path_title">Filter files by full path</string>
+    <string name="filter_files_full_path_summary">Match the full file path in detail file search instead of only the file name</string>
 </resources>

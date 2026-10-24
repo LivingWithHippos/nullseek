@@ -77,6 +77,13 @@ class WebDownloadDetailViewModel(
             initialValue = emptyList(),
         )
 
+    val filterFilesFullPath: StateFlow<Boolean> =
+        preferencesRepository.filterFilesFullPath.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false,
+        )
+
     fun playOnMedia(
         service: ExternalService,
         url: String,

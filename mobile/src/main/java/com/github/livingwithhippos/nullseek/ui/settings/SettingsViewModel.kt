@@ -65,6 +65,13 @@ class SettingsViewModel(
             initialValue = false,
         )
 
+    val filterFilesFullPath: StateFlow<Boolean> =
+        preferencesRepository.filterFilesFullPath.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false,
+        )
+
     val themeMode: StateFlow<ThemeMode> =
         preferencesRepository.themeMode.stateIn(
             scope = viewModelScope,
@@ -94,6 +101,10 @@ class SettingsViewModel(
 
     fun setSearchAutoAddDownload(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setSearchAutoAddDownload(enabled) }
+    }
+
+    fun setFilterFilesFullPath(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setFilterFilesFullPath(enabled) }
     }
 
     fun setDownloadZipMode(mode: DownloadZipMode) {

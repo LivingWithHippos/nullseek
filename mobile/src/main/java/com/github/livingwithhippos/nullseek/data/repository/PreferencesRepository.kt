@@ -67,6 +67,7 @@ class PreferencesRepository(
 
     private val referralKey = booleanPreferencesKey("include_referral_in_browser")
     private val searchAutoAddDownloadKey = booleanPreferencesKey("search_auto_add_download")
+    private val filterFilesFullPathKey = booleanPreferencesKey("filter_files_full_path")
 
     private val searchSortOptionKey = stringPreferencesKey("search_sort_option")
     private val searchSortAscendingKey = booleanPreferencesKey("search_sort_ascending")
@@ -112,6 +113,9 @@ class PreferencesRepository(
 
     val searchAutoAddDownload: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[searchAutoAddDownloadKey] ?: false }
+
+    val filterFilesFullPath: Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[filterFilesFullPathKey] ?: false }
 
     val downloadZipMode: Flow<DownloadZipMode> =
         dataStore.data.map { preferences ->
@@ -214,6 +218,16 @@ class PreferencesRepository(
                 preferences[searchAutoAddDownloadKey] = true
             } else {
                 preferences.remove(searchAutoAddDownloadKey)
+            }
+        }
+    }
+
+    suspend fun setFilterFilesFullPath(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            if (enabled) {
+                preferences[filterFilesFullPathKey] = true
+            } else {
+                preferences.remove(filterFilesFullPathKey)
             }
         }
     }
