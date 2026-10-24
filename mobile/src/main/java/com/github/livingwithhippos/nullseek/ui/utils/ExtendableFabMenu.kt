@@ -2,12 +2,14 @@ package com.github.livingwithhippos.nullseek.ui.utils
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ExtendableFabMenu(
     onNewDownload: () -> Unit,
@@ -35,6 +38,7 @@ fun ExtendableFabMenu(
             ToggleFloatingActionButton(
                 checked = expanded,
                 onCheckedChange = { expanded = it },
+                containerCornerRadius = ToggleFloatingActionButtonDefaults.containerCornerRadius(0.dp, 0.dp),
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.icon_action),
