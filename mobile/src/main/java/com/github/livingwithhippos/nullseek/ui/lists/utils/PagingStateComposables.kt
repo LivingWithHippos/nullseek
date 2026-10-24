@@ -13,12 +13,12 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import com.github.livingwithhippos.nullseek.ui.theme.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
+import com.github.livingwithhippos.nullseek.ui.theme.Button
 
 @Composable
 fun PagingRefreshState(

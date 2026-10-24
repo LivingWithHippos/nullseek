@@ -4,7 +4,6 @@ import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddo
 import com.github.livingwithhippos.nullseek.core.data.repository.StremioAddonRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
@@ -288,16 +287,33 @@ class AddonManager(
         val rawDetails =
             stream.description?.trim()?.takeIf { it.isNotEmpty() }
                 ?: stream.title?.trim()?.takeIf { it.isNotEmpty() }
-        val fileName = stream.behaviorHints?.filename?.trim()?.takeIf { it.isNotEmpty() }
+        val fileName =
+            stream.behaviorHints
+                ?.filename
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
 
         val resolvedName =
             when {
-                rawDetails != null && fileName != null && !rawDetails.contains(fileName, ignoreCase = true) ->
+                rawDetails != null && fileName != null && !rawDetails.contains(fileName, ignoreCase = true) -> {
                     "$fileName\n$rawDetails"
-                rawDetails != null -> rawDetails
-                fileName != null -> fileName
-                !stream.name.isNullOrBlank() -> stream.name.trim()
-                else -> contentName
+                }
+
+                rawDetails != null -> {
+                    rawDetails
+                }
+
+                fileName != null -> {
+                    fileName
+                }
+
+                !stream.name.isNullOrBlank() -> {
+                    stream.name.trim()
+                }
+
+                else -> {
+                    contentName
+                }
             }
 
         val combinedText = listOfNotNull(stream.title, stream.description, stream.name).joinToString("\n")

@@ -16,9 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
@@ -26,7 +23,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -38,18 +38,18 @@ import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.core.utils.mockTorrents
 import com.github.livingwithhippos.nullseek.ui.lists.utils.FindBar
 import com.github.livingwithhippos.nullseek.ui.lists.utils.MatchHighlight
 import com.github.livingwithhippos.nullseek.ui.lists.utils.PagingRefreshState
 import com.github.livingwithhippos.nullseek.ui.lists.utils.matchCardBorder
 import com.github.livingwithhippos.nullseek.ui.lists.utils.matchCardColors
-import com.github.livingwithhippos.nullseek.ui.lists.utils.rememberFindInListState
 import com.github.livingwithhippos.nullseek.ui.lists.utils.pagingAppendState
+import com.github.livingwithhippos.nullseek.ui.lists.utils.rememberFindInListState
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
-import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import kotlinx.coroutines.flow.Flow
 

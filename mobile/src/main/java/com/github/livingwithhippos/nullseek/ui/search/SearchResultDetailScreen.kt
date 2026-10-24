@@ -19,10 +19,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import com.github.livingwithhippos.nullseek.ui.theme.AssistChip
-import com.github.livingwithhippos.nullseek.ui.theme.Button
-import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
-import com.github.livingwithhippos.nullseek.ui.theme.SuggestionChip
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +32,11 @@ import androidx.core.net.toUri
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
+import com.github.livingwithhippos.nullseek.ui.theme.AssistChip
+import com.github.livingwithhippos.nullseek.ui.theme.Button
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
+import com.github.livingwithhippos.nullseek.ui.theme.SuggestionChip
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
 import java.text.DateFormat

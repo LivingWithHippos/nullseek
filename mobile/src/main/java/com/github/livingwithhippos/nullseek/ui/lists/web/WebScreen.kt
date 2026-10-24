@@ -39,18 +39,18 @@ import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.core.utils.mockWebDownload
 import com.github.livingwithhippos.nullseek.ui.lists.utils.FindBar
 import com.github.livingwithhippos.nullseek.ui.lists.utils.MatchHighlight
 import com.github.livingwithhippos.nullseek.ui.lists.utils.PagingRefreshState
 import com.github.livingwithhippos.nullseek.ui.lists.utils.matchCardBorder
 import com.github.livingwithhippos.nullseek.ui.lists.utils.matchCardColors
-import com.github.livingwithhippos.nullseek.ui.lists.utils.rememberFindInListState
 import com.github.livingwithhippos.nullseek.ui.lists.utils.pagingAppendState
+import com.github.livingwithhippos.nullseek.ui.lists.utils.rememberFindInListState
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
-import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import kotlinx.coroutines.flow.Flow
 

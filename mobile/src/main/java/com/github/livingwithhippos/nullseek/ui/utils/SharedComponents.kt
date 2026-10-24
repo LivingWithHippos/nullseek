@@ -15,7 +15,6 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import com.github.livingwithhippos.nullseek.ui.theme.OutlinedIconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.ui.theme.CustomTypography
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedIconButton
 import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 

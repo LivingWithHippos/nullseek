@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -60,14 +59,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
-import com.github.livingwithhippos.nullseek.ui.theme.AssistChip
-import com.github.livingwithhippos.nullseek.ui.theme.Button
-import com.github.livingwithhippos.nullseek.ui.theme.FilledTonalButton
-import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
-import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
-import com.github.livingwithhippos.nullseek.ui.theme.SuggestionChip
-import com.github.livingwithhippos.nullseek.ui.theme.TextButton
-import com.github.livingwithhippos.nullseek.utils.openWebPage
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -91,10 +82,18 @@ import com.github.livingwithhippos.nullseek.data.model.Indexer
 import com.github.livingwithhippos.nullseek.data.model.IndexerType
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
 import com.github.livingwithhippos.nullseek.data.model.isDirectStreamResult
+import com.github.livingwithhippos.nullseek.ui.theme.AssistChip
+import com.github.livingwithhippos.nullseek.ui.theme.Button
+import com.github.livingwithhippos.nullseek.ui.theme.FilledTonalButton
+import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
+import com.github.livingwithhippos.nullseek.ui.theme.SuggestionChip
+import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.ExtendableFabMenu
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.utils.openWebPage
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 

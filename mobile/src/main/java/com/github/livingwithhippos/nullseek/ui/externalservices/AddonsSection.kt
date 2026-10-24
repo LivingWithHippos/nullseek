@@ -27,8 +27,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import com.github.livingwithhippos.nullseek.ui.theme.Button
-import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +43,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity
+import com.github.livingwithhippos.nullseek.ui.theme.Button
+import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import kotlinx.serialization.json.Json
 

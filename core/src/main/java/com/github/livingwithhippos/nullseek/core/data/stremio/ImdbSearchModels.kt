@@ -187,7 +187,8 @@ internal data class CinemetaCatalogItem(
         val resolvedGenres =
             genres.ifEmpty { genre }.mapNotNull { it.trim().takeIf { g -> g.isNotEmpty() } }
         val resolvedStars =
-            cast.mapNotNull { it.trim().takeIf { c -> c.isNotEmpty() } }
+            cast
+                .mapNotNull { it.trim().takeIf { c -> c.isNotEmpty() } }
                 .take(4)
                 .joinToString(", ")
                 .takeIf { it.isNotEmpty() }
@@ -263,7 +264,8 @@ internal data class CinemetaSeriesMeta(
             existing?.posterUrl?.takeIf { it.isNotEmpty() }
                 ?: poster?.trim()?.takeIf { it.isNotEmpty() }
         val resolvedStars =
-            cast.mapNotNull { it.trim().takeIf { c -> c.isNotEmpty() } }
+            cast
+                .mapNotNull { it.trim().takeIf { c -> c.isNotEmpty() } }
                 .take(4)
                 .joinToString(", ")
                 .takeIf { it.isNotEmpty() }
@@ -278,11 +280,13 @@ internal data class CinemetaSeriesMeta(
             runtime?.trim()?.takeIf { it.isNotEmpty() }
                 ?: existing?.runtime
         val resolvedGenres =
-            genres.ifEmpty { genre }
+            genres
+                .ifEmpty { genre }
                 .mapNotNull { it.trim().takeIf { g -> g.isNotEmpty() } }
                 .ifEmpty { existing?.genres.orEmpty() }
         val resolvedDirector =
-            director.mapNotNull { it.trim().takeIf { d -> d.isNotEmpty() } }
+            director
+                .mapNotNull { it.trim().takeIf { d -> d.isNotEmpty() } }
                 .ifEmpty { existing?.director.orEmpty() }
 
         val parsedEpisodes =

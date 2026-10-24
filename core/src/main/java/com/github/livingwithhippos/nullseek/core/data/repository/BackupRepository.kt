@@ -17,7 +17,6 @@ import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddo
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 const val CURRENT_BACKUP_VERSION = 1
@@ -284,7 +283,15 @@ class BackupRepositoryImpl(
             val activeIndex =
                 backup.providers
                     .indexOfFirst { it.active }
-                    .let { idx -> if (idx >= 0) idx else if (backup.providers.isNotEmpty()) 0 else -1 }
+                    .let { idx ->
+                        if (idx >= 0) {
+                            idx
+                        } else if (backup.providers.isNotEmpty()) {
+                            0
+                        } else {
+                            -1
+                        }
+                    }
 
             providerDao.deleteAll()
             backup.providers.forEachIndexed { index, item ->

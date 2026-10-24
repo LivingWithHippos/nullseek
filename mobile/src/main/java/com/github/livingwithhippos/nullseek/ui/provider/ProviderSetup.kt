@@ -27,10 +27,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import com.github.livingwithhippos.nullseek.ui.theme.FilledTonalButton
-import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
-import com.github.livingwithhippos.nullseek.ui.theme.OutlinedIconButton
-import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,7 +46,11 @@ import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.NullRootUiState
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
+import com.github.livingwithhippos.nullseek.ui.theme.FilledTonalButton
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedIconButton
+import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.user.UserViewModel
 import com.github.livingwithhippos.nullseek.utils.getClipboardText
 import com.github.livingwithhippos.nullseek.utils.openWebPage

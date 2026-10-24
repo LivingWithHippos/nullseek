@@ -148,8 +148,7 @@ class AddonClient(
     /**
      * Fetch episodes for a series from Stremio Cinemeta (/meta/series/{imdbId}.json).
      */
-    suspend fun getSeriesEpisodes(imdbId: String): Result<List<SeriesEpisodeItem>> =
-        getTitleMeta(imdbId, "series").map { it.episodes }
+    suspend fun getSeriesEpisodes(imdbId: String): Result<List<SeriesEpisodeItem>> = getTitleMeta(imdbId, "series").map { it.episodes }
 
     /**
      * Fetch rich title metadata (and episodes if series) from Stremio Cinemeta (/meta/{type}/{imdbId}.json).
