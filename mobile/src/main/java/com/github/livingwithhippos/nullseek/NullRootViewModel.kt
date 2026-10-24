@@ -8,7 +8,9 @@ import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvide
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.model.TorrentDto
+import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
 import com.github.livingwithhippos.torbox.model.UserDataDto
+import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import com.github.livingwithhippos.torbox.network.ApiResult
 import com.github.livingwithhippos.torbox.network.TorboxClientConfig
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +34,7 @@ class NullRootViewModel(
 
     init {
         // check if there's an active token and enable it, initializing the TorboxClient with the token
+        // todo: try catch and handle errors, like network issues, invalid token, etc.
         loadActiveToken()
     }
 
@@ -120,6 +123,64 @@ class NullRootViewModel(
         }
     }
 
+    fun loadWebDetails(
+        webDownload: WebDownloadDto,
+        reload: Boolean = false,
+    ) {
+        viewModelScope.launch {
+            if (reload) {
+                loadingWebDetails()
+                val response = client.web.get(id = webDownload.id)
+                if (response is ApiResult.Success) {
+                    val webDetails = response.value.data
+                    if (webDetails != null) {
+                        loadedWebDetails(webDetails)
+                    } else {
+                        setupInvalid("Failed to load web details")
+                    }
+                } else {
+                    setupInvalid("Failed to load web details")
+                }
+            } else {
+                loadedWebDetails(webDownload)
+            }
+        }
+    }
+
+    fun loadUsenetDetails(
+        usenetDownload: UsenetDownloadDto,
+        reload: Boolean = false,
+    ) {
+        viewModelScope.launch {
+            if (reload) {
+                loadingUsenetDetails()
+                val response = client.usenet.get(id = usenetDownload.id)
+                if (response is ApiResult.Success) {
+                    val usenetDetails = response.value.data
+                    if (usenetDetails != null) {
+                        loadedUsenetDetails(usenetDetails)
+                    } else {
+                        setupInvalid("Failed to load usenet details")
+                    }
+                } else {
+                    setupInvalid("Failed to load usenet details")
+                }
+            } else {
+                loadedUsenetDetails(usenetDownload)
+            }
+        }
+    }
+
+    fun closeDetails() {
+        _uiState.value =
+            _uiState.value.copy(
+                selectedTorrent = null,
+                selectedWeb = null,
+                selectedUsenet = null,
+                isDetailOnlyOpen = false,
+            )
+    }
+
     // helpers to update the state //
 
     // todo add a prefix for these
@@ -129,11 +190,31 @@ class NullRootViewModel(
     }
 
     private fun loadedTorrentDetails(torrent: TorrentDto) {
-        _uiState.value = _uiState.value.copy(loading = false, selectedTorrent = torrent, error = null)
+        _uiState.value =
+            _uiState.value.copy(loading = false, selectedTorrent = torrent, error = null)
+    }
+
+    private fun loadingWebDetails() {
+        _uiState.value = _uiState.value.copy(loading = true, selectedWeb = null, error = null)
+    }
+
+    private fun loadedWebDetails(webDownload: WebDownloadDto) {
+        _uiState.value =
+            _uiState.value.copy(loading = false, selectedWeb = webDownload, error = null)
+    }
+
+    private fun loadingUsenetDetails() {
+        _uiState.value = _uiState.value.copy(loading = true, selectedUsenet = null, error = null)
+    }
+
+    private fun loadedUsenetDetails(usenetDownload: UsenetDownloadDto) {
+        _uiState.value =
+            _uiState.value.copy(loading = false, selectedUsenet = usenetDownload, error = null)
     }
 
     private fun activeTokenLoaded(user: UserDataDto) {
-        _uiState.value = _uiState.value.copy(loading = false, setup = false, user = user, error = null)
+        _uiState.value =
+            _uiState.value.copy(loading = false, setup = false, user = user, error = null)
     }
 
     private fun setupNeeded() {
@@ -141,7 +222,8 @@ class NullRootViewModel(
     }
 
     private fun setupCompleted(user: UserDataDto) {
-        _uiState.value = _uiState.value.copy(loading = false, setup = false, user = user, error = null)
+        _uiState.value =
+            _uiState.value.copy(loading = false, setup = false, user = user, error = null)
     }
 
     private fun setupInvalid(error: String) {
@@ -179,10 +261,8 @@ data class NullRootUiState(
     /**
      * currently selected a web download, to show its details page
      */
-    val selectedWeb: Int? = null,
-    /**
-     *
-     */
+    val selectedWeb: WebDownloadDto? = null,
+    val selectedUsenet: UsenetDownloadDto? = null,
     val isDetailOnlyOpen: Boolean = false,
     val error: String? = null,
     val isOnline: Boolean = true,

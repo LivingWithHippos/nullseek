@@ -11,23 +11,32 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
+import com.github.livingwithhippos.nullseek.ui.externalservices.ExternalServicesScreen
+import com.github.livingwithhippos.nullseek.ui.addons.AddonsScreen
 import com.github.livingwithhippos.nullseek.ui.home.HomeScreen
 import com.github.livingwithhippos.nullseek.ui.lists.ListsScreen
 import com.github.livingwithhippos.nullseek.ui.navigation.NavigationActions
 import com.github.livingwithhippos.nullseek.ui.navigation.NullNavigationWrapper
 import com.github.livingwithhippos.nullseek.ui.navigation.Route
 import com.github.livingwithhippos.nullseek.ui.navigation.SETTINGS_DESTINATION
+import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadScreen
+import com.github.livingwithhippos.nullseek.ui.providers.ProvidersScreen
 import com.github.livingwithhippos.nullseek.ui.search.SearchScreen
 import com.github.livingwithhippos.nullseek.ui.settings.SettingsScreen
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.torbox.model.TorrentDto
+import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
+import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import org.koin.compose.viewmodel.koinViewModel
 
 private fun NavigationSuiteType.toNullNavType() = when (this) {
@@ -44,6 +53,10 @@ fun NullSeekApp(
     rootUiState: NullRootUiState,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
     loadTorrentDetails: (torrent: TorrentDto) -> Unit,
+    loadWebDetails: (webDownload: WebDownloadDto) -> Unit,
+    loadUsenetDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
+    closeDetails: () -> Unit,
+    reloadProviders: () -> Unit = {},
     viewmodel: NullViewModel = koinViewModel<NullViewModel>()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -78,10 +91,24 @@ fun NullSeekApp(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
+    // when no provider is left, go back to the setup screen
+    LaunchedEffect(rootUiState.setup) {
+        if (rootUiState.setup && currentDestination?.hasRoute<Route.ManageProviders>() == true) {
+            navController.navigate(Route.Home) {
+                popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
     Surface {
         NullNavigationWrapper(
             currentDestination = currentDestination,
+            isUserLoaded = rootUiState.user != null,
             navigateToTopLevelDestination = { destination ->
+                if (destination.route == Route.Lists && rootUiState.user == null) {
+                    return@NullNavigationWrapper
+                }
                 navigationActions.navigateTo(destination)
             },
         ) {
@@ -92,9 +119,16 @@ fun NullSeekApp(
                 navigationType = navSuiteType.toNullNavType(),
                 checkValidToken = checkValidToken,
                 loadTorrentDetails = loadTorrentDetails,
+                loadWebDetails = loadWebDetails,
+                loadUsenetDetails = loadUsenetDetails,
                 showSettings = {
                     navigationActions.navigateTo(SETTINGS_DESTINATION)
                 },
+                showNewDownload = {
+                    navigationActions.navigateTo(com.github.livingwithhippos.nullseek.ui.navigation.NEW_DOWNLOAD_DESTINATION)
+                },
+                closeDetails = closeDetails,
+                reloadProviders = reloadProviders,
             )
         }
     }
@@ -108,7 +142,12 @@ private fun NullNavHost(
     navigationType: NullNavigationType,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
     loadTorrentDetails: (torrent: TorrentDto) -> Unit,
+    loadWebDetails: (webDownload: WebDownloadDto) -> Unit,
+    loadUsenetDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
     showSettings: () -> Unit,
+    showNewDownload: () -> Unit,
+    closeDetails: () -> Unit,
+    reloadProviders: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NavHost(
@@ -122,7 +161,8 @@ private fun NullNavHost(
                 navigationType = navigationType,
                 uiState = uiState,
                 checkValidToken = checkValidToken,
-                showSettings = showSettings
+                showSettings = showSettings,
+                onNewDownload = showNewDownload
             )
         }
         composable<Route.Lists> {
@@ -130,18 +170,67 @@ private fun NullNavHost(
                 contentType = contentType,
                 navigationType = navigationType,
                 uiState = uiState,
-                loadTorrentDetails = loadTorrentDetails
+                loadTorrentDetails = loadTorrentDetails,
+                loadWebDetails = loadWebDetails,
+                loadUsenetDetails = loadUsenetDetails,
+                closeDetails = closeDetails,
+                onNewDownload = showNewDownload,
+                showSettings = showSettings,
             )
         }
         composable<Route.Search> {
             SearchScreen(
-                contentType = contentType, navigationType = navigationType, uiState = uiState
+                contentType = contentType,
+                navigationType = navigationType,
+                uiState = uiState,
+                onNewDownload = showNewDownload,
+                onDownload = { link -> navController.navigate(Route.NewDownload(links = link)) },
+                showSettings = showSettings,
+                onNavigateToExternalServices = {
+                    navController.navigate(Route.ExternalServices)
+                },
             )
         }
         composable<Route.Settings> {
             SettingsScreen(
                 contentType = contentType,
-                navigationType = navigationType
+                navigationType = navigationType,
+                onNavigateToProviders = {
+                    navController.navigate(Route.ManageProviders)
+                },
+                onNavigateToExternalServices = {
+                    navController.navigate(Route.ExternalServices)
+                },
+                onNavigateToAddons = {
+                    navController.navigate(Route.StremioAddons)
+                },
+            )
+        }
+        composable<Route.StremioAddons> {
+            AddonsScreen(
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable<Route.ExternalServices> {
+            ExternalServicesScreen(
+                contentType = contentType,
+                navigationType = navigationType,
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+        composable<Route.ManageProviders> {
+            ProvidersScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onProvidersChanged = reloadProviders,
+            )
+        }
+        composable<Route.NewDownload> { backStackEntry ->
+            val route = backStackEntry.toRoute<Route.NewDownload>()
+            NewDownloadScreen(
+                initialLinks = route.links.orEmpty(),
+                contentType = contentType,
+                navigationType = navigationType,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

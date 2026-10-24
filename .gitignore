@@ -15,3 +15,8 @@
 local.properties
 .idea/deploymentTargetSelector.xml
 /.kotlin/sessions
+/extra/docker/prowlarr
+/extra/docker/jackett
+/extra/voiden/.voiden/history
+/extra/torbox/.voiden
+extra/manifest.example.json

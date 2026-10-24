@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.koin.compiler) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.spotless) apply false
-    kotlin("plugin.serialization") version "2.3.20" apply false
+    kotlin("plugin.serialization") version "2.4.20" apply false
     alias(libs.plugins.android.room) apply false
 }
 

@@ -1,41 +1,64 @@
 package com.github.livingwithhippos.nullseek.ui.user
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.R
 import com.github.livingwithhippos.nullseek.core.utils.mockUser
-import com.github.livingwithhippos.nullseek.ui.theme.CustomTypography
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
-import com.github.livingwithhippos.nullseek.utils.convertToDays
-import com.github.livingwithhippos.nullseek.utils.convertToSize
-import com.github.livingwithhippos.nullseek.utils.getPlanName
+import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
+import com.github.livingwithhippos.nullseek.core.utils.convertToDays
+import com.github.livingwithhippos.nullseek.core.utils.convertToSize
+import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
+import com.github.livingwithhippos.nullseek.core.utils.getPlanName
+import com.github.livingwithhippos.nullseek.core.utils.isDateNotInPast
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.model.UserDataDto
+import logcat.asLog
+import logcat.logcat
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -45,147 +68,635 @@ fun UserScreen(
     loading: Boolean,
     error: String?,
     context: Context = LocalContext.current,
+    viewModel: UserViewModel = koinViewModel(),
 ) {
     if (loading || user == null) {
-        // user == null should not happen
-        Column(
+        Box(
             modifier = modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            contentAlignment = Alignment.Center,
         ) {
             LoadingIndicator()
         }
         return
     }
 
-    // todo: reload button
+    val referralPreference by viewModel.includeReferralPreference.collectAsState()
+    var showReferralDialog by remember { mutableStateOf(false) }
 
+    if (showReferralDialog) {
+        AlertDialog(
+            onDismissRequest = { showReferralDialog = false },
+            title = {
+                Text(text = stringResource(id = R.string.referral_dialog_title))
+            },
+            text = {
+                Text(text = stringResource(id = R.string.referral_dialog_message))
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showReferralDialog = false
+                        viewModel.setReferralPreference(true)
+                        openBrowser(context, viewModel.buildTorboxSubscriptionUrl(true))
+                    },
+                ) {
+                    Text(text = stringResource(id = R.string.referral_dialog_positive))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showReferralDialog = false
+                        viewModel.setReferralPreference(false)
+                        openBrowser(context, viewModel.buildTorboxSubscriptionUrl(false))
+                    },
+                ) {
+                    Text(text = stringResource(id = R.string.referral_dialog_negative))
+                }
+            },
+        )
+    }
+
+    UserScreenContent(
+        modifier = modifier,
+        user = user,
+        error = error,
+        onOpenSettingsClick = {
+            openBrowser(context, viewModel.getTorboxSettingsUrl())
+        },
+        onOpenSubscriptionClick = {
+            if (referralPreference == null) {
+                showReferralDialog = true
+            } else {
+                val url = viewModel.buildTorboxSubscriptionUrl(referralPreference == true)
+                openBrowser(context, url)
+            }
+        },
+        context = context,
+    )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun UserScreenContent(
+    modifier: Modifier = Modifier,
+    user: UserDataDto,
+    error: String?,
+    onOpenSettingsClick: () -> Unit,
+    onOpenSubscriptionClick: () -> Unit,
+    context: Context = LocalContext.current,
+) {
     Column(
-        modifier = modifier
-            .padding(horizontal = 8.dp)
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(
-            text = "User Info",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        Text(
-            text = "Plan: ${getPlanName(user.plan)}",
-            style = MaterialTheme.typography.titleLargeEmphasized,
-        )
-        Text(text = convertToDays(user.premiumExpiresAt))
-        Row(
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier =
+                Modifier
+                    .widthIn(max = 600.dp)
+                    .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            IconButton(onClick = {
-                setClipboardText(context, user.email)
-            }) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_paste),
-                    contentDescription = "Copy Mail"
-                )
-            }
-            Text(text = user.email, overflow = TextOverflow.Clip)
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = {
-                setClipboardText(context, user.authId)
-            }) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_paste),
-                    contentDescription = "Copy Auth ID"
-                )
-            }
-            Text(text = user.authId, overflow = TextOverflow.Clip)
-        }
-
-        if (user.isSubscribed) {
-            Text(text = "Subscribed")
-        } else {
-            Text(text = "No active subscription")
-        }
-
-        if (user.isVendor) {
-            Text(text = "Vendor Enabled")
-        }
-
-        ElevatedCard(
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = 6.dp
+            AccountOverviewAndActionsCard(
+                user = user,
+                onOpenSettingsClick = onOpenSettingsClick,
+                onOpenSubscriptionClick = onOpenSubscriptionClick,
+                context = context,
             )
-        ) {
-            Row(
-                modifier = Modifier
-                    .padding(top = 12.dp)
-                    .widthIn(min = 250.dp, max = 400.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = "Files", style = MaterialTheme.typography.bodySmall)
-                    Text(text = "Downloaded", style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        text = user.totalDownloaded.toString(),
-                        style= CustomTypography.cardBoldValue,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Torrents", style = MaterialTheme.typography.bodySmall)
-                    Text(text = "Downloaded", style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        text = user.torrentsDownloaded.toString(),
-                        style= CustomTypography.cardBoldValue,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .widthIn(min = 250.dp, max = 400.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = "Size", style = MaterialTheme.typography.bodySmall)
-                    Text(text = "Downloaded", style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        text = convertToSize(user.totalBytesDownloaded),
-                        style= CustomTypography.cardBoldValue,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Size", style = MaterialTheme.typography.bodySmall)
-                    Text(text = "Uploaded", style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        text = convertToSize(user.totalBytesUploaded),
-                        style= CustomTypography.cardBoldValue,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
-            }
-        }
 
-        if (error != null) {
+            UserStatsCard(user = user)
+
+            AccountFeaturesCard(user = user)
+
+            UserReferralCard(user = user, context = context)
+
+
+            // Error Notice (if any)
+            if (error != null) {
+                OutlinedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors =
+                        CardDefaults.outlinedCardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
+                        ),
+                ) {
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
+            }
+
+            // Extra bottom spacing to account for the FAB
+            Spacer(modifier = Modifier.height(88.dp))
+        }
+    }
+}
+
+@Composable
+private fun AccountOverviewAndActionsCard(
+    user: UserDataDto,
+    onOpenSettingsClick: () -> Unit,
+    onOpenSubscriptionClick: () -> Unit,
+    context: Context,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             Text(
-                text = error,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error
+                text = stringResource(id = R.string.account_overview),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
             )
-        }
 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Email",
+                    modifier = Modifier.padding(end = 8.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = user.email,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    CopyButton(
+                        text = user.email,
+                        description = "Copy Email",
+                        context = context,
+                    )
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "User ID",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = "#${user.id}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Plan",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = getPlanName(user.plan).uppercase(),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Premium Expires",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = convertToDays(user.premiumExpiresAt),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Subscription",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = if (user.isSubscribed) "Active" else "None",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color =
+                        if (user.isSubscribed) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            // Web Action Buttons
+            OutlinedButton(
+                onClick = onOpenSettingsClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_settings),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = stringResource(id = R.string.open_torbox_settings))
+            }
+
+            OutlinedButton(
+                onClick = onOpenSubscriptionClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_contact_page),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = stringResource(id = R.string.open_torbox_subscription))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountFeaturesCard(
+    user: UserDataDto,
+    modifier: Modifier = Modifier,
+) {
+    val coolDown = user.cooldownUntil
+
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(id = R.string.account_features),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(id = R.string.concurrent_slots),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = "+${user.additionalConcurrentSlots}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(id = R.string.long_term_seeding),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = if (user.longTermSeeding) "Active" else "Inactive",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color =
+                        if (user.longTermSeeding) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(id = R.string.long_term_storage),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = if (user.longTermStorage) "Active" else "Inactive",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color =
+                        if (user.longTermStorage) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                )
+            }
+
+            if (user.isVendor) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.vendor_badge),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        text = "Enabled",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+            }
+
+            if (coolDown != null && isDateNotInPast(coolDown)) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.cooldown_active),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    Text(
+                        text = formatToLocalDate(coolDown),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UserReferralCard(
+    user: UserDataDto,
+    context: Context,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(id = R.string.referral_section_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+            )
+
+            OutlinedButton(
+                onClick = {
+                    setClipboardText(context, user.userReferral)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors =
+                    ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_copy),
+                    contentDescription = null,
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = stringResource(id = R.string.copy_referral))
+            }
+
+            if (user.purchasesReferred > 0) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.purchases_referred),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        text = user.purchasesReferred.toString(),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UserStatsCard(
+    user: UserDataDto,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(id = R.string.usage_stats_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(id = R.string.data_downloaded),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = convertToSize(user.totalBytesDownloaded),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(id = R.string.data_uploaded),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = convertToSize(user.totalBytesUploaded),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(id = R.string.total_files),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = user.totalDownloaded.toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(id = R.string.torrents),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = user.torrentsDownloaded.toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(id = R.string.web_downloads),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = user.webDownloadsDownloaded.toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(id = R.string.usenet_downloads),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = user.usenetDownloadsDownloaded.toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+    }
+}
+
+private fun openBrowser(
+    context: Context,
+    url: String,
+) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        logcat("UserScreen") { "Failed to open browser: ${e.asLog()}" }
     }
 }
 
@@ -194,13 +705,14 @@ fun UserScreen(
 fun UserScreenPreview() {
     NullSeekTheme {
         Scaffold(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) { innerPadding ->
-            UserScreen(
+            UserScreenContent(
                 modifier = Modifier.padding(innerPadding),
                 user = mockUser,
-                loading = false,
-                error = null
+                error = null,
+                onOpenSettingsClick = {},
+                onOpenSubscriptionClick = {},
             )
         }
     }

@@ -9,7 +9,7 @@ import logcat.logcat
 
 class TorrentsPagingSource(
     val client: TorboxClient,
-    val pageSize: Int = 100
+    val pageSize: Int = DEFAULT_PAGING_LOAD_SIZE
 ) : PagingSource<Int, TorrentDto>() {
     override suspend fun load(
         params: LoadParams<Int>
@@ -20,13 +20,14 @@ class TorrentsPagingSource(
             val nextOffset = nextPageNumber * pageSize
             val response = client.torrent.list(offset = nextOffset, limit = pageSize)
             if (response is ApiResult.Success) {
-                val torrents = response.value.data ?: emptyList()
-                logcat { "Loading torrents page $nextPageNumber with offset $nextOffset and limit $pageSize, found ${torrents.size}" }
+                val items = response.value.data ?: emptyList()
+                val isEndOfList = items.size < pageSize
+                logcat { "Loading torrents page $nextPageNumber with offset $nextOffset and limit $pageSize, found ${items.size}" }
                 return LoadResult.Page(
-                    data = torrents,
+                    data = items,
                     // todo: check if paging only forward is correct
                     prevKey = null, // Only paging forward.
-                    nextKey = nextPageNumber + 1
+                    nextKey = if (isEndOfList) null else nextPageNumber + 1
                 )
             } else {
                 logcat { "Failed to load torrents: $response" }

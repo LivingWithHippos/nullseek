@@ -35,12 +35,22 @@ class MainActivity : ComponentActivity() {
                     NullSeekApp(
                         windowSize = windowSize,
                         rootUiState = uiState,
+                        reloadProviders = { viewModel.loadActiveToken() },
                         checkValidToken = { provider, token ->
                             viewModel.checkValidToken(provider, token)
                         },
                         loadTorrentDetails = { torrent ->
                             viewModel.loadTorrentDetails(torrent, false)
-                        }
+                        },
+                        loadWebDetails = { webDownload ->
+                            viewModel.loadWebDetails(webDownload, false)
+                        },
+                        loadUsenetDetails = { usenetDownload ->
+                            viewModel.loadUsenetDetails(usenetDownload, false)
+                        },
+                        closeDetails = {
+                            viewModel.closeDetails()
+                        },
                     )
                 }
             }
