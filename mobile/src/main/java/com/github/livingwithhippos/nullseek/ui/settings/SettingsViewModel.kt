@@ -52,6 +52,19 @@ class SettingsViewModel(
             initialValue = ThemeColor.SYSTEM,
         )
 
+    val externalDisclaimerAccepted: StateFlow<Boolean> =
+        preferencesRepository.externalDisclaimerAccepted.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false,
+        )
+
+    fun acceptExternalDisclaimer() {
+        viewModelScope.launch {
+            preferencesRepository.setExternalDisclaimerAccepted(true)
+        }
+    }
+
     fun setSearchAutoAddDownload(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setSearchAutoAddDownload(enabled) }
     }

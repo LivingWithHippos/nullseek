@@ -78,6 +78,7 @@ class PreferencesRepository(
     private val searchHistoryKey = stringPreferencesKey("search_history")
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val themeColorKey = stringPreferencesKey("theme_color")
+    private val externalDisclaimerAcceptedKey = booleanPreferencesKey("external_disclaimer_accepted")
 
     // null means the user has not chosen yet
     val includeReferral: Flow<Boolean?> =
@@ -139,6 +140,21 @@ class PreferencesRepository(
             val raw = preferences[themeColorKey]
             ThemeColor.entries.firstOrNull { it.name == raw } ?: ThemeColor.SYSTEM
         }
+
+    val externalDisclaimerAccepted: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[externalDisclaimerAcceptedKey] ?: false
+        }
+
+    suspend fun setExternalDisclaimerAccepted(accepted: Boolean) {
+        dataStore.edit { preferences ->
+            if (accepted) {
+                preferences[externalDisclaimerAcceptedKey] = true
+            } else {
+                preferences.remove(externalDisclaimerAcceptedKey)
+            }
+        }
+    }
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { preferences ->

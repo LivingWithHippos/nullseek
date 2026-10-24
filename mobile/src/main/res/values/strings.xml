@@ -379,4 +379,9 @@
     <string name="theme_color_green">Green</string>
     <string name="theme_color_orange">Orange</string>
     <string name="theme_color_red">Red</string>
+
+    <!-- External Content Disclaimer -->
+    <string name="external_content_disclaimer_title">Disclaimer</string>
+    <string name="external_content_disclaimer_message">NullSeek does not host, provide, or endorse any third-party indexers, Stremio addons, or media content.\n\nYou are solely responsible for the external services and addons you configure, the content you search, stream, or download, and for ensuring that your use complies with all applicable laws and copyright regulations in your jurisdiction.</string>
+    <string name="external_content_disclaimer_accept">I Understand</string>
 </resources>

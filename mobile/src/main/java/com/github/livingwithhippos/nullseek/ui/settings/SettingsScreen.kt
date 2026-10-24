@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
@@ -30,7 +31,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import com.github.livingwithhippos.nullseek.ui.theme.Button
 import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
+import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,6 +65,11 @@ import org.koin.androidx.compose.koinViewModel
 
 private val PAGING_LOAD_SIZE_PRESETS = listOf(100, 500, 1000, 5000)
 
+private enum class DisclaimerDestination {
+    EXTERNAL_SERVICES,
+    STREMIO_ADDONS,
+}
+
 @Composable
 fun SettingsScreen(
     contentType: NullContentType,
@@ -77,6 +85,7 @@ fun SettingsScreen(
     val searchAutoAddDownload by viewModel.searchAutoAddDownload.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
+    val externalDisclaimerAccepted by viewModel.externalDisclaimerAccepted.collectAsStateWithLifecycle()
 
     SettingsScreen(
         downloadZipMode = downloadZipMode,
@@ -89,6 +98,8 @@ fun SettingsScreen(
         onThemeModeSelected = { viewModel.setThemeMode(it) },
         themeColor = themeColor,
         onThemeColorSelected = { viewModel.setThemeColor(it) },
+        externalDisclaimerAccepted = externalDisclaimerAccepted,
+        onAcceptExternalDisclaimer = { viewModel.acceptExternalDisclaimer() },
         onNavigateToExternalServices = onNavigateToExternalServices,
         onNavigateToProviders = onNavigateToProviders,
         onNavigateToAddons = onNavigateToAddons,
@@ -110,15 +121,45 @@ fun SettingsScreen(
     onThemeModeSelected: (ThemeMode) -> Unit = {},
     themeColor: ThemeColor = ThemeColor.SYSTEM,
     onThemeColorSelected: (ThemeColor) -> Unit = {},
+    externalDisclaimerAccepted: Boolean = false,
+    onAcceptExternalDisclaimer: () -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
     onNavigateToAddons: () -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
     var pageSizeInput by rememberSaveable { mutableStateOf(pagingLoadSize.toString()) }
+    var pendingDisclaimerDestination by rememberSaveable { mutableStateOf<DisclaimerDestination?>(null) }
 
     LaunchedEffect(pagingLoadSize) {
         pageSizeInput = pagingLoadSize.toString()
+    }
+
+    pendingDisclaimerDestination?.let { destination ->
+        AlertDialog(
+            onDismissRequest = { pendingDisclaimerDestination = null },
+            title = { Text(text = stringResource(id = R.string.external_content_disclaimer_title)) },
+            text = { Text(text = stringResource(id = R.string.external_content_disclaimer_message)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onAcceptExternalDisclaimer()
+                        pendingDisclaimerDestination = null
+                        when (destination) {
+                            DisclaimerDestination.EXTERNAL_SERVICES -> onNavigateToExternalServices()
+                            DisclaimerDestination.STREMIO_ADDONS -> onNavigateToAddons()
+                        }
+                    },
+                ) {
+                    Text(text = stringResource(id = R.string.external_content_disclaimer_accept))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDisclaimerDestination = null }) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            },
+        )
     }
 
     Column(
@@ -172,7 +213,13 @@ fun SettingsScreen(
             }
 
             OutlinedCard(
-                onClick = onNavigateToExternalServices,
+                onClick = {
+                    if (externalDisclaimerAccepted) {
+                        onNavigateToExternalServices()
+                    } else {
+                        pendingDisclaimerDestination = DisclaimerDestination.EXTERNAL_SERVICES
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
@@ -207,7 +254,13 @@ fun SettingsScreen(
             }
 
             OutlinedCard(
-                onClick = onNavigateToAddons,
+                onClick = {
+                    if (externalDisclaimerAccepted) {
+                        onNavigateToAddons()
+                    } else {
+                        pendingDisclaimerDestination = DisclaimerDestination.STREMIO_ADDONS
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
