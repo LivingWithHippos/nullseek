@@ -291,6 +291,7 @@
     </plurals>
     <string name="search_dismiss">Dismiss</string>
     <string name="search_result_seeders_peers">%1$d seeders · %2$d peers</string>
+    <string name="search_result_seeders_only">%1$d seeders</string>
     <string name="search_result_age_days">%1$d d</string>
     <string name="search_result_age_today">Today</string>
     <string name="search_detail_back">Back to results</string>
@@ -329,6 +330,13 @@
     <string name="search_stremio_show_filter_bar_summary">Display an input bar to filter stream results by title</string>
     <string name="search_stremio_filter_hint">Filter results titles…</string>
     <string name="search_stremio_no_filtered_results">No results match your filter</string>
+    <string name="search_stremio_open_imdb">Open IMDb</string>
+    <string name="search_stremio_imdb_rating">★ %1$s</string>
+    <string name="search_stremio_expand_details">Expand details</string>
+    <string name="search_stremio_collapse_details">Collapse details</string>
+    <string name="search_stremio_director">Director: %1$s</string>
+    <string name="search_stremio_cast">Cast: %1$s</string>
+    <string name="search_imdb_rank">Rank #%1$d</string>
     <string name="search_history_title">Recent searches</string>
     <string name="search_history_clear_all">Clear all</string>
     <string name="search_history_remove_item">Remove from history</string>

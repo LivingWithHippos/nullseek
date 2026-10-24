@@ -19,10 +19,28 @@ data class ImdbTitleResult(
     val type: String = "movie",
     val posterUrl: String? = null,
     val stars: String? = null,
+    val description: String? = null,
+    val imdbRating: String? = null,
+    val runtime: String? = null,
+    val genres: List<String> = emptyList(),
+    val director: List<String> = emptyList(),
+    val qualifier: String? = null,
+    val rank: Int? = null,
 ) : Parcelable {
     val isSeries: Boolean
         get() = type.equals("series", ignoreCase = true)
 }
+
+/**
+ * Rich metadata for a movie or series (including episodes if series) fetched from Cinemeta.
+ */
+@Keep
+@Serializable
+@Parcelize
+data class TitleMetaDetails(
+    val title: ImdbTitleResult,
+    val episodes: List<SeriesEpisodeItem> = emptyList(),
+) : Parcelable
 
 /**
  * Domain model representing a single episode of a series from Cinemeta metadata.
@@ -56,6 +74,7 @@ internal data class ImdbSuggestionItem(
     @SerialName("y") val year: Int? = null,
     @SerialName("yr") val yearRange: String? = null,
     @SerialName("s") val stars: String? = null,
+    @SerialName("rank") val rank: Int? = null,
     @SerialName("i") val image: ImdbSuggestionImage? = null,
 ) {
     fun toImdbTitleResultOrNull(): ImdbTitleResult? {
@@ -93,6 +112,12 @@ internal data class ImdbSuggestionItem(
             yearRange?.trim()?.takeIf { it.isNotEmpty() }
                 ?: year?.toString()
 
+        val formattedQualifier =
+            qualifier
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() && !it.equals("feature", ignoreCase = true) }
+                ?.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+
         return ImdbTitleResult(
             imdbId = rawId,
             title = rawTitle,
@@ -100,6 +125,8 @@ internal data class ImdbSuggestionItem(
             type = resolvedType,
             posterUrl = image?.imageUrl?.trim()?.takeIf { it.isNotEmpty() },
             stars = stars?.trim()?.takeIf { it.isNotEmpty() },
+            qualifier = formattedQualifier,
+            rank = rank?.takeIf { it > 0 },
         )
     }
 
@@ -134,6 +161,13 @@ internal data class CinemetaCatalogItem(
     @SerialName("releaseInfo") val releaseInfo: String? = null,
     @SerialName("year") val year: String? = null,
     @SerialName("poster") val poster: String? = null,
+    @SerialName("description") val description: String? = null,
+    @SerialName("imdbRating") val imdbRating: String? = null,
+    @SerialName("runtime") val runtime: String? = null,
+    @SerialName("genres") val genres: List<String> = emptyList(),
+    @SerialName("genre") val genre: List<String> = emptyList(),
+    @SerialName("cast") val cast: List<String> = emptyList(),
+    @SerialName("director") val director: List<String> = emptyList(),
 ) {
     fun toImdbTitleResultOrNull(defaultType: String): ImdbTitleResult? {
         val resolvedId =
@@ -150,12 +184,28 @@ internal data class CinemetaCatalogItem(
         val resolvedYear =
             releaseInfo?.trim()?.takeIf { it.isNotEmpty() }
                 ?: year?.trim()?.takeIf { it.isNotEmpty() }
+        val resolvedGenres =
+            genres.ifEmpty { genre }.mapNotNull { it.trim().takeIf { g -> g.isNotEmpty() } }
+        val resolvedStars =
+            cast.mapNotNull { it.trim().takeIf { c -> c.isNotEmpty() } }
+                .take(4)
+                .joinToString(", ")
+                .takeIf { it.isNotEmpty() }
+        val resolvedDirector =
+            director.mapNotNull { it.trim().takeIf { d -> d.isNotEmpty() } }
+
         return ImdbTitleResult(
             imdbId = resolvedId,
             title = resolvedTitle,
             year = resolvedYear,
             type = resolvedType,
             posterUrl = poster?.trim()?.takeIf { it.isNotEmpty() },
+            stars = resolvedStars,
+            description = description?.trim()?.takeIf { it.isNotEmpty() },
+            imdbRating = imdbRating?.trim()?.takeIf { it.isNotEmpty() },
+            runtime = runtime?.trim()?.takeIf { it.isNotEmpty() },
+            genres = resolvedGenres,
+            director = resolvedDirector,
         )
     }
 }
@@ -170,9 +220,101 @@ internal data class CinemetaMetaResponse(
 @Serializable
 internal data class CinemetaSeriesMeta(
     @SerialName("id") val id: String? = null,
+    @SerialName("imdb_id") val imdbId: String? = null,
+    @SerialName("type") val type: String? = null,
     @SerialName("name") val name: String? = null,
+    @SerialName("releaseInfo") val releaseInfo: String? = null,
+    @SerialName("year") val year: String? = null,
+    @SerialName("poster") val poster: String? = null,
+    @SerialName("description") val description: String? = null,
+    @SerialName("imdbRating") val imdbRating: String? = null,
+    @SerialName("runtime") val runtime: String? = null,
+    @SerialName("genres") val genres: List<String> = emptyList(),
+    @SerialName("genre") val genre: List<String> = emptyList(),
+    @SerialName("cast") val cast: List<String> = emptyList(),
+    @SerialName("director") val director: List<String> = emptyList(),
     @SerialName("videos") val videos: List<CinemetaVideoDto> = emptyList(),
-)
+) {
+    fun toTitleMetaDetails(
+        fallbackImdbId: String,
+        fallbackType: String,
+        existing: ImdbTitleResult? = null,
+    ): TitleMetaDetails {
+        val resolvedId =
+            imdbId?.trim()?.takeIf { it.startsWith("tt") }
+                ?: id?.trim()?.takeIf { it.startsWith("tt") }
+                ?: existing?.imdbId
+                ?: fallbackImdbId
+        val resolvedTitle =
+            name?.trim()?.takeIf { it.isNotEmpty() }
+                ?: existing?.title
+                ?: resolvedId
+        val resolvedType =
+            when (type?.trim()?.lowercase()) {
+                "series" -> "series"
+                "movie" -> "movie"
+                else -> existing?.type ?: fallbackType
+            }
+        val resolvedYear =
+            releaseInfo?.trim()?.takeIf { it.isNotEmpty() }
+                ?: year?.trim()?.takeIf { it.isNotEmpty() }
+                ?: existing?.year
+        val resolvedPoster =
+            existing?.posterUrl?.takeIf { it.isNotEmpty() }
+                ?: poster?.trim()?.takeIf { it.isNotEmpty() }
+        val resolvedStars =
+            cast.mapNotNull { it.trim().takeIf { c -> c.isNotEmpty() } }
+                .take(4)
+                .joinToString(", ")
+                .takeIf { it.isNotEmpty() }
+                ?: existing?.stars
+        val resolvedDescription =
+            description?.trim()?.takeIf { it.isNotEmpty() }
+                ?: existing?.description
+        val resolvedRating =
+            imdbRating?.trim()?.takeIf { it.isNotEmpty() }
+                ?: existing?.imdbRating
+        val resolvedRuntime =
+            runtime?.trim()?.takeIf { it.isNotEmpty() }
+                ?: existing?.runtime
+        val resolvedGenres =
+            genres.ifEmpty { genre }
+                .mapNotNull { it.trim().takeIf { g -> g.isNotEmpty() } }
+                .ifEmpty { existing?.genres.orEmpty() }
+        val resolvedDirector =
+            director.mapNotNull { it.trim().takeIf { d -> d.isNotEmpty() } }
+                .ifEmpty { existing?.director.orEmpty() }
+
+        val parsedEpisodes =
+            videos
+                .mapNotNull { it.toSeriesEpisodeItemOrNull(resolvedId) }
+                .distinctBy { "${it.season}:${it.episode}" }
+                .sortedWith(
+                    compareBy<SeriesEpisodeItem> { if (it.season == 0) Int.MAX_VALUE else it.season }
+                        .thenBy { it.episode },
+                )
+
+        return TitleMetaDetails(
+            title =
+                ImdbTitleResult(
+                    imdbId = resolvedId,
+                    title = resolvedTitle,
+                    year = resolvedYear,
+                    type = resolvedType,
+                    posterUrl = resolvedPoster,
+                    stars = resolvedStars,
+                    description = resolvedDescription,
+                    imdbRating = resolvedRating,
+                    runtime = resolvedRuntime,
+                    genres = resolvedGenres,
+                    director = resolvedDirector,
+                    qualifier = existing?.qualifier,
+                    rank = existing?.rank,
+                ),
+            episodes = parsedEpisodes,
+        )
+    }
+}
 
 @Keep
 @Serializable

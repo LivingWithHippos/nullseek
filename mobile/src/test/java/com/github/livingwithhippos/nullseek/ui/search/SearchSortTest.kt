@@ -2,9 +2,13 @@ package com.github.livingwithhippos.nullseek.ui.search
 
 import com.github.livingwithhippos.nullseek.core.data.ScrapedItem
 import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity
+import com.github.livingwithhippos.nullseek.core.data.stremio.AddonClient
 import com.github.livingwithhippos.nullseek.core.data.stremio.AddonScrapedItem
+import com.github.livingwithhippos.nullseek.core.data.stremio.AddonStream
+import com.github.livingwithhippos.nullseek.core.data.stremio.AddonStreamResult
 import com.github.livingwithhippos.nullseek.core.data.stremio.ImdbTitleResult
 import com.github.livingwithhippos.nullseek.core.data.stremio.SeriesEpisodeItem
+import com.github.livingwithhippos.nullseek.core.data.stremio.StreamBehaviorHints
 import com.github.livingwithhippos.nullseek.data.model.Indexer
 import com.github.livingwithhippos.nullseek.data.model.IndexerSearchOutcome
 import com.github.livingwithhippos.nullseek.data.model.IndexerType
@@ -204,5 +208,75 @@ class SearchSortTest {
 
         history = updateSearchHistoryOnRemove(history, "Dune")
         assertEquals(listOf("Arrival", "inception"), history)
+    }
+
+    @Test
+    fun parseCinemetaTitleMetaExtractsFullSummaryRatingAndDetails() {
+        val json =
+            """
+            {
+              "meta": {
+                "id": "tt0133093",
+                "type": "movie",
+                "name": "The Matrix",
+                "releaseInfo": "1999",
+                "imdbRating": "8.7",
+                "runtime": "136 min",
+                "genres": ["Action", "Sci-Fi"],
+                "cast": ["Keanu Reeves", "Laurence Fishburne", "Carrie-Anne Moss"],
+                "director": ["Lana Wachowski", "Lilly Wachowski"],
+                "description": "When a beautiful stranger leads computer hacker Neo to a forbidding underworld..."
+              }
+            }
+            """.trimIndent()
+        val existing =
+            ImdbTitleResult(
+                imdbId = "tt0133093",
+                title = "The Matrix",
+                year = "1999",
+                type = "movie",
+                posterUrl = "https://example.com/matrix.jpg",
+            )
+        val details =
+            AddonClient().parseCinemetaTitleMeta(
+                body = json,
+                fallbackImdbId = "tt0133093",
+                fallbackType = "movie",
+                existing = existing,
+            )
+        assertEquals("The Matrix", details.title.title)
+        assertEquals("8.7", details.title.imdbRating)
+        assertEquals("136 min", details.title.runtime)
+        assertEquals(listOf("Action", "Sci-Fi"), details.title.genres)
+        assertEquals(listOf("Lana Wachowski", "Lilly Wachowski"), details.title.director)
+        assertEquals("Keanu Reeves, Laurence Fishburne, Carrie-Anne Moss", details.title.stars)
+        assertEquals("https://example.com/matrix.jpg", details.title.posterUrl)
+        assertTrue(details.title.description!!.startsWith("When a beautiful stranger"))
+    }
+
+    @Test
+    fun parseImdbSuggestionExtractsQualifierAndRank() {
+        val json =
+            """
+            {
+              "d": [
+                {
+                  "id": "tt0903747",
+                  "l": "Breaking Bad",
+                  "q": "TV mini-series",
+                  "qid": "tvMiniSeries",
+                  "yr": "2008-2013",
+                  "s": "Bryan Cranston, Aaron Paul",
+                  "rank": 15
+                }
+              ]
+            }
+            """.trimIndent()
+        val results = AddonClient().parseImdbSuggestionResponse(json)
+        assertEquals(1, results.size)
+        val item = results.first()
+        assertEquals("TV mini-series", item.qualifier)
+        assertEquals(15, item.rank)
+        assertEquals("Bryan Cranston, Aaron Paul", item.stars)
     }
 }

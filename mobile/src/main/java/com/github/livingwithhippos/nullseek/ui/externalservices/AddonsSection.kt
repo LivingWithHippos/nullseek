@@ -169,7 +169,7 @@ fun AddonCard(
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         color = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
                         Text(
@@ -230,7 +230,7 @@ fun AddonCard(
                     ) {
                         types.forEach { type ->
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant,
                             ) {
                                 Text(
@@ -328,7 +328,7 @@ fun AddonEditDialog(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             color = MaterialTheme.colorScheme.secondaryContainer,
                         ) {
                             Text(
@@ -340,7 +340,7 @@ fun AddonEditDialog(
                         }
                         types.forEach { type ->
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant,
                             ) {
                                 Text(

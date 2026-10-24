@@ -62,6 +62,7 @@ data class AddonScrapedItem(
     val scrapedItem: ScrapedItem,
     val addonName: String,
     val addonId: String,
+    val categories: List<String> = emptyList(),
 )
 
 /**
@@ -84,6 +85,15 @@ class AddonSearchHelper(
      * Fetch episodes for a series by its IMDb ID
      */
     suspend fun getSeriesEpisodes(imdbId: String): Result<List<SeriesEpisodeItem>> = addonManager.getSeriesEpisodes(imdbId)
+
+    /**
+     * Fetch rich title metadata (and episodes if series) by its IMDb ID
+     */
+    suspend fun getTitleMeta(
+        imdbId: String,
+        type: String,
+        existing: ImdbTitleResult? = null,
+    ): Result<TitleMetaDetails> = addonManager.getTitleMeta(imdbId, type, existing)
 
     /**
      * Search for content using Stremio addons, preserving the source addon name for each stream.
@@ -121,6 +131,7 @@ class AddonSearchHelper(
                         ),
                     addonName = streamResult.addonName,
                     addonId = streamResult.addonId,
+                    categories = addonManager.extractStreamCategories(streamResult),
                 )
             }
         }

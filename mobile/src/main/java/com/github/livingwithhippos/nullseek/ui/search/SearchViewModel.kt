@@ -193,6 +193,7 @@ internal fun AddonScrapedItem.toSearchResultOrNull(): SearchResult? {
         magnetLink = magnetLink,
         downloadLink = downloadLink,
         infoUrl = if (isDirectStream) null else scrapedItem.link,
+        categories = categories,
         isDirectStream = isDirectStream,
         isFromStremioAddon = true,
     )
@@ -382,28 +383,15 @@ class SearchViewModel(
         stremioJob?.cancel()
         val directImdbId = ImdbUtils.extractImdbId(query)
         if (directImdbId != null) {
-            stremioState.value =
-                StremioSearchState(
-                    stage = StremioStage.STREAMS,
-                    query = query,
-                    activeStreamImdbId = directImdbId,
-                    activeStreamLabel = directImdbId,
-                    isLoadingStreams = true,
-                )
-            stremioJob =
-                viewModelScope.launch {
-                    val streamResults =
-                        addonSearchHelper
-                            .searchStreamsWithAddonInfo(directImdbId)
-                            .getOrDefault(emptyList())
-                            .mapNotNull { it.toSearchResultOrNull() }
-                    stremioState.update {
-                        it.copy(
-                            isLoadingStreams = false,
-                            streamResults = streamResults,
-                        )
-                    }
-                }
+            stremioState.value = StremioSearchState(query = query)
+            fetchStremioStreams(
+                imdbId = directImdbId,
+                type = ImdbUtils.detectContentType(directImdbId),
+                contentName = directImdbId,
+                selectedTitle = null,
+                selectedEpisode = null,
+                streamLabel = directImdbId,
+            )
         } else {
             stremioState.value =
                 StremioSearchState(
@@ -442,10 +430,12 @@ class SearchViewModel(
             }
             stremioJob =
                 viewModelScope.launch {
-                    val episodes =
+                    val meta =
                         addonSearchHelper
-                            .getSeriesEpisodes(title.imdbId)
-                            .getOrDefault(emptyList())
+                            .getTitleMeta(title.imdbId, "series", existing = title)
+                            .getOrNull()
+                    val episodes = meta?.episodes.orEmpty()
+                    val enrichedTitle = meta?.title ?: title
                     val firstSeason =
                         episodes.firstOrNull { it.season > 0 }?.season
                             ?: episodes.firstOrNull()?.season
@@ -453,6 +443,7 @@ class SearchViewModel(
                     stremioState.update {
                         it.copy(
                             isLoadingEpisodes = false,
+                            selectedTitle = enrichedTitle,
                             episodes = episodes,
                             selectedSeason = firstSeason,
                         )
@@ -585,6 +576,43 @@ class SearchViewModel(
         }
         stremioJob =
             viewModelScope.launch {
+                val needsMeta =
+                    selectedTitle == null ||
+                        (selectedTitle.description.isNullOrBlank() && selectedTitle.imdbRating.isNullOrBlank())
+                if (needsMeta) {
+                    launch {
+                        val primaryType =
+                            type
+                                ?: selectedTitle?.type
+                                ?: ImdbUtils.detectContentType(imdbId)
+                                ?: "movie"
+                        val meta =
+                            addonSearchHelper
+                                .getTitleMeta(imdbId, primaryType, existing = selectedTitle)
+                                .getOrNull()
+                                ?: if (type == null && selectedTitle == null && primaryType == "movie") {
+                                    addonSearchHelper
+                                        .getTitleMeta(imdbId, "series", existing = null)
+                                        .getOrNull()
+                                } else {
+                                    null
+                                }
+                        if (meta != null) {
+                            stremioState.update { current ->
+                                current.copy(
+                                    selectedTitle = meta.title,
+                                    activeStreamLabel =
+                                        if (current.selectedEpisode == null) {
+                                            buildTitleSummary(meta.title)
+                                        } else {
+                                            current.activeStreamLabel
+                                        },
+                                )
+                            }
+                        }
+                    }
+                }
+
                 val results =
                     addonSearchHelper
                         .searchStreamsWithAddonInfo(

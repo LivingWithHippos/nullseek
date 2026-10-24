@@ -269,7 +269,7 @@ private fun ProviderCard(
                 )
                 if (provider.active) {
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         color = MaterialTheme.colorScheme.primaryContainer,
                     ) {
                         Text(

@@ -214,7 +214,7 @@ private fun WebDownloadRow(
                     }
 
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     color = badgeContainerColor,
                 ) {
                     Text(

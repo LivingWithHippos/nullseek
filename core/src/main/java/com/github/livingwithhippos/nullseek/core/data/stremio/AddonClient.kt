@@ -149,14 +149,25 @@ class AddonClient(
      * Fetch episodes for a series from Stremio Cinemeta (/meta/series/{imdbId}.json).
      */
     suspend fun getSeriesEpisodes(imdbId: String): Result<List<SeriesEpisodeItem>> =
+        getTitleMeta(imdbId, "series").map { it.episodes }
+
+    /**
+     * Fetch rich title metadata (and episodes if series) from Stremio Cinemeta (/meta/{type}/{imdbId}.json).
+     */
+    suspend fun getTitleMeta(
+        imdbId: String,
+        type: String,
+        existing: ImdbTitleResult? = null,
+    ): Result<TitleMetaDetails> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val baseImdbId = imdbId.trim().substringBefore(":")
+                val resolvedType = if (type.equals("series", ignoreCase = true)) "series" else "movie"
                 val url =
                     buildAddonResourceUrl(
                         manifestUrl = CINEMETA_MANIFEST_URL,
                         resource = "meta",
-                        type = "series",
+                        type = resolvedType,
                         id = baseImdbId,
                     )
                 val request =
@@ -168,9 +179,14 @@ class AddonClient(
 
                 httpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
-                        throw AddonException("Failed to fetch series episodes: HTTP ${response.code}")
+                        throw AddonException("Failed to fetch title metadata: HTTP ${response.code}")
                     }
-                    parseCinemetaSeriesEpisodes(response.body.string(), baseImdbId)
+                    parseCinemetaTitleMeta(
+                        body = response.body.string(),
+                        fallbackImdbId = baseImdbId,
+                        fallbackType = resolvedType,
+                        existing = existing,
+                    )
                 }
             }
         }
@@ -192,21 +208,30 @@ class AddonClient(
             .distinctBy { it.imdbId }
     }
 
+    internal fun parseCinemetaTitleMeta(
+        body: String,
+        fallbackImdbId: String,
+        fallbackType: String = "movie",
+        existing: ImdbTitleResult? = null,
+    ): TitleMetaDetails {
+        val decoded = json.decodeFromString<CinemetaMetaResponse>(body)
+        val meta = decoded.meta ?: CinemetaSeriesMeta(id = fallbackImdbId, type = fallbackType)
+        return meta.toTitleMetaDetails(
+            fallbackImdbId = fallbackImdbId,
+            fallbackType = fallbackType,
+            existing = existing,
+        )
+    }
+
     internal fun parseCinemetaSeriesEpisodes(
         body: String,
         seriesImdbId: String,
-    ): List<SeriesEpisodeItem> {
-        val decoded = json.decodeFromString<CinemetaMetaResponse>(body)
-        return decoded.meta
-            ?.videos
-            .orEmpty()
-            .mapNotNull { it.toSeriesEpisodeItemOrNull(seriesImdbId) }
-            .distinctBy { "${it.season}:${it.episode}" }
-            .sortedWith(
-                compareBy<SeriesEpisodeItem> { if (it.season == 0) Int.MAX_VALUE else it.season }
-                    .thenBy { it.episode },
-            )
-    }
+    ): List<SeriesEpisodeItem> =
+        parseCinemetaTitleMeta(
+            body = body,
+            fallbackImdbId = seriesImdbId,
+            fallbackType = "series",
+        ).episodes
 
     /**
      * Normalize manifest URL to ensure it uses http(s) and ends with /manifest.json (preserving query parameters)
