@@ -179,7 +179,7 @@ fun TvDetailPane(
                     modifier = Modifier.weight(1f),
                 )
                 TvActionButton(
-                    text = if (isFullScreen) "Split view" else "Full screen",
+                    text = if (isFullScreen) stringResource(R.string.detail_split_view) else stringResource(R.string.detail_full_screen),
                     icon = R.drawable.ic_open_in_new,
                     onClick = onToggleFullScreen,
                     modifier = Modifier.padding(start = 12.dp),
@@ -263,7 +263,7 @@ private fun OverviewSection(overview: DetailOverview) {
         }
         InfoRow(stringResource(R.string.size), convertToSize(overview.sizeBytes))
         overview.createdAt?.let { InfoRow(stringResource(R.string.added_on), formatToLocalDate(it)) }
-        overview.expiresAt?.let { InfoRow("Expires", formatToLocalDate(it)) }
+        overview.expiresAt?.let { InfoRow(stringResource(R.string.expires), formatToLocalDate(it)) }
         overview.hash?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.hash), it, maxLines = 1) }
 
         val complete = overview.progress >= 1.0
@@ -308,11 +308,12 @@ private fun OverviewSection(overview: DetailOverview) {
     }
 }
 
+@Composable
 private fun formatEta(seconds: Int): String {
     val h = seconds / 3600
     val m = (seconds % 3600) / 60
     val s = seconds % 60
-    return if (h > 0) "%dh %02dm".format(h, m) else "%dm %02ds".format(m, s)
+    return if (h > 0) stringResource(R.string.eta_hours_minutes, h, m) else stringResource(R.string.eta_minutes_seconds, m, s)
 }
 
 @Composable

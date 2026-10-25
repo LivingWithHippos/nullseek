@@ -271,7 +271,6 @@ private fun NullNavHost(
             NewDownloadScreen(
                 initialLinks = route.links.orEmpty(),
                 contentType = contentType,
-                navigationType = navigationType,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

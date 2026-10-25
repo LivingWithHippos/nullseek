@@ -1,5 +1,7 @@
 package com.github.livingwithhippos.nullseek.ui.lists.utils
 
+import androidx.compose.ui.res.stringResource
+import com.github.livingwithhippos.nullseek.core.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,12 +35,12 @@ fun PagingRefreshState(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = loadState.error.localizedMessage ?: "Unknown error",
+                text = loadState.error.localizedMessage ?: stringResource(R.string.error_unknown),
                 color = MaterialTheme.colorScheme.error
             )
             Spacer(modifier = Modifier.height(8.dp))
             Button(onClick = onRetry) {
-                Text("Retry")
+                Text(stringResource(R.string.retry))
             }
         }
     }
@@ -72,12 +74,12 @@ fun LazyListScope.pagingAppendState(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = loadState.error.localizedMessage ?: "Error loading more",
+                        text = loadState.error.localizedMessage ?: stringResource(R.string.error_loading_more),
                         color = MaterialTheme.colorScheme.error
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = onRetry) {
-                        Text("Retry")
+                        Text(stringResource(R.string.retry))
                     }
                 }
             }

@@ -1,5 +1,7 @@
 package com.github.livingwithhippos.nullseek.ui.lists.web
 
+import androidx.compose.ui.res.stringResource
+import com.github.livingwithhippos.nullseek.core.R
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -206,9 +208,9 @@ private fun WebDownloadRow(
                     }
                 val badgeText =
                     when {
-                        hasError -> "Error"
-                        isDone -> "Ready"
-                        item.cached -> "Cached"
+                        hasError -> stringResource(R.string.status_error)
+                        isDone -> stringResource(R.string.status_ready)
+                        item.cached -> stringResource(R.string.cached)
                         item.downloadState.isNotBlank() -> item.downloadState.replaceFirstChar { it.uppercase() }
                         else -> "${(item.progress * 100).toInt()}%"
                     }
@@ -254,14 +256,14 @@ private fun WebDownloadRow(
 
                 if (isDownloading && item.downloadSpeed > 0) {
                     Text(
-                        text = "${item.downloadSpeed} kB/s",
+                        text = stringResource(R.string.speed_kbps, item.downloadSpeed),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
                     )
                 } else if (!isDownloading) {
                     Text(
-                        text = if (item.active) "Active" else "Inactive",
+                        text = if (item.active) stringResource(R.string.active) else stringResource(R.string.inactive),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

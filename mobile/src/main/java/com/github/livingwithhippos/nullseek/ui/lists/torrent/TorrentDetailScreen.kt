@@ -363,13 +363,13 @@ private fun TorrentOverviewCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "State",
+                    text = stringResource(R.string.state),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
                     text = buildString {
-                        append(if (item.active) "Active" else "Inactive")
-                        if (item.cached) append(" • Cached")
+                        append(if (item.active) stringResource(R.string.active) else stringResource(R.string.inactive))
+                        if (item.cached) append(" • " + stringResource(R.string.cached))
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
@@ -403,7 +403,7 @@ private fun TorrentOverviewCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Expires",
+                        text = stringResource(R.string.expires),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Text(
@@ -516,7 +516,7 @@ private fun TorrentTransferProgressCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = "${item.downloadSpeed} kB/s",
+                    text = stringResource(R.string.speed_kbps, item.downloadSpeed),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -534,7 +534,7 @@ private fun TorrentTransferProgressCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = "${item.uploadSpeed} kB/s",
+                    text = stringResource(R.string.speed_kbps, item.uploadSpeed),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -552,7 +552,7 @@ private fun TorrentTransferProgressCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = "${item.seeds} seeds • ${item.peers} peers",
+                    text = stringResource(R.string.seeds_peers_count, item.seeds, item.peers),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -589,9 +589,9 @@ private fun TorrentTransferProgressCard(
                 )
                 Text(
                     text = if (item.downloadFinished || item.progress >= 1.0) {
-                        "Finished"
+                        stringResource(R.string.finished)
                     } else if (item.eta > 0) {
-                        "${item.eta}s"
+                        stringResource(R.string.eta_seconds, item.eta)
                     } else {
                         "—"
                     },
@@ -939,9 +939,9 @@ private fun TorrentActionsCard(
                         text = if (uiState.fullInfo == null) {
                             stringResource(id = R.string.action_full_info)
                         } else if (uiState.isFullInfoExpanded) {
-                            "Hide Full Info"
+                            stringResource(R.string.hide_full_info)
                         } else {
-                            "Show Full Info"
+                            stringResource(R.string.show_full_info)
                         },
                     )
                 }
@@ -995,7 +995,7 @@ private fun TorrentFullInfoCard(
                                 R.drawable.ic_arrow_drop_down
                             },
                         ),
-                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                        contentDescription = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
                     )
                 }
             }

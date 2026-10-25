@@ -29,7 +29,7 @@
     <string name="usenet_repair_unpack_delete">Repair, Unpack, Delete</string>
     <string name="allow_zipped_downloads">Allow downloads to be zipped if necessary</string>
     <string name="action_cancel">Cancel</string>
-    <string name="action_add_downloads">Add Downloads (0)</string>
+    <string name="action_add_downloads">Add Downloads (%1$d)</string>
     <string name="open_torbox_settings">Open Torbox Web Settings</string>
     <string name="open_torbox_subscription">Open Subscription Page</string>
     <string name="referral_dialog_title">Support NullSeek?</string>
@@ -61,7 +61,7 @@
     <string name="setup_title">Connect Your Account</string>
     <string name="setup_provider_description">NullSeek connects to your TorBox account to stream, download, and manage your cloud debrid files, torrents, and Usenet downloads.</string>
     <string name="setup_signup_title">New to TorBox?</string>
-    <string name="setup_signup_description">Don\'t have an account yet? Create an account on TorBox to get started with free or premium cloud features.</string>
+    <string name="setup_signup_description">Create an account on TorBox to get started with free or premium features.</string>
     <string name="setup_signup_button">Create a TorBox Account</string>
     <string name="setup_key_title">API Key Configuration</string>
     <string name="setup_key_description">Retrieve your API Key from your TorBox Account Settings and paste it below to link your account.</string>
@@ -150,7 +150,7 @@
     <string name="download_option_uncompressed">Direct / Uncompressed</string>
     <string name="download_remember_choice">Remember choice and don\'t ask again</string>
     <string name="download_zip_preference_title">Download format</string>
-    <string name="download_zip_preference_summary">Choose whether files should be zipped or downloaded directly</string>
+    <string name="download_zip_preference_summary">Choose whether files should be zipped or uncompressed when creating a download link</string>
     <string name="download_zip_preference_ask">Always ask</string>
     <string name="download_zip_preference_zip">Always zip</string>
     <string name="download_zip_preference_uncompressed">Always uncompressed</string>
@@ -210,7 +210,7 @@
     <string name="connection_failed">Connection failed: %s</string>
     <string name="testing_connection">Testing…</string>
     <string name="external_services_local_network_warning_title">Local Network Permission Required</string>
-    <string name="external_services_local_network_warning_message">Local network access is required to connect to and control devices like Kodi and VLC on your local network.</string>
+    <string name="external_services_local_network_warning_message">Local network access is required to connect to and control devices like Kodi and VLC on your LAN.</string>
     <string name="external_services_grant_permission">Grant Permission</string>
     <string name="external_services_open_settings">App Settings</string>
     <string name="close">Close</string>
@@ -271,7 +271,7 @@
         <item quantity="one">%d active indexer</item>
         <item quantity="other">%d active indexers</item>
     </plurals>
-    <string name="search_no_indexers">No indexers enabled. Add or enable Jackett/Prowlarr in External services</string>
+    <string name="search_no_indexers">No indexers or Stremio addons enabled. Add or enable one in the External Services settings</string>
     <string name="search_open_external_services">External services</string>
     <string name="search_sort_by">Sort by</string>
     <string name="search_sort_relevance">Relevance</string>
@@ -328,7 +328,7 @@
     <string name="search_stremio_no_episodes">Episode list unavailable. Enter season and episode above or search full series.</string>
     <string name="search_stremio_show_filter_bar">Show results filter bar</string>
     <string name="search_stremio_show_filter_bar_summary">Display an input bar to filter stream results by title</string>
-    <string name="search_stremio_filter_hint">Filter results titles…</string>
+    <string name="search_stremio_filter_hint">Filter titles…</string>
     <string name="search_stremio_no_filtered_results">No results match your filter</string>
     <string name="search_stremio_open_imdb">Open IMDb</string>
     <string name="search_stremio_imdb_rating">★ %1$s</string>
@@ -428,4 +428,63 @@
     <string name="widget_action_search">Search</string>
     <string name="widget_action_lists">Lists</string>
     <string name="widget_action_refresh">Refresh</string>
+
+    <!-- download states and details -->
+    <string name="state">State</string>
+    <string name="inactive">Inactive</string>
+    <string name="status_ready">Ready</string>
+    <string name="status_error">Error</string>
+    <string name="expires">Expires</string>
+    <string name="finished">Finished</string>
+    <string name="speed_kbps">%1$d kB/s</string>
+    <string name="seeds_count">%1$d seeds</string>
+    <string name="seeds_peers_count">%1$d seeds • %2$d peers</string>
+    <string name="eta_seconds">%1$ds</string>
+    <string name="eta_hours_minutes">%1$dh %2$02dm</string>
+    <string name="eta_minutes_seconds">%1$dm %2$02ds</string>
+    <string name="show_full_info">Show Full Info</string>
+    <string name="hide_full_info">Hide Full Info</string>
+    <string name="expand">Expand</string>
+    <string name="collapse">Collapse</string>
+    <string name="detail_split_view">Split view</string>
+    <string name="detail_full_screen">Full screen</string>
+    <string name="type_torrent">Torrent</string>
+    <string name="type_web">Web</string>
+    <string name="type_usenet">Usenet</string>
+
+    <!-- paging -->
+    <string name="retry">Retry</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="error_loading_more">Error loading more</string>
+    <string name="error_loading_failed">Loading failed</string>
+
+    <!-- user -->
+    <string name="user_plan">Plan</string>
+    <string name="user_premium_expires">Premium Expires</string>
+    <string name="user_subscription">Subscription</string>
+    <string name="none">None</string>
+
+    <!-- new download -->
+    <string name="queued_success">Successfully queued %1$d items</string>
+    <string name="queued_failed">Failed to queue items: %1$s</string>
+    <string name="queued_partial">Queued %1$d items. Failed %2$d items.</string>
+    <string name="upload_report_title">Upload Report</string>
+    <string name="upload_report_successful">Successfully queued: %1$d</string>
+    <string name="upload_report_failed">Failed to queue: %1$d</string>
+    <string name="ok">OK</string>
+    <string name="valid_links_count">%1$d valid</string>
+    <string name="links_label_torrent">Magnet links or info hashes</string>
+    <string name="links_label_web">Web links (https://…)</string>
+    <string name="links_label_usenet">NZB links (https://…)</string>
+    <string name="file_hint_tv">Select files</string>
+    <string name="no_file_manager">No file manager available on this device</string>
+
+    <!-- external services -->
+    <string name="external_services_media_players_summary">Kodi and VLC remote playback</string>
+    <string name="external_services_empty_hint_tv">Select \"Add\" to configure Kodi or VLC remote playback.</string>
+    <string name="indexers_empty_hint_tv">Select \"Add\" to configure Jackett or Prowlarr.</string>
+    <string name="stremio_addons_empty_hint_tv">Select \"Add\" to install a Stremio addon from its manifest URL.</string>
+
+    <!-- widget -->
+    <string name="widget_active_count">(%1$d active)</string>
 </resources>

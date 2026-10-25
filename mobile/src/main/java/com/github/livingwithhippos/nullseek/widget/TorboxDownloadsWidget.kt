@@ -1,5 +1,6 @@
 package com.github.livingwithhippos.nullseek.widget
 
+import androidx.glance.LocalContext
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -220,7 +221,7 @@ private fun DownloadsWidgetHeader(
             if (activeCount > 0) {
                 Spacer(modifier = GlanceModifier.width(6.dp))
                 Text(
-                    text = "($activeCount active)",
+                    text = LocalContext.current.getString(R.string.widget_active_count, activeCount),
                     style =
                         TextStyle(
                             color = GlanceTheme.colors.primary,
@@ -346,9 +347,9 @@ private fun DownloadWidgetRow(
         ) {
             val typeTag =
                 when (item.type) {
-                    WidgetDownloadType.TORRENT -> "Torrent"
-                    WidgetDownloadType.WEB -> "Web"
-                    WidgetDownloadType.USENET -> "Usenet"
+                    WidgetDownloadType.TORRENT -> LocalContext.current.getString(R.string.type_torrent)
+                    WidgetDownloadType.WEB -> LocalContext.current.getString(R.string.type_web)
+                    WidgetDownloadType.USENET -> LocalContext.current.getString(R.string.type_usenet)
                 }
             Text(
                 text = "$typeTag • ${convertToSize(item.sizeBytes)}",

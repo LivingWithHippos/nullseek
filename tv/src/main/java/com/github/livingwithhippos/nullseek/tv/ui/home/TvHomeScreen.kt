@@ -124,7 +124,7 @@ private fun UserOverview(
                         }
                         if (user.isVendor) Badge(stringResource(R.string.vendor_badge), color = MaterialTheme.colorScheme.tertiary)
                     }
-                    InfoRow("Expires", convertToDays(user.premiumExpiresAt))
+                    InfoRow(stringResource(R.string.expires), convertToDays(user.premiumExpiresAt))
                     InfoRow(stringResource(R.string.added_on), formatToLocalDate(user.createdAt))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         TvActionButton(

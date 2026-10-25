@@ -1,6 +1,5 @@
 package com.github.livingwithhippos.nullseek.ui.newdownload
 
-import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -63,17 +62,14 @@ import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.ui.theme.Button
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
-import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewDownloadScreen(
     contentType: NullContentType,
-    navigationType: NullNavigationType,
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit = {},
     initialLinks: String = "",
@@ -126,15 +122,15 @@ fun NewDownloadScreen(
         if (uploadState is UploadState.Finished) {
             val state = uploadState as UploadState.Finished
             if (state.failed == 0) {
-                snackbarHostState.showSnackbar("Successfully queued ${state.successful} items")
+                snackbarHostState.showSnackbar(context.getString(R.string.queued_success, state.successful))
                 linkText = ""
                 selectedFiles = emptyList()
                 password = ""
                 viewModel.resetState()
             } else if (state.successful == 0) {
-                snackbarHostState.showSnackbar("Failed to queue items: ${state.errors.firstOrNull()}")
+                snackbarHostState.showSnackbar(context.getString(R.string.queued_failed, state.errors.firstOrNull().orEmpty()))
             } else {
-                snackbarHostState.showSnackbar("Queued ${state.successful} items. Failed ${state.failed} items.")
+                snackbarHostState.showSnackbar(context.getString(R.string.queued_partial, state.successful, state.failed))
             }
         }
     }
@@ -143,12 +139,12 @@ fun NewDownloadScreen(
         val state = uploadState as UploadState.Finished
         AlertDialog(
             onDismissRequest = { viewModel.resetState() },
-            title = { Text("Upload Report") },
+            title = { Text(stringResource(R.string.upload_report_title)) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Text("Successfully queued: ${state.successful}")
+                    Text(stringResource(R.string.upload_report_successful, state.successful))
                     Text(
-                        "Failed to queue: ${state.failed}",
+                        stringResource(R.string.upload_report_failed, state.failed),
                         color = MaterialTheme.colorScheme.error
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -160,7 +156,7 @@ fun NewDownloadScreen(
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.resetState() }) {
-                    Text("OK")
+                    Text(stringResource(R.string.ok))
                 }
             }
         )
@@ -229,7 +225,7 @@ fun NewDownloadScreen(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Add Downloads ($totalDownloads)")
+                            Text(stringResource(R.string.action_add_downloads, totalDownloads))
                         }
                     }
                 }
@@ -384,7 +380,8 @@ fun NewDownloadScreen(
                             Text(
                                 text = stringResource(id = R.string.allow_zipped_downloads),
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
                             )
                             Switch(
                                 checked = allowZipped,

@@ -1,5 +1,11 @@
 package com.github.livingwithhippos.nullseek.ui.settings
 
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.appwidget.AppWidgetManager
@@ -10,7 +16,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,7 +40,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -536,28 +540,9 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    DownloadZipModeOption(
-                        title = stringResource(id = R.string.download_zip_preference_ask),
-                        selected = downloadZipMode == DownloadZipMode.ASK,
-                        onClick = { onDownloadZipModeSelected(DownloadZipMode.ASK) },
-                    )
-
-                    DownloadZipModeOption(
-                        title = stringResource(id = R.string.download_zip_preference_zip),
-                        selected = downloadZipMode == DownloadZipMode.ZIP,
-                        onClick = { onDownloadZipModeSelected(DownloadZipMode.ZIP) },
-                    )
-
-                    DownloadZipModeOption(
-                        title = stringResource(id = R.string.download_zip_preference_zip_non_media),
-                        selected = downloadZipMode == DownloadZipMode.ZIP_NON_MEDIA,
-                        onClick = { onDownloadZipModeSelected(DownloadZipMode.ZIP_NON_MEDIA) },
-                    )
-
-                    DownloadZipModeOption(
-                        title = stringResource(id = R.string.download_zip_preference_uncompressed),
-                        selected = downloadZipMode == DownloadZipMode.UNCOMPRESSED,
-                        onClick = { onDownloadZipModeSelected(DownloadZipMode.UNCOMPRESSED) },
+                    DownloadZipModeDropdown(
+                        selected = downloadZipMode,
+                        onSelected = onDownloadZipModeSelected,
                     )
                 }
             }
@@ -861,32 +846,63 @@ private tailrec fun Context.findActivity(): Activity? =
         else -> null
     }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DownloadZipModeOption(
-    title: String,
-    selected: Boolean,
-    onClick: () -> Unit,
+private fun DownloadZipModeDropdown(
+    selected: DownloadZipMode,
+    onSelected: (DownloadZipMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(vertical = 1.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier.fillMaxWidth(),
     ) {
-        RadioButton(
-            selected = selected,
-            onClick = onClick,
+        OutlinedTextField(
+            value = stringResource(id = selected.labelRes()),
+            onValueChange = {},
+            readOnly = true,
+            singleLine = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyMedium,
-        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            DOWNLOAD_ZIP_MODE_ORDER.forEach { mode ->
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(id = mode.labelRes())) },
+                    onClick = {
+                        expanded = false
+                        onSelected(mode)
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                )
+            }
+        }
     }
 }
+
+private val DOWNLOAD_ZIP_MODE_ORDER =
+    listOf(
+        DownloadZipMode.ASK,
+        DownloadZipMode.ZIP,
+        DownloadZipMode.ZIP_NON_MEDIA,
+        DownloadZipMode.UNCOMPRESSED,
+    )
+
+private fun DownloadZipMode.labelRes(): Int =
+    when (this) {
+        DownloadZipMode.ASK -> R.string.download_zip_preference_ask
+        DownloadZipMode.ZIP -> R.string.download_zip_preference_zip
+        DownloadZipMode.ZIP_NON_MEDIA -> R.string.download_zip_preference_zip_non_media
+        DownloadZipMode.UNCOMPRESSED -> R.string.download_zip_preference_uncompressed
+    }
 
 private fun ThemeMode.labelRes(): Int =
     when (this) {

@@ -284,7 +284,7 @@ private fun <T : Any> PagedDownloads(
 
         refresh is LoadState.Error && items.itemCount == 0 -> {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                ErrorBanner(refresh.error.message ?: "Loading failed")
+                ErrorBanner(refresh.error.message ?: stringResource(R.string.error_loading_failed))
                 TvActionButton(text = stringResource(R.string.action_refresh), icon = R.drawable.ic_refresh, onClick = items::retry)
             }
             return

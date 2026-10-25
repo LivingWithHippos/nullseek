@@ -174,9 +174,6 @@ fun UserScreenContent(
 
             AccountFeaturesCard(user = user)
 
-            UserReferralCard(user = user, context = context)
-
-
             // Error Notice (if any)
             if (error != null) {
                 OutlinedCard(
@@ -228,7 +225,7 @@ private fun AccountOverviewAndActionsCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Email",
+                    text = stringResource(id = R.string.user),
                     modifier = Modifier.padding(end = 8.dp),
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -242,12 +239,6 @@ private fun AccountOverviewAndActionsCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    CopyButton(
-                        text = user.email,
-                        description = "Copy Email",
-                        context = context,
-                    )
                 }
             }
 
@@ -259,25 +250,7 @@ private fun AccountOverviewAndActionsCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "User ID",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = "#${user.id}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Plan",
+                    text = stringResource(R.string.user_plan),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -296,7 +269,7 @@ private fun AccountOverviewAndActionsCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Premium Expires",
+                    text = stringResource(R.string.user_premium_expires),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -314,11 +287,11 @@ private fun AccountOverviewAndActionsCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Subscription",
+                    text = stringResource(R.string.user_subscription),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = if (user.isSubscribed) "Active" else "None",
+                    text = if (user.isSubscribed) stringResource(R.string.active) else stringResource(R.string.none),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color =
@@ -363,6 +336,46 @@ private fun AccountOverviewAndActionsCard(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = stringResource(id = R.string.open_torbox_subscription))
+            }
+
+
+            OutlinedButton(
+                onClick = {
+                    setClipboardText(context, user.userReferral)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors =
+                    ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_copy),
+                    contentDescription = null,
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = stringResource(id = R.string.copy_referral))
+            }
+
+            if (user.purchasesReferred > 0) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.purchases_referred),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        text = user.purchasesReferred.toString(),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
     }
@@ -417,7 +430,7 @@ private fun AccountFeaturesCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = if (user.longTermSeeding) "Active" else "Inactive",
+                    text = if (user.longTermSeeding) stringResource(R.string.active) else stringResource(R.string.inactive),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color =
@@ -441,7 +454,7 @@ private fun AccountFeaturesCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = if (user.longTermStorage) "Active" else "Inactive",
+                    text = if (user.longTermStorage) stringResource(R.string.active) else stringResource(R.string.inactive),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color =
@@ -466,7 +479,7 @@ private fun AccountFeaturesCard(
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Text(
-                        text = "Enabled",
+                        text = stringResource(R.string.enabled),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.secondary,
@@ -499,66 +512,6 @@ private fun AccountFeaturesCard(
     }
 }
 
-@Composable
-private fun UserReferralCard(
-    user: UserDataDto,
-    context: Context,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedCard(
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(id = R.string.referral_section_title),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-            )
-
-            OutlinedButton(
-                onClick = {
-                    setClipboardText(context, user.userReferral)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors =
-                    ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary,
-                    ),
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_copy),
-                    contentDescription = null,
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(text = stringResource(id = R.string.copy_referral))
-            }
-
-            if (user.purchasesReferred > 0) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.purchases_referred),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Text(
-                        text = user.purchasesReferred.toString(),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun UserStatsCard(

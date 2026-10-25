@@ -279,10 +279,11 @@ private fun LazyListScope.resultItems(
     }
 }
 
+@Composable
 private fun ageLabel(publishedAt: Long?): String? {
     if (publishedAt == null) return null
     val days = ((System.currentTimeMillis() - publishedAt) / 86_400_000L).toInt()
-    return if (days <= 0) "Today" else "$days d"
+    return if (days <= 0) stringResource(R.string.search_result_age_today) else stringResource(R.string.search_result_age_days, days)
 }
 
 @Composable

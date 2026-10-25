@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
+import com.github.livingwithhippos.nullseek.core.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -16,7 +17,7 @@ fun <I> ActivityResultLauncher<I>.launchSafely(
     try {
         launch(input)
     } catch (e: ActivityNotFoundException) {
-        Toast.makeText(context, "No file manager available on this device", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, R.string.no_file_manager, Toast.LENGTH_LONG).show()
     }
 }
 

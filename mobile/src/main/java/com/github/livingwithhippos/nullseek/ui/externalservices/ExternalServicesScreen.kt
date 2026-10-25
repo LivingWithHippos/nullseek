@@ -237,7 +237,7 @@ fun ExternalServicesScreen(
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = "Kodi and VLC remote playback",
+                            text = stringResource(R.string.external_services_media_players_summary),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -684,7 +684,7 @@ private fun ServiceEditDialog(
                             selectedType = ExternalServiceType.KODI
                             if (address.isBlank()) address = "192.168.1.100:8080"
                         },
-                        label = { Text("Kodi") },
+                        label = { Text(ExternalServiceType.KODI.displayName) },
                     )
                     FilterChip(
                         selected = selectedType == ExternalServiceType.VLC,
@@ -693,7 +693,7 @@ private fun ServiceEditDialog(
                             username = ""
                             if (address.isBlank()) address = "192.168.1.100:9090"
                         },
-                        label = { Text("VLC") },
+                        label = { Text(ExternalServiceType.VLC.displayName) },
                     )
                 }
 

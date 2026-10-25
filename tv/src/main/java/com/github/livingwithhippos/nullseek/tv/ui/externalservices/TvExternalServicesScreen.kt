@@ -146,7 +146,7 @@ private fun MediaPlayersTab(viewModel: ExternalServicesViewModel = koinViewModel
         onAdd = { adding = true },
         isEmpty = players.isEmpty(),
         emptyText = stringResource(R.string.external_services_empty),
-        emptyHint = stringResource(R.string.external_services_empty_hint).replace("Tap", "Select"),
+        emptyHint = stringResource(R.string.external_services_empty_hint_tv),
     ) {
         items(players, key = { it.id }) { service ->
             SectionCard {
@@ -302,7 +302,7 @@ private fun IndexersTab(viewModel: IndexersViewModel = koinViewModel()) {
         onAdd = { adding = true },
         isEmpty = indexers.isEmpty(),
         emptyText = stringResource(R.string.indexers_empty),
-        emptyHint = stringResource(R.string.indexers_empty_hint).replace("Tap", "Select"),
+        emptyHint = stringResource(R.string.indexers_empty_hint_tv),
     ) {
         items(indexers, key = { it.id }) { indexer ->
             SectionCard {
@@ -422,7 +422,7 @@ private fun AddonsTab(viewModel: AddonsViewModel = koinViewModel()) {
         onAdd = { adding = true },
         isEmpty = uiState.addons.isEmpty(),
         emptyText = stringResource(R.string.stremio_addons_empty),
-        emptyHint = stringResource(R.string.stremio_addons_empty_hint).replace("Tap", "Select"),
+        emptyHint = stringResource(R.string.stremio_addons_empty_hint_tv),
     ) {
         items(uiState.addons, key = { it.manifestUrl }) { addon ->
             SectionCard {

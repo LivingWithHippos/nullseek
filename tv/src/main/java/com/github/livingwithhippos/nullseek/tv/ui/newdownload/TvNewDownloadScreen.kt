@@ -133,7 +133,7 @@ fun TvNewDownloadScreen(
     LaunchedEffect(uploadState) {
         val state = uploadState
         if (state is UploadState.Finished && state.failed == 0) {
-            messenger.show("Successfully queued ${state.successful} items")
+            messenger.show(context.getString(R.string.queued_success, state.successful))
             linkText = ""
             password = ""
             selectedFiles = emptyList()
@@ -160,9 +160,9 @@ fun TvNewDownloadScreen(
                         onValueChange = { linkText = it },
                         label =
                             when (tab) {
-                                NewDownloadTab.TORRENT -> "Magnet links or info hashes"
-                                NewDownloadTab.WEB -> "Web links (https://…)"
-                                NewDownloadTab.USENET -> "NZB links (https://…)"
+                                NewDownloadTab.TORRENT -> stringResource(R.string.links_label_torrent)
+                                NewDownloadTab.WEB -> stringResource(R.string.links_label_web)
+                                NewDownloadTab.USENET -> stringResource(R.string.links_label_usenet)
                             },
                         placeholder = stringResource(R.string.link_hint),
                         singleLine = false,
@@ -179,7 +179,7 @@ fun TvNewDownloadScreen(
                             },
                         )
                         Text(
-                            "${links.size} valid",
+                            stringResource(R.string.valid_links_count, links.size),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.align(Alignment.CenterVertically),
                         )
@@ -190,7 +190,7 @@ fun TvNewDownloadScreen(
                 if (ext != null) {
                     SectionCard(title = stringResource(R.string.file_label) + " ($ext)", icon = R.drawable.ic_file) {
                         TvActionButton(
-                            text = stringResource(R.string.file_hint).replace("Tap", "Click"),
+                            text = stringResource(R.string.file_hint_tv),
                             icon = R.drawable.ic_add,
                             onClick = { picker.launchSafely(context, arrayOf("*/*")) },
                         )
@@ -238,7 +238,7 @@ fun TvNewDownloadScreen(
                 }
 
                 TvActionButton(
-                    text = "Add Downloads ($total)",
+                    text = stringResource(R.string.action_add_downloads, total),
                     icon = R.drawable.ic_download,
                     primary = true,
                     enabled = total > 0,
@@ -265,13 +265,13 @@ fun TvNewDownloadScreen(
     val state = uploadState
     if (state is UploadState.Finished && state.failed > 0) {
         TvDialog(
-            title = "Upload Report",
+            title = stringResource(R.string.upload_report_title),
             onDismiss = viewModel::resetState,
-            confirmText = "OK",
+            confirmText = stringResource(R.string.ok),
             onConfirm = viewModel::resetState,
         ) {
-            androidx.compose.material3.Text("Successfully queued: ${state.successful}")
-            androidx.compose.material3.Text("Failed to queue: ${state.failed}", color = androidx.compose.material3.MaterialTheme.colorScheme.error)
+            androidx.compose.material3.Text(stringResource(R.string.upload_report_successful, state.successful))
+            androidx.compose.material3.Text(stringResource(R.string.upload_report_failed, state.failed), color = androidx.compose.material3.MaterialTheme.colorScheme.error)
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 state.errors.forEach { androidx.compose.material3.Text(it) }
             }
