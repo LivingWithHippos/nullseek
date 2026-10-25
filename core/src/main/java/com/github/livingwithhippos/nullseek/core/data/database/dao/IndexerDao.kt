@@ -33,4 +33,7 @@ interface IndexerDao {
         id: Long,
         active: Boolean,
     )
+
+    @Query("DELETE FROM indexers")
+    suspend fun deleteAll()
 }

@@ -13,6 +13,9 @@ interface StremioAddonDao {
     @Query("SELECT * FROM stremio_addons ORDER BY addedTimestamp DESC")
     fun getAllAddons(): Flow<List<StremioAddonEntity>>
 
+    @Query("SELECT * FROM stremio_addons ORDER BY addedTimestamp DESC")
+    suspend fun getAll(): List<StremioAddonEntity>
+
     @Query("SELECT * FROM stremio_addons WHERE isEnabled = 1 ORDER BY addedTimestamp DESC")
     fun getEnabledAddons(): Flow<List<StremioAddonEntity>>
 

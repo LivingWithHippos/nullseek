@@ -21,7 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.paging.PagingData
 import com.github.livingwithhippos.nullseek.NullRootUiState
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.mockTorrents
 import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentsScreen
 import com.github.livingwithhippos.nullseek.ui.lists.usenet.UsenetScreen

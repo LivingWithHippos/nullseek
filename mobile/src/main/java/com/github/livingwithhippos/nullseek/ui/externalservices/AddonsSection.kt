@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,7 +27,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,8 +41,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity
+import com.github.livingwithhippos.nullseek.ui.theme.Button
+import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import kotlinx.serialization.json.Json
 
@@ -169,7 +169,7 @@ fun AddonCard(
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         color = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
                         Text(
@@ -230,7 +230,7 @@ fun AddonCard(
                     ) {
                         types.forEach { type ->
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant,
                             ) {
                                 Text(
@@ -328,7 +328,7 @@ fun AddonEditDialog(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             color = MaterialTheme.colorScheme.secondaryContainer,
                         ) {
                             Text(
@@ -340,7 +340,7 @@ fun AddonEditDialog(
                         }
                         types.forEach { type ->
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = RoundedCornerShape(0.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant,
                             ) {
                                 Text(

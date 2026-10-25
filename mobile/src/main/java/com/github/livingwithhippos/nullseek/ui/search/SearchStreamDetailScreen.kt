@@ -18,15 +18,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,13 +38,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceType
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
 import com.github.livingwithhippos.nullseek.ui.externalservices.PlayChoiceDialog
+import com.github.livingwithhippos.nullseek.ui.theme.AssistChip
+import com.github.livingwithhippos.nullseek.ui.theme.Button
+import com.github.livingwithhippos.nullseek.ui.theme.FilledTonalButton
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
+import com.github.livingwithhippos.nullseek.ui.theme.SuggestionChip
 import com.github.livingwithhippos.nullseek.ui.utils.FileTypeBadge
 import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
@@ -349,46 +349,6 @@ fun SearchStreamDetailScreen(
             onDismiss = { showPlayChoiceDialog = false },
             onNavigateToSettings = onNavigateToExternalServices,
         )
-    }
-}
-
-/**
- * Resolves a filename with a media extension from [title] or [url] so MIME type detection and
- * streamable checks recognize Stremio direct streams (even when multi-line descriptions are used).
- */
-internal fun resolveStreamFileName(
-    title: String,
-    url: String,
-): String {
-    val lines = title.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
-    for (line in lines) {
-        val candidate = line.substringAfterLast('/').substringAfterLast('\\').trim()
-        if (isStreamableOrSubtitle(candidate)) {
-            return candidate
-        }
-    }
-
-    val urlPathSegment =
-        url
-            .substringBefore('?')
-            .substringBefore('#')
-            .substringAfterLast('/')
-            .trim()
-    if (isStreamableOrSubtitle(urlPathSegment)) {
-        return urlPathSegment
-    }
-
-    val firstLine =
-        lines
-            .firstOrNull()
-            ?.substringAfterLast('/')
-            ?.substringAfterLast('\\')
-            .orEmpty()
-            .ifBlank { "stream" }
-    return if (detectFileTypeCategory(firstLine) != null) {
-        firstLine
-    } else {
-        "$firstLine.mp4"
     }
 }
 

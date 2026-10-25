@@ -13,7 +13,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,9 +24,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.ui.theme.CustomTypography
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedIconButton
 import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 
@@ -155,7 +155,7 @@ fun FileTypeBadge(
         }
 
     Surface(
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(0.dp),
         color = MaterialTheme.colorScheme.secondaryContainer,
         modifier = modifier,
     ) {

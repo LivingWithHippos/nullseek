@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,18 +40,19 @@ import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.core.utils.mockWebDownload
 import com.github.livingwithhippos.nullseek.ui.lists.utils.FindBar
 import com.github.livingwithhippos.nullseek.ui.lists.utils.MatchHighlight
 import com.github.livingwithhippos.nullseek.ui.lists.utils.PagingRefreshState
 import com.github.livingwithhippos.nullseek.ui.lists.utils.matchCardBorder
 import com.github.livingwithhippos.nullseek.ui.lists.utils.matchCardColors
-import com.github.livingwithhippos.nullseek.ui.lists.utils.rememberFindInListState
 import com.github.livingwithhippos.nullseek.ui.lists.utils.pagingAppendState
+import com.github.livingwithhippos.nullseek.ui.lists.utils.rememberFindInListState
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
-import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import kotlinx.coroutines.flow.Flow
 
@@ -206,15 +208,15 @@ private fun WebDownloadRow(
                     }
                 val badgeText =
                     when {
-                        hasError -> "Error"
-                        isDone -> "Ready"
-                        item.cached -> "Cached"
+                        hasError -> stringResource(R.string.status_error)
+                        isDone -> stringResource(R.string.status_ready)
+                        item.cached -> stringResource(R.string.cached)
                         item.downloadState.isNotBlank() -> item.downloadState.replaceFirstChar { it.uppercase() }
                         else -> "${(item.progress * 100).toInt()}%"
                     }
 
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
+                    shape = RoundedCornerShape(0.dp),
                     color = badgeContainerColor,
                 ) {
                     Text(
@@ -254,14 +256,14 @@ private fun WebDownloadRow(
 
                 if (isDownloading && item.downloadSpeed > 0) {
                     Text(
-                        text = "${item.downloadSpeed} kB/s",
+                        text = stringResource(R.string.speed_kbps, item.downloadSpeed),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
                     )
                 } else if (!isDownloading) {
                     Text(
-                        text = if (item.active) "Active" else "Inactive",
+                        text = if (item.active) stringResource(R.string.active) else stringResource(R.string.inactive),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

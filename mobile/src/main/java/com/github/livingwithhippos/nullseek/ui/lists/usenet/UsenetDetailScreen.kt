@@ -22,18 +22,14 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -41,7 +37,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,20 +56,25 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.core.utils.convertToSize
+import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.core.utils.mockUsenetDownload
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.ui.externalservices.PlayChoiceDialog
+import com.github.livingwithhippos.nullseek.ui.theme.Button
+import com.github.livingwithhippos.nullseek.ui.theme.FilledTonalButton
+import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
+import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.FileTypeBadge
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
-import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
-import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.utils.isAudioFile
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.nullseek.utils.isSubtitleFile
@@ -107,6 +107,7 @@ fun UsenetDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
+    val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
     val currentItem = uiState.usenet ?: item
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -135,6 +136,7 @@ fun UsenetDetailScreen(
             uiState = uiState,
             defaultPlayer = defaultPlayer,
             mediaPlayers = mediaPlayers,
+            filterFilesFullPath = filterFilesFullPath,
             onPlayMedia = { service, url, setAsDefault ->
                 viewModel.playOnMedia(service, url, setAsDefault)
             },
@@ -160,6 +162,7 @@ private fun UsenetDetailScreen(
     uiState: UsenetDetailUiState,
     defaultPlayer: ExternalService? = null,
     mediaPlayers: List<ExternalService> = emptyList(),
+    filterFilesFullPath: Boolean = false,
     onPlayMedia: (ExternalService, String, Boolean) -> Unit = { _, _, _ -> },
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
@@ -206,14 +209,14 @@ private fun UsenetDetailScreen(
             }
 
             // Card 3: Download Link Card
-            if (uiState.downloadLinkResult != null) {
+            uiState.downloadLinkResult?.let { linkResult ->
                 UsenetDownloadLinkCard(
-                    result = uiState.downloadLinkResult,
+                    result = linkResult,
                     context = context,
                     defaultPlayer = defaultPlayer,
                     onPlay = {
                         if (defaultPlayer != null) {
-                            onPlayMedia(defaultPlayer, uiState.downloadLinkResult.url, false)
+                            onPlayMedia(defaultPlayer, linkResult.url, false)
                         } else {
                             showPlayChoiceDialog = true
                         }
@@ -236,6 +239,7 @@ private fun UsenetDetailScreen(
                 UsenetFilesCard(
                     files = item.files,
                     isCached = item.cached,
+                    filterFilesFullPath = filterFilesFullPath,
                     onDownloadFile = onDownloadFile,
                 )
             }
@@ -245,20 +249,21 @@ private fun UsenetDetailScreen(
         }
     }
 
-    if (showPlayChoiceDialog && uiState.downloadLinkResult != null) {
+    val playLink = uiState.downloadLinkResult
+    if (showPlayChoiceDialog && playLink != null) {
         PlayChoiceDialog(
             services = mediaPlayers,
             onDismiss = { showPlayChoiceDialog = false },
             onSelect = { service, setAsDefault ->
                 showPlayChoiceDialog = false
-                onPlayMedia(service, uiState.downloadLinkResult.url, setAsDefault)
+                onPlayMedia(service, playLink.url, setAsDefault)
             },
         )
     }
 
-    if (uiState.pendingDownload != null) {
+    uiState.pendingDownload?.let { pending ->
         DownloadZipModal(
-            itemName = uiState.pendingDownload.fileName ?: item.name,
+            itemName = pending.fileName ?: item.name,
             onDismiss = onDismissDownloadModal,
             onConfirm = onConfirmDownloadModal,
         )
@@ -392,14 +397,14 @@ private fun UsenetOverviewCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "State",
+                    text = stringResource(R.string.state),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
                     text =
                         buildString {
-                            append(if (item.active) "Active" else "Inactive")
-                            if (item.cached) append(" • Cached")
+                            append(if (item.active) stringResource(R.string.active) else stringResource(R.string.inactive))
+                            if (item.cached) append(" • " + stringResource(R.string.cached))
                         },
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
@@ -433,7 +438,7 @@ private fun UsenetOverviewCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Expires",
+                        text = stringResource(R.string.expires),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Text(
@@ -545,7 +550,7 @@ private fun UsenetTransferProgressCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = "${item.downloadSpeed} kB/s",
+                    text = stringResource(R.string.speed_kbps, item.downloadSpeed),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -565,9 +570,9 @@ private fun UsenetTransferProgressCard(
                 Text(
                     text =
                         if (item.downloadFinished || item.progress >= 1.0) {
-                            "Finished"
+                            stringResource(R.string.finished)
                         } else if (item.eta > 0) {
-                            "${item.eta}s"
+                            stringResource(R.string.eta_seconds, item.eta)
                         } else {
                             "—"
                         },
@@ -909,6 +914,7 @@ private fun UsenetDownloadFileDto.isSubtitle(): Boolean = isSubtitleFile(name)
 private fun UsenetFilesCard(
     files: List<UsenetDownloadFileDto>,
     isCached: Boolean,
+    filterFilesFullPath: Boolean = false,
     onDownloadFile: (Int, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -918,22 +924,28 @@ private fun UsenetFilesCard(
     var filterSubtitles by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    val filteredFiles = remember(files, searchQuery, filterVideo, filterAudio, filterSubtitles) {
-        files.filter { file ->
-            val matchesSearch = searchQuery.isBlank() || file.name.contains(
-                searchQuery,
-                ignoreCase = true
-            ) || file.shortName.contains(searchQuery, ignoreCase = true)
+    val filteredFiles =
+        remember(files, searchQuery, filterFilesFullPath, filterVideo, filterAudio, filterSubtitles) {
+            files.filter { file ->
+                val fileNameOnly =
+                    file.shortName.ifBlank {
+                        file.name.substringAfterLast('/').substringAfterLast('\\')
+                    }
+                val matchesSearch =
+                    searchQuery.isBlank() ||
+                        fileNameOnly.contains(searchQuery, ignoreCase = true) ||
+                        (filterFilesFullPath && file.name.contains(searchQuery, ignoreCase = true))
 
-            val anyFilterActive = filterVideo || filterAudio || filterSubtitles
-            val matchesType = !anyFilterActive ||
-                    (filterVideo && file.isVideo()) ||
-                    (filterAudio && file.isAudio()) ||
-                    (filterSubtitles && file.isSubtitle())
+                val anyFilterActive = filterVideo || filterAudio || filterSubtitles
+                val matchesType =
+                    !anyFilterActive ||
+                        (filterVideo && file.isVideo()) ||
+                        (filterAudio && file.isAudio()) ||
+                        (filterSubtitles && file.isSubtitle())
 
-            matchesSearch && matchesType
+                matchesSearch && matchesType
+            }
         }
-    }
 
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),

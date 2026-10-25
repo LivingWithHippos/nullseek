@@ -1,8 +1,6 @@
 package com.github.livingwithhippos.nullseek.ui.newdownload
 
-import android.content.Context
 import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -24,7 +22,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,7 +37,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -62,42 +58,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.ui.theme.Button
+import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
-import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
-
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 
-fun Context.getFileName(uri: Uri): String {
-    var name = "Unknown file"
-    if (uri.scheme == "content") {
-        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (index != -1) name = cursor.getString(index)
-            }
-        }
-    } else if (uri.scheme == "file") {
-        name = uri.lastPathSegment ?: name
-    }
-    return name
-}
-
-fun isValidDownloadLink(link: String): Boolean {
-    val trimmed = link.trim()
-    return trimmed.startsWith("magnet:?xt=urn:btih:", ignoreCase = true) ||
-            trimmed.startsWith("http://", ignoreCase = true) ||
-            trimmed.startsWith("https://", ignoreCase = true)
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewDownloadScreen(
     contentType: NullContentType,
-    navigationType: NullNavigationType,
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit = {},
     initialLinks: String = "",
@@ -150,15 +122,15 @@ fun NewDownloadScreen(
         if (uploadState is UploadState.Finished) {
             val state = uploadState as UploadState.Finished
             if (state.failed == 0) {
-                snackbarHostState.showSnackbar("Successfully queued ${state.successful} items")
+                snackbarHostState.showSnackbar(context.getString(R.string.queued_success, state.successful))
                 linkText = ""
                 selectedFiles = emptyList()
                 password = ""
                 viewModel.resetState()
             } else if (state.successful == 0) {
-                snackbarHostState.showSnackbar("Failed to queue items: ${state.errors.firstOrNull()}")
+                snackbarHostState.showSnackbar(context.getString(R.string.queued_failed, state.errors.firstOrNull().orEmpty()))
             } else {
-                snackbarHostState.showSnackbar("Queued ${state.successful} items. Failed ${state.failed} items.")
+                snackbarHostState.showSnackbar(context.getString(R.string.queued_partial, state.successful, state.failed))
             }
         }
     }
@@ -167,12 +139,12 @@ fun NewDownloadScreen(
         val state = uploadState as UploadState.Finished
         AlertDialog(
             onDismissRequest = { viewModel.resetState() },
-            title = { Text("Upload Report") },
+            title = { Text(stringResource(R.string.upload_report_title)) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Text("Successfully queued: ${state.successful}")
+                    Text(stringResource(R.string.upload_report_successful, state.successful))
                     Text(
-                        "Failed to queue: ${state.failed}",
+                        stringResource(R.string.upload_report_failed, state.failed),
                         color = MaterialTheme.colorScheme.error
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -184,7 +156,7 @@ fun NewDownloadScreen(
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.resetState() }) {
-                    Text("OK")
+                    Text(stringResource(R.string.ok))
                 }
             }
         )
@@ -253,7 +225,7 @@ fun NewDownloadScreen(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Add Downloads ($totalDownloads)")
+                            Text(stringResource(R.string.action_add_downloads, totalDownloads))
                         }
                     }
                 }
@@ -408,7 +380,8 @@ fun NewDownloadScreen(
                             Text(
                                 text = stringResource(id = R.string.allow_zipped_downloads),
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
                             )
                             Switch(
                                 checked = allowZipped,

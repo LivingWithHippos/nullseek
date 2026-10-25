@@ -4,37 +4,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import com.github.livingwithhippos.nullseek.R
-import kotlinx.serialization.Serializable
-
-sealed interface Route {
-    @Serializable
-    data object Home : Route
-
-    @Serializable
-    data object Lists : Route
-
-    @Serializable
-    data object Search : Route
-
-    @Serializable
-    data object Settings : Route
-
-    @Serializable
-    data object ExternalServices : Route
-
-    @Serializable
-    data object ManageProviders : Route
-
-    @Serializable
-    data object StremioAddons : Route
-
-    /** [links] optionally prefills the links field. */
-    @Serializable
-    data class NewDownload(
-        val links: String? = null,
-    ) : Route
-}
+import com.github.livingwithhippos.nullseek.core.R
 
 data class TopLevelDestination(
     val route: Route,

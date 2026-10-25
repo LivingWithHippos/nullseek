@@ -14,7 +14,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,10 +25,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceType
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 
 @Composable
 fun PlayChoiceDialog(

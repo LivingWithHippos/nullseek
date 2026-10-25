@@ -4,7 +4,6 @@ import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddo
 import com.github.livingwithhippos.nullseek.core.data.repository.StremioAddonRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
@@ -111,6 +110,15 @@ class AddonManager(
      * Fetch episodes for a series by its IMDb ID
      */
     suspend fun getSeriesEpisodes(imdbId: String): Result<List<SeriesEpisodeItem>> = addonClient.getSeriesEpisodes(imdbId)
+
+    /**
+     * Fetch rich title metadata (and episodes if series) by its IMDb ID
+     */
+    suspend fun getTitleMeta(
+        imdbId: String,
+        type: String,
+        existing: ImdbTitleResult? = null,
+    ): Result<TitleMetaDetails> = addonClient.getTitleMeta(imdbId, type, existing)
 
     /**
      * Search for streams across all enabled addons
@@ -276,25 +284,123 @@ class AddonManager(
             }
         }
 
+        val rawDetails =
+            stream.description?.trim()?.takeIf { it.isNotEmpty() }
+                ?: stream.title?.trim()?.takeIf { it.isNotEmpty() }
+        val fileName =
+            stream.behaviorHints
+                ?.filename
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+
         val resolvedName =
-            stream.behaviorHints?.filename?.takeIf { it.isNotBlank() }
-                ?: stream.description?.takeIf { it.isNotBlank() }
-                ?: stream.title?.takeIf { it.isNotBlank() }
-                ?: stream.name?.takeIf { it.isNotBlank() }
-                ?: contentName
+            when {
+                rawDetails != null && fileName != null && !rawDetails.contains(fileName, ignoreCase = true) -> {
+                    "$fileName\n$rawDetails"
+                }
+
+                rawDetails != null -> {
+                    rawDetails
+                }
+
+                fileName != null -> {
+                    fileName
+                }
+
+                !stream.name.isNullOrBlank() -> {
+                    stream.name.trim()
+                }
+
+                else -> {
+                    contentName
+                }
+            }
+
+        val combinedText = listOfNotNull(stream.title, stream.description, stream.name).joinToString("\n")
+        val resolvedSizeBytes =
+            stream.behaviorHints?.videoSize?.takeIf { it > 0L }
+                ?: parseSizeBytesFromText(combinedText)
+        val parsedSeeders = parseSeedersFromText(combinedText)
+        val parsedLeechers = parseLeechersFromText(combinedText)
 
         return com.github.livingwithhippos.nullseek.core.data.ScrapedItem(
             name = resolvedName,
             link = hosting.firstOrNull(),
-            seeders = null,
-            leechers = null,
-            size = stream.behaviorHints?.videoSize?.let { formatBytes(it) },
+            seeders = parsedSeeders?.toString(),
+            leechers = parsedLeechers?.toString(),
+            size = resolvedSizeBytes?.let { formatBytes(it) },
             addedDate = null,
-            parsedSize = stream.behaviorHints?.videoSize?.toDouble(),
+            parsedSize = resolvedSizeBytes?.toDouble(),
             magnets = magnets,
             torrents = torrents,
             hosting = hosting,
         )
+    }
+
+    /**
+     * Extract concise metadata tags (quality, debrid status, source indexer, codec) from an AddonStream
+     * without making additional network requests.
+     */
+    fun extractStreamCategories(streamResult: AddonStreamResult): List<String> {
+        val stream = streamResult.stream
+        val tags = mutableListOf<String>()
+
+        stream.name
+            ?.lineSequence()
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() && !it.equals(streamResult.addonName, ignoreCase = true) }
+            ?.forEach { line ->
+                val cleaned =
+                    if (line.startsWith(streamResult.addonName, ignoreCase = true)) {
+                        line.substring(streamResult.addonName.length).trim(' ', '-', ':', '|')
+                    } else {
+                        line
+                    }
+                if (cleaned.isNotEmpty() && cleaned.length <= 32) {
+                    tags.add(cleaned)
+                }
+            }
+
+        val combinedText = listOfNotNull(stream.title, stream.description).joinToString("\n")
+        SOURCE_INDEXER_REGEX.find(combinedText)?.groupValues?.getOrNull(1)?.trim()?.takeIf { it.isNotEmpty() }?.let { source ->
+            val cleanSource = source.trimEnd('.', ',', '|', '-', ' ')
+            if (cleanSource.isNotEmpty() && cleanSource.length <= 28) {
+                tags.add(cleanSource)
+            }
+        }
+
+        return tags.distinct()
+    }
+
+    internal fun parseSeedersFromText(text: String): Int? =
+        SEEDERS_REGEX
+            .find(text)
+            ?.groupValues
+            ?.drop(1)
+            ?.firstOrNull { it.isNotEmpty() }
+            ?.toIntOrNull()
+
+    internal fun parseLeechersFromText(text: String): Int? =
+        LEECHERS_REGEX
+            .find(text)
+            ?.groupValues
+            ?.drop(1)
+            ?.firstOrNull { it.isNotEmpty() }
+            ?.toIntOrNull()
+
+    internal fun parseSizeBytesFromText(text: String): Long? {
+        val match = SIZE_REGEX.find(text) ?: return null
+        val amount = match.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return null
+        val unit = match.groupValues[2].uppercase()
+        val multiplier =
+            when (unit) {
+                "TB", "TIB" -> 1024.0 * 1024.0 * 1024.0 * 1024.0
+                "GB", "GIB" -> 1024.0 * 1024.0 * 1024.0
+                "MB", "MIB" -> 1024.0 * 1024.0
+                "KB", "KIB" -> 1024.0
+                else -> return null
+            }
+        return (amount * multiplier).toLong().takeIf { it > 0L }
     }
 
     internal fun buildMagnetLink(
@@ -340,6 +446,17 @@ class AddonManager(
             bytes >= kb -> String.format("%.2f KB", bytes.toDouble() / kb)
             else -> "$bytes B"
         }
+    }
+
+    private companion object {
+        val SEEDERS_REGEX =
+            Regex("""(?:👤|🌱)\s*(\d+)|\b(?:seeds?|seeders?)\s*[:=]\s*(\d+)|\bS\s*:\s*(\d+)\b""", RegexOption.IGNORE_CASE)
+        val LEECHERS_REGEX =
+            Regex("""\b(?:peers?|leechers?)\s*[:=]\s*(\d+)|\bL\s*:\s*(\d+)\b""", RegexOption.IGNORE_CASE)
+        val SIZE_REGEX =
+            Regex("""(?:💾\s*)?(\d+(?:[.,]\d+)?)\s*(TB|TiB|GB|GiB|MB|MiB|KB|KiB)\b""", RegexOption.IGNORE_CASE)
+        val SOURCE_INDEXER_REGEX =
+            Regex("""(?:⚙️|📡)\s*([^\n\r👤💾⚙️📡]+)""")
     }
 }
 

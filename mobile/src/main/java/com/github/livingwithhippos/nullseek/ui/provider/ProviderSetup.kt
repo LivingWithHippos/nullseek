@@ -1,6 +1,9 @@
 package com.github.livingwithhippos.nullseek.ui.provider
 
 import android.content.Context
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,22 +20,19 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,12 +44,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.NullRootUiState
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
+import com.github.livingwithhippos.nullseek.ui.theme.FilledTonalButton
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedIconButton
+import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.user.UserViewModel
 import com.github.livingwithhippos.nullseek.utils.getClipboardText
 import com.github.livingwithhippos.nullseek.utils.openWebPage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -57,6 +64,7 @@ fun ProviderSetup(
     modifier: Modifier = Modifier,
     uiState: NullRootUiState,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
+    onBackupRestored: () -> Unit = {},
     viewModel: UserViewModel = koinViewModel(),
 ) {
     val currentProvider = NetProvider.Torbox()
@@ -68,6 +76,7 @@ fun ProviderSetup(
         loading = uiState.loading,
         error = uiState.error,
         checkValidToken = checkValidToken,
+        onBackupRestored = onBackupRestored,
         viewModel = viewModel,
         context = context,
     )
@@ -80,11 +89,47 @@ fun ProviderSetup(
     loading: Boolean,
     error: String?,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
+    onBackupRestored: () -> Unit = {},
     viewModel: UserViewModel = koinViewModel(),
     context: Context = LocalContext.current,
 ) {
     val referralPreference by viewModel.includeReferralPreference.collectAsState()
+    val isRestoringBackup by viewModel.isRestoringBackup.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
     var showReferralDialog by remember { mutableStateOf(false) }
+
+    val restoreBackupLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            if (uri != null) {
+                coroutineScope.launch {
+                    val rawJson =
+                        withContext(Dispatchers.IO) {
+                            runCatching {
+                                context.contentResolver
+                                    .openInputStream(uri)
+                                    ?.bufferedReader(Charsets.UTF_8)
+                                    ?.use { it.readText() }
+                            }.getOrNull()
+                        }
+                    if (rawJson != null) {
+                        viewModel.restoreBackup(rawJson) { success ->
+                            val messageRes =
+                                if (success) {
+                                    onBackupRestored()
+                                    R.string.backup_restored_success
+                                } else {
+                                    R.string.backup_restore_failed
+                                }
+                            Toast.makeText(context, messageRes, Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(context, R.string.backup_restore_failed, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
 
     if (showReferralDialog) {
         AlertDialog(
@@ -142,6 +187,10 @@ fun ProviderSetup(
         onGetTokenClick = {
             openWebPage(context, provider.tokenLink)
         },
+        isRestoringBackup = isRestoringBackup,
+        onRestoreBackupClick = {
+            restoreBackupLauncher.launch(arrayOf("application/json", "*/*"))
+        },
         context = context,
     )
 }
@@ -156,6 +205,8 @@ fun ProviderSetupContent(
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
     onSignUpClick: () -> Unit,
     onGetTokenClick: () -> Unit,
+    isRestoringBackup: Boolean = false,
+    onRestoreBackupClick: () -> Unit = {},
     context: Context = LocalContext.current,
 ) {
     var token by rememberSaveable { mutableStateOf("") }
@@ -198,7 +249,13 @@ fun ProviderSetupContent(
                 context = context,
             )
 
-            // Card 3: Error Banner (if error occurred)
+            // Card 3: Restore Backup Card
+            ProviderRestoreBackupCard(
+                isRestoringBackup = isRestoringBackup || loading,
+                onRestoreBackupClick = onRestoreBackupClick,
+            )
+
+            // Card 4: Error Banner (if error occurred)
             if (error != null) {
                 OutlinedCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -362,6 +419,49 @@ private fun ProviderTokenConfigCard(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Text(text = stringResource(id = R.string.setup_connect_button))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun ProviderRestoreBackupCard(
+    isRestoringBackup: Boolean,
+    onRestoreBackupClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(id = R.string.setup_restore_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+            )
+
+            Text(
+                text = stringResource(id = R.string.setup_restore_description),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            OutlinedButton(
+                onClick = onRestoreBackupClick,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isRestoringBackup,
+            ) {
+                if (isRestoringBackup) {
+                    LoadingIndicator(
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(text = stringResource(id = R.string.backup_restore_button))
             }
         }
     }

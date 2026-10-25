@@ -29,7 +29,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import kotlinx.coroutines.launch
 
 /** Indices of the items whose name contains [query] (case-insensitive). Null items are skipped. */

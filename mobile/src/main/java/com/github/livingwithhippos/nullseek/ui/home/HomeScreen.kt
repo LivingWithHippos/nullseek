@@ -22,9 +22,11 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     showSettings: () -> Unit,
     onNewDownload: () -> Unit,
-    checkValidToken: (provider: NetProvider, token: String) -> Unit
+    checkValidToken: (provider: NetProvider, token: String) -> Unit,
+    onBackupRestored: () -> Unit = {},
 ) {
     val context = LocalContext.current
+    val isLoggedIn = !uiState.setup && uiState.user != null
 
     // we have no double panel for the user info, unless we decide to put the settings one on the side
     Box(modifier = modifier.fillMaxSize()) {
@@ -32,7 +34,8 @@ fun HomeScreen(
             ProviderSetup(
                 modifier = modifier,
                 uiState = uiState,
-                checkValidToken = checkValidToken
+                checkValidToken = checkValidToken,
+                onBackupRestored = onBackupRestored,
             )
         } else {
             UserScreen(
@@ -40,7 +43,7 @@ fun HomeScreen(
                 user = uiState.user,
                 loading = uiState.loading,
                 error = uiState.error,
-                context = context
+                context = context,
             )
         }
 
@@ -48,6 +51,7 @@ fun HomeScreen(
             ExtendableFabMenu(
                 onNewDownload = onNewDownload,
                 showSettings = showSettings,
+                showNewDownload = isLoggedIn,
                 modifier = Modifier.align(Alignment.BottomEnd),
             )
         }

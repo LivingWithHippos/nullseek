@@ -6,12 +6,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,18 +22,15 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,11 +45,9 @@ import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,6 +58,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -75,7 +73,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.NullRootUiState
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.data.stremio.ImdbTitleResult
 import com.github.livingwithhippos.nullseek.core.data.stremio.SeriesEpisodeItem
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
@@ -84,10 +82,18 @@ import com.github.livingwithhippos.nullseek.data.model.Indexer
 import com.github.livingwithhippos.nullseek.data.model.IndexerType
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
 import com.github.livingwithhippos.nullseek.data.model.isDirectStreamResult
+import com.github.livingwithhippos.nullseek.ui.theme.AssistChip
+import com.github.livingwithhippos.nullseek.ui.theme.Button
+import com.github.livingwithhippos.nullseek.ui.theme.FilledTonalButton
+import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
+import com.github.livingwithhippos.nullseek.ui.theme.SuggestionChip
+import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.ExtendableFabMenu
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.utils.openWebPage
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -153,6 +159,7 @@ fun SearchScreen(
         onClearHistory = viewModel::clearSearchHistory,
         onNewDownload = onNewDownload,
         showSettings = showSettings,
+        showNewDownload = !uiState.setup && uiState.user != null,
         onNavigateToExternalServices = onNavigateToExternalServices,
     )
 }
@@ -182,6 +189,7 @@ fun SearchContent(
     onClearHistory: () -> Unit = {},
     onNewDownload: () -> Unit = {},
     showSettings: () -> Unit = {},
+    showNewDownload: Boolean = true,
     onNavigateToExternalServices: () -> Unit = {},
     selectedResult: SearchResult? = null,
     onResultClick: (SearchResult) -> Unit = {},
@@ -291,6 +299,7 @@ fun SearchContent(
                     modifier = Modifier.weight(1f),
                     state = searchBarState,
                     inputField = inputField,
+                    shape = RectangleShape,
                 )
                 ExpandedFullScreenSearchBar(
                     state = searchBarState,
@@ -447,6 +456,7 @@ fun SearchContent(
             ExtendableFabMenu(
                 onNewDownload = onNewDownload,
                 showSettings = showSettings,
+                showNewDownload = showNewDownload,
                 modifier = Modifier.align(Alignment.BottomEnd),
             )
         }
@@ -636,33 +646,76 @@ fun ImdbTitleCard(
                         label = {
                             Text(
                                 text =
-                                    if (item.isSeries) {
-                                        stringResource(R.string.search_imdb_type_series)
-                                    } else {
-                                        stringResource(R.string.search_imdb_type_movie)
-                                    },
+                                    item.qualifier
+                                        ?: if (item.isSeries) {
+                                            stringResource(R.string.search_imdb_type_series)
+                                        } else {
+                                            stringResource(R.string.search_imdb_type_movie)
+                                        },
                             )
                         },
                     )
-                    item.year?.let { year ->
+                    item.imdbRating?.takeIf { it.isNotBlank() }?.let { rating ->
+                        Surface(
+                            shape = RoundedCornerShape(0.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.search_stremio_imdb_rating, rating),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+                    val yearRuntime =
+                        listOfNotNull(
+                            item.year?.takeIf { it.isNotBlank() },
+                            item.runtime?.takeIf { it.isNotBlank() },
+                        ).joinToString(" · ")
+                    if (yearRuntime.isNotEmpty()) {
                         Text(
-                            text = year,
+                            text = yearRuntime,
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
-                item.stars?.let { stars ->
+                if (item.genres.isNotEmpty()) {
                     Text(
-                        text = stars,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = item.genres.joinToString(" · "),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+                item.stars?.let { stars ->
+                    Text(
+                        text = stringResource(R.string.search_stremio_cast, stars),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                item.description?.takeIf { it.isNotBlank() }?.let { desc ->
+                    Text(
+                        text = desc,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                val idAndRank =
+                    listOfNotNull(
+                        item.imdbId,
+                        item.rank?.let { stringResource(R.string.search_imdb_rank, it) },
+                    ).joinToString(" · ")
                 Text(
-                    text = item.imdbId,
+                    text = idAndRank,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -685,63 +738,21 @@ private fun StremioEpisodesSection(
     var manualEpisodeText by rememberSaveable(selectedTitle.imdbId) { mutableStateOf("1") }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        OutlinedCard(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    PosterImage(
-                        posterUrl = selectedTitle.posterUrl,
-                        title = selectedTitle.title,
-                        modifier =
-                            Modifier
-                                .width(48.dp)
-                                .height(72.dp),
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = selectedTitle.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text =
-                                listOfNotNull(selectedTitle.year, selectedTitle.imdbId)
-                                    .joinToString(" · "),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+        StremioTitleDetailsCard(
+            selectedTitle = selectedTitle,
+            selectedEpisode = null,
+            activeStreamImdbId = selectedTitle.imdbId,
+            activeStreamLabel = selectedTitle.title,
+            canNavigateBack = stremioState.canNavigateBack,
+            backButtonLabel = stringResource(R.string.search_stremio_back_titles),
+            onBack = onBackToTitles,
+            initialExpanded = false,
+            trailingAction = {
+                FilledTonalButton(onClick = onSearchWholeSeries) {
+                    Text(stringResource(R.string.search_stremio_whole_series))
                 }
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (stremioState.canNavigateBack) {
-                        TextButton(onClick = onBackToTitles) {
-                            Text(stringResource(R.string.search_stremio_back_titles))
-                        }
-                    } else {
-                        Spacer(modifier = Modifier.width(1.dp))
-                    }
-                    FilledTonalButton(onClick = onSearchWholeSeries) {
-                        Text(stringResource(R.string.search_stremio_whole_series))
-                    }
-                }
-            }
-        }
+            },
+        )
 
         // Manual Season / Episode quick entry
         Row(
@@ -921,26 +932,56 @@ private fun SeriesEpisodeCard(
 }
 
 @Composable
-private fun StremioStreamsSection(
-    stremioState: StremioSearchState,
-    onFilterQueryChange: (String) -> Unit,
+private fun StremioTitleDetailsCard(
+    selectedTitle: ImdbTitleResult?,
+    selectedEpisode: SeriesEpisodeItem?,
+    activeStreamImdbId: String,
+    activeStreamLabel: String,
+    canNavigateBack: Boolean,
+    backButtonLabel: String,
     onBack: () -> Unit,
-    onResultClick: (SearchResult) -> Unit,
+    initialExpanded: Boolean = true,
+    trailingAction: (@Composable () -> Unit)? = null,
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        val selectedTitle = stremioState.selectedTitle
-        if (selectedTitle != null || stremioState.canNavigateBack) {
-            OutlinedCard(
+    val context = LocalContext.current
+    val baseImdbId =
+        (selectedTitle?.imdbId ?: activeStreamImdbId)
+            .substringBefore(":")
+            .trim()
+    var isExpanded by rememberSaveable(baseImdbId, activeStreamImdbId) { mutableStateOf(initialExpanded) }
+
+    val displayTitle = selectedTitle?.title ?: activeStreamLabel
+    val compactSubtitle =
+        buildList {
+            selectedTitle?.imdbRating?.takeIf { it.isNotBlank() }?.let {
+                add(stringResource(R.string.search_stremio_imdb_rating, it))
+            }
+            if (selectedEpisode != null) {
+                add("S%02dE%02d · %s".format(selectedEpisode.season, selectedEpisode.episode, selectedEpisode.title))
+            } else {
+                selectedTitle?.year?.takeIf { it.isNotBlank() }?.let { add(it) }
+                selectedTitle?.runtime?.takeIf { it.isNotBlank() }?.let { add(it) }
+            }
+            activeStreamImdbId.ifBlank { baseImdbId }.takeIf { it.isNotBlank() }?.let { add(it) }
+        }.joinToString(" · ")
+
+    OutlinedCard(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .clickable { isExpanded = !isExpanded },
+    ) {
+        if (!isExpanded) {
+            Column(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(10.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
@@ -956,39 +997,276 @@ private fun StremioStreamsSection(
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = selectedTitle?.title ?: stremioState.activeStreamLabel,
+                            text = displayTitle,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        Text(
-                            text =
-                                if (selectedTitle != null && stremioState.activeStreamLabel != selectedTitle.title) {
-                                    "${stremioState.activeStreamLabel} (${stremioState.activeStreamImdbId})"
-                                } else {
-                                    stremioState.activeStreamImdbId
-                                },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                        if (compactSubtitle.isNotEmpty()) {
+                            Text(
+                                text = compactSubtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                    if (canNavigateBack && trailingAction == null) {
+                        TextButton(onClick = onBack) {
+                            Text(text = backButtonLabel)
+                        }
+                    }
+                    IconButton(
+                        onClick = { isExpanded = true },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_arrow_drop_down),
+                            contentDescription = stringResource(R.string.search_stremio_expand_details),
                         )
                     }
-                    if (stremioState.canNavigateBack) {
-                        TextButton(onClick = onBack) {
+                }
+                if (trailingAction != null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (canNavigateBack) {
+                            TextButton(onClick = onBack) {
+                                Text(text = backButtonLabel)
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.width(1.dp))
+                        }
+                        trailingAction()
+                    }
+                }
+            }
+        } else {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (selectedTitle != null) {
+                        PosterImage(
+                            posterUrl = selectedTitle.posterUrl,
+                            title = selectedTitle.title,
+                            modifier =
+                                Modifier
+                                    .width(72.dp)
+                                    .height(108.dp),
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top,
+                        ) {
                             Text(
-                                text =
-                                    if (selectedTitle?.isSeries == true) {
-                                        stringResource(R.string.search_stremio_back_episodes)
-                                    } else {
-                                        stringResource(R.string.search_stremio_back_titles)
-                                    },
+                                text = displayTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f),
+                            )
+                            IconButton(
+                                onClick = { isExpanded = false },
+                                modifier = Modifier.size(32.dp),
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_arrow_drop_up),
+                                    contentDescription = stringResource(R.string.search_stremio_collapse_details),
+                                )
+                            }
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            selectedTitle?.imdbRating?.takeIf { it.isNotBlank() }?.let { rating ->
+                                Surface(
+                                    shape = RoundedCornerShape(0.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.search_stremio_imdb_rating, rating),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    )
+                                }
+                            }
+                            val metaLine =
+                                listOfNotNull(
+                                    selectedTitle?.year?.takeIf { it.isNotBlank() },
+                                    selectedTitle?.runtime?.takeIf { it.isNotBlank() },
+                                    activeStreamImdbId.ifBlank { baseImdbId }.takeIf { it.isNotBlank() },
+                                ).joinToString(" · ")
+                            if (metaLine.isNotEmpty()) {
+                                Text(
+                                    text = metaLine,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+
+                        if (!selectedTitle?.genres.isNullOrEmpty()) {
+                            Text(
+                                text = selectedTitle.genres.joinToString(" · "),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+
+                        selectedTitle?.stars?.takeIf { it.isNotBlank() }?.let { stars ->
+                            Text(
+                                text = stringResource(R.string.search_stremio_cast, stars),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+
+                        if (!selectedTitle?.director.isNullOrEmpty()) {
+                            Text(
+                                text = stringResource(R.string.search_stremio_director, selectedTitle.director.joinToString(", ")),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
                 }
+
+                if (selectedEpisode != null) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "S%02dE%02d · %s".format(selectedEpisode.season, selectedEpisode.episode, selectedEpisode.title),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        selectedEpisode.released?.let { released ->
+                            Text(
+                                text = released,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 8.dp),
+                            )
+                        }
+                    }
+                }
+
+                val summaryText =
+                    when {
+                        !selectedEpisode?.overview.isNullOrBlank() && !selectedTitle?.description.isNullOrBlank() ->
+                            "${selectedEpisode.overview}\n\n${selectedTitle.description}"
+                        !selectedEpisode?.overview.isNullOrBlank() -> selectedEpisode.overview
+                        !selectedTitle?.description.isNullOrBlank() -> selectedTitle.description
+                        else -> null
+                    }
+
+                if (!summaryText.isNullOrBlank()) {
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 180.dp)
+                                .verticalScroll(rememberScrollState()),
+                    ) {
+                        Text(
+                            text = summaryText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (canNavigateBack) {
+                        TextButton(onClick = onBack) {
+                            Text(text = backButtonLabel)
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (baseImdbId.startsWith("tt")) {
+                            OutlinedButton(
+                                onClick = {
+                                    openWebPage(context, "https://www.imdb.com/title/$baseImdbId/")
+                                },
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_open_in_new),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(text = stringResource(R.string.search_stremio_open_imdb))
+                            }
+                        }
+                        trailingAction?.invoke()
+                    }
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun StremioStreamsSection(
+    stremioState: StremioSearchState,
+    onFilterQueryChange: (String) -> Unit,
+    onBack: () -> Unit,
+    onResultClick: (SearchResult) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        val selectedTitle = stremioState.selectedTitle
+        if (selectedTitle != null || stremioState.canNavigateBack || stremioState.activeStreamImdbId.isNotBlank()) {
+            StremioTitleDetailsCard(
+                selectedTitle = selectedTitle,
+                selectedEpisode = stremioState.selectedEpisode,
+                activeStreamImdbId = stremioState.activeStreamImdbId,
+                activeStreamLabel = stremioState.activeStreamLabel,
+                canNavigateBack = stremioState.canNavigateBack,
+                backButtonLabel =
+                    if (selectedTitle?.isSeries == true) {
+                        stringResource(R.string.search_stremio_back_episodes)
+                    } else {
+                        stringResource(R.string.search_stremio_back_titles)
+                    },
+                onBack = onBack,
+                initialExpanded = true,
+            )
         }
 
         if (stremioState.showFilterBar && (!stremioState.isLoadingStreams && stremioState.streamResults.isNotEmpty() || stremioState.filterQuery.isNotEmpty())) {
@@ -1157,15 +1435,29 @@ fun SearchResultCard(
             Text(
                 text = result.title,
                 style = MaterialTheme.typography.titleSmall,
-                maxLines = 3,
+                maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
             )
-            Row(
+            FlowRow(
                 modifier = Modifier.padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 AssistChip(onClick = {}, label = { Text(result.indexerName) })
+                result.categories.forEach { category ->
+                    Surface(
+                        shape = RoundedCornerShape(0.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                    ) {
+                        Text(
+                            text = category,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                        )
+                    }
+                }
                 if (result.sizeBytes > 0L) {
                     Text(convertToSize(result.sizeBytes), style = MaterialTheme.typography.labelMedium)
                 }
@@ -1175,7 +1467,12 @@ fun SearchResultCard(
             }
             if ((!result.isFromStremioAddon && !result.isDirectStream) || result.seeders > 0 || result.peers > 0) {
                 Text(
-                    text = stringResource(R.string.search_result_seeders_peers, result.seeders, result.peers),
+                    text =
+                        if (result.isFromStremioAddon && result.seeders > 0 && result.peers == 0) {
+                            stringResource(R.string.search_result_seeders_only, result.seeders)
+                        } else {
+                            stringResource(R.string.search_result_seeders_peers, result.seeders, result.peers)
+                        },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -1244,7 +1541,12 @@ fun SearchSortSheet(
                     SegmentedButton(
                         selected = searchMode == mode,
                         onClick = { onSearchMode(mode) },
-                        shape = SegmentedButtonDefaults.itemShape(index, SearchMode.entries.size),
+                        shape =
+                            SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = SearchMode.entries.size,
+                                baseShape = RoundedCornerShape(0.dp),
+                            ),
                     ) {
                         Text(mode.label())
                     }

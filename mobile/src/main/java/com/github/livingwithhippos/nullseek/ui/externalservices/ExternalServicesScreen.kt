@@ -26,17 +26,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -44,7 +40,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -68,15 +63,20 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.github.livingwithhippos.nullseek.R
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceType
 import com.github.livingwithhippos.nullseek.data.model.Indexer
+import com.github.livingwithhippos.nullseek.ui.addons.AddonsViewModel
+import com.github.livingwithhippos.nullseek.ui.theme.Button
+import com.github.livingwithhippos.nullseek.ui.theme.FilledTonalButton
+import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
+import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
-import com.github.livingwithhippos.nullseek.ui.addons.AddonsViewModel
 import com.github.livingwithhippos.nullseek.utils.openWebPage
 import org.koin.androidx.compose.koinViewModel
 
@@ -237,7 +237,7 @@ fun ExternalServicesScreen(
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = "Kodi and VLC remote playback",
+                            text = stringResource(R.string.external_services_media_players_summary),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -511,7 +511,7 @@ private fun ServiceCard(
                     )
 
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
+                        shape = RoundedCornerShape(0.dp),
                         color = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
                         Text(
@@ -523,7 +523,7 @@ private fun ServiceCard(
                     }
                     if (service.isDefault) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(0.dp),
                             color = MaterialTheme.colorScheme.primaryContainer,
                         ) {
                             Text(
@@ -684,7 +684,7 @@ private fun ServiceEditDialog(
                             selectedType = ExternalServiceType.KODI
                             if (address.isBlank()) address = "192.168.1.100:8080"
                         },
-                        label = { Text("Kodi") },
+                        label = { Text(ExternalServiceType.KODI.displayName) },
                     )
                     FilterChip(
                         selected = selectedType == ExternalServiceType.VLC,
@@ -693,7 +693,7 @@ private fun ServiceEditDialog(
                             username = ""
                             if (address.isBlank()) address = "192.168.1.100:9090"
                         },
-                        label = { Text("VLC") },
+                        label = { Text(ExternalServiceType.VLC.displayName) },
                     )
                 }
 

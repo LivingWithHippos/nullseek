@@ -51,4 +51,7 @@ interface ExternalServiceDao {
 
     @Query("DELETE FROM external_services WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM external_services")
+    suspend fun deleteAll()
 }
