@@ -24,15 +24,21 @@ import com.github.livingwithhippos.nullseek.ui.externalservices.ExternalServices
 import com.github.livingwithhippos.nullseek.ui.home.HomeScreen
 import com.github.livingwithhippos.nullseek.ui.lists.ListsScreen
 import com.github.livingwithhippos.nullseek.ui.navigation.NavigationActions
+import com.github.livingwithhippos.nullseek.ui.navigation.NEW_DOWNLOAD_DESTINATION
 import com.github.livingwithhippos.nullseek.ui.navigation.NullNavigationWrapper
 import com.github.livingwithhippos.nullseek.ui.navigation.Route
 import com.github.livingwithhippos.nullseek.ui.navigation.SETTINGS_DESTINATION
+import com.github.livingwithhippos.nullseek.ui.navigation.TOP_LEVEL_DESTINATIONS
 import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadScreen
 import com.github.livingwithhippos.nullseek.ui.providers.ProvidersScreen
 import com.github.livingwithhippos.nullseek.ui.search.SearchScreen
 import com.github.livingwithhippos.nullseek.ui.settings.SettingsScreen
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.widget.WIDGET_DEST_LISTS
+import com.github.livingwithhippos.nullseek.widget.WIDGET_DEST_NEW_DOWNLOAD
+import com.github.livingwithhippos.nullseek.widget.WIDGET_DEST_SEARCH
+import com.github.livingwithhippos.nullseek.widget.WIDGET_DEST_SETTINGS
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
 import com.github.livingwithhippos.torbox.model.WebDownloadDto
@@ -56,7 +62,9 @@ fun NullSeekApp(
     loadUsenetDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
     closeDetails: () -> Unit,
     reloadProviders: () -> Unit = {},
-    viewmodel: NullViewModel = koinViewModel<NullViewModel>()
+    pendingWidgetDestination: String? = null,
+    onWidgetDestinationConsumed: () -> Unit = {},
+    viewmodel: NullViewModel = koinViewModel<NullViewModel>(),
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -96,6 +104,47 @@ fun NullSeekApp(
             navController.navigate(Route.Home) {
                 popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
                 launchSingleTop = true
+            }
+        }
+    }
+
+    LaunchedEffect(pendingWidgetDestination, rootUiState.loading, rootUiState.user) {
+        val destination = pendingWidgetDestination ?: return@LaunchedEffect
+        when (destination) {
+            WIDGET_DEST_SETTINGS -> {
+                navigationActions.navigateTo(SETTINGS_DESTINATION)
+                onWidgetDestinationConsumed()
+            }
+
+            WIDGET_DEST_SEARCH -> {
+                TOP_LEVEL_DESTINATIONS.firstOrNull { it.route == Route.Search }?.let {
+                    navigationActions.navigateTo(it)
+                }
+                onWidgetDestinationConsumed()
+            }
+
+            WIDGET_DEST_NEW_DOWNLOAD -> {
+                if (!rootUiState.loading) {
+                    if (rootUiState.user != null) {
+                        navigationActions.navigateTo(NEW_DOWNLOAD_DESTINATION)
+                    }
+                    onWidgetDestinationConsumed()
+                }
+            }
+
+            WIDGET_DEST_LISTS -> {
+                if (!rootUiState.loading) {
+                    if (rootUiState.user != null) {
+                        TOP_LEVEL_DESTINATIONS.firstOrNull { it.route == Route.Lists }?.let {
+                            navigationActions.navigateTo(it)
+                        }
+                    }
+                    onWidgetDestinationConsumed()
+                }
+            }
+
+            else -> {
+                onWidgetDestinationConsumed()
             }
         }
     }

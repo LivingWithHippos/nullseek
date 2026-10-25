@@ -403,4 +403,29 @@
     <!-- File Filter Scope -->
     <string name="filter_files_full_path_title">Filter files by full path</string>
     <string name="filter_files_full_path_summary">Match the full file path in detail file search instead of only the file name</string>
+
+    <!-- Widgets & Premium -->
+    <string name="widgets_premium_title">Home Screen Widgets</string>
+    <string name="widgets_foss_summary">Open Source Edition — All TorBox home screen widgets are unlocked</string>
+    <string name="widgets_playstore_unlocked_summary">Subscription active — All TorBox home screen widgets are unlocked</string>
+    <string name="widgets_playstore_locked_summary">Unlock the TorBox Active Downloads and Quick Actions home screen widgets with a subscription</string>
+    <string name="widgets_subscribe_button">Subscribe to Unlock</string>
+    <string name="widgets_subscribe_with_price">Subscribe (%1$s)</string>
+    <string name="widgets_restore_purchases">Restore purchases</string>
+    <string name="widgets_pin_downloads">Add Downloads Widget</string>
+    <string name="widgets_pin_quick_actions">Add Quick Actions Widget</string>
+    <string name="widgets_pin_unsupported">Your launcher does not support pinning widgets directly. Add them from your home screen widget picker.</string>
+    <string name="widget_downloads_label">TorBox Downloads</string>
+    <string name="widget_downloads_description">Shows active and recent TorBox torrents, web downloads, and usenet transfers</string>
+    <string name="widget_quick_actions_label">TorBox Quick Actions</string>
+    <string name="widget_quick_actions_description">Shortcuts to add downloads, search, and open your TorBox lists</string>
+    <string name="widget_locked_title">Premium Widget</string>
+    <string name="widget_locked_message">Subscribe in NullSeek to unlock TorBox home screen widgets</string>
+    <string name="widget_setup_needed_title">TorBox Account Needed</string>
+    <string name="widget_setup_needed_message">Tap to configure your TorBox API token in NullSeek</string>
+    <string name="widget_no_downloads">No active or recent downloads</string>
+    <string name="widget_action_add">Add</string>
+    <string name="widget_action_search">Search</string>
+    <string name="widget_action_lists">Lists</string>
+    <string name="widget_action_refresh">Refresh</string>
 </resources>

@@ -31,6 +31,21 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    flavorDimensions += "distribution"
+
+    productFlavors {
+        create("foss") {
+            dimension = "distribution"
+            buildConfigField("boolean", "IS_FOSS", "true")
+            buildConfigField("String", "SUBSCRIPTION_PRODUCT_ID", "\"\"")
+        }
+        create("playstore") {
+            dimension = "distribution"
+            buildConfigField("boolean", "IS_FOSS", "false")
+            buildConfigField("String", "SUBSCRIPTION_PRODUCT_ID", "\"nullseek_premium_widgets\"")
+        }
+    }
+
     buildTypes {
         release {
             optimization {
@@ -49,6 +64,8 @@ android {
 }
 
 dependencies {
+    val playstoreImplementation by configurations
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     // implementation(libs.androidx.compose.material3)
@@ -60,6 +77,11 @@ dependencies {
     implementation(libs.androidx.compose.material3.adaptive.navigationSuite)
     implementation(libs.androidx.compose.materialWindow)
     implementation(libs.accompanist.adaptive)
+
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+    implementation(libs.androidx.work.runtime.ktx)
+    playstoreImplementation(libs.play.billing.ktx)
 
     implementation(libs.androidx.paging)
     implementation(libs.androidx.paging.compose)

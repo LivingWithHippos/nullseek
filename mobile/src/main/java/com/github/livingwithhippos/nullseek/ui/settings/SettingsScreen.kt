@@ -1,6 +1,11 @@
 package com.github.livingwithhippos.nullseek.ui.settings
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -58,6 +63,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.github.livingwithhippos.nullseek.BuildConfig
+import com.github.livingwithhippos.nullseek.billing.BillingManager
+import com.github.livingwithhippos.nullseek.billing.EntitlementState
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
@@ -72,10 +80,13 @@ import com.github.livingwithhippos.nullseek.ui.theme.shouldUseDarkTheme
 import com.github.livingwithhippos.nullseek.ui.theme.swatchColor
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.widget.TorboxDownloadsWidgetReceiver
+import com.github.livingwithhippos.nullseek.widget.TorboxQuickActionsWidgetReceiver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -97,6 +108,7 @@ fun SettingsScreen(
     onNavigateToProviders: () -> Unit = {},
     onProvidersChanged: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
+    billingManager: BillingManager = koinInject(),
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -111,6 +123,7 @@ fun SettingsScreen(
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
     val externalDisclaimerAccepted by viewModel.externalDisclaimerAccepted.collectAsStateWithLifecycle()
     val isBackupBusy by viewModel.isBackupBusy.collectAsStateWithLifecycle()
+    val entitlementState by billingManager.entitlementState.collectAsStateWithLifecycle()
 
     var pendingBackupJson by remember { mutableStateOf<String?>(null) }
 
@@ -204,6 +217,29 @@ fun SettingsScreen(
             },
             onNavigateToExternalServices = onNavigateToExternalServices,
             onNavigateToProviders = onNavigateToProviders,
+            entitlementState = entitlementState,
+            onSubscribeClick = {
+                context.findActivity()?.let { activity ->
+                    billingManager.launchSubscriptionFlow(activity)
+                }
+            },
+            onRestorePurchasesClick = {
+                billingManager.refreshPurchases()
+            },
+            onPinDownloadsWidgetClick = {
+                if (!requestPinWidget(context, TorboxDownloadsWidgetReceiver::class.java)) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(context.getString(R.string.widgets_pin_unsupported))
+                    }
+                }
+            },
+            onPinQuickActionsWidgetClick = {
+                if (!requestPinWidget(context, TorboxQuickActionsWidgetReceiver::class.java)) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(context.getString(R.string.widgets_pin_unsupported))
+                    }
+                }
+            },
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -232,6 +268,15 @@ fun SettingsScreen(
     onRestoreBackup: () -> Unit = {},
     onNavigateToExternalServices: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
+    entitlementState: EntitlementState =
+        EntitlementState(
+            isFossBuild = BuildConfig.IS_FOSS,
+            isPremiumUnlocked = BuildConfig.IS_FOSS,
+        ),
+    onSubscribeClick: () -> Unit = {},
+    onRestorePurchasesClick: () -> Unit = {},
+    onPinDownloadsWidgetClick: () -> Unit = {},
+    onPinQuickActionsWidgetClick: () -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
     var pageSizeInput by rememberSaveable { mutableStateOf(pagingLoadSize.toString()) }
@@ -379,6 +424,14 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            WidgetsPremiumSettingsCard(
+                entitlementState = entitlementState,
+                onSubscribeClick = onSubscribeClick,
+                onRestorePurchasesClick = onRestorePurchasesClick,
+                onPinDownloadsWidgetClick = onPinDownloadsWidgetClick,
+                onPinQuickActionsWidgetClick = onPinQuickActionsWidgetClick,
+            )
 
             OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -690,6 +743,123 @@ fun SettingsScreen(
         }
     }
 }
+
+@Composable
+private fun WidgetsPremiumSettingsCard(
+    entitlementState: EntitlementState,
+    onSubscribeClick: () -> Unit,
+    onRestorePurchasesClick: () -> Unit,
+    onPinDownloadsWidgetClick: () -> Unit,
+    onPinQuickActionsWidgetClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val summaryText =
+        when {
+            entitlementState.isFossBuild -> stringResource(id = R.string.widgets_foss_summary)
+            entitlementState.isPremiumUnlocked -> stringResource(id = R.string.widgets_playstore_unlocked_summary)
+            else -> stringResource(id = R.string.widgets_playstore_locked_summary)
+        }
+
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(id = R.string.widgets_premium_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = summaryText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            if (entitlementState.errorMessage != null) {
+                Text(
+                    text = entitlementState.errorMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            if (entitlementState.isPremiumUnlocked) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = onPinDownloadsWidgetClick,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(text = stringResource(id = R.string.widgets_pin_downloads))
+                    }
+
+                    OutlinedButton(
+                        onClick = onPinQuickActionsWidgetClick,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(text = stringResource(id = R.string.widgets_pin_quick_actions))
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Button(
+                        onClick = onSubscribeClick,
+                        enabled = !entitlementState.isLoading,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        val buttonText =
+                            if (!entitlementState.formattedPrice.isNullOrBlank()) {
+                                stringResource(
+                                    id = R.string.widgets_subscribe_with_price,
+                                    entitlementState.formattedPrice,
+                                )
+                            } else {
+                                stringResource(id = R.string.widgets_subscribe_button)
+                            }
+                        Text(text = buttonText)
+                    }
+
+                    OutlinedButton(
+                        onClick = onRestorePurchasesClick,
+                        enabled = !entitlementState.isLoading,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(text = stringResource(id = R.string.widgets_restore_purchases))
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun requestPinWidget(
+    context: Context,
+    receiverClass: Class<*>,
+): Boolean {
+    val appWidgetManager = AppWidgetManager.getInstance(context)
+    if (!appWidgetManager.isRequestPinAppWidgetSupported) {
+        return false
+    }
+    val provider = ComponentName(context, receiverClass)
+    return appWidgetManager.requestPinAppWidget(provider, null, null)
+}
+
+private tailrec fun Context.findActivity(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }
 
 @Composable
 private fun DownloadZipModeOption(
