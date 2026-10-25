@@ -53,7 +53,6 @@ import com.github.livingwithhippos.nullseek.core.utils.mockUser
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
-import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.model.UserDataDto
 import logcat.asLog

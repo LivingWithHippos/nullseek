@@ -42,13 +42,13 @@ import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
 import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
+import com.github.livingwithhippos.nullseek.tv.ui.components.ConfirmDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.LocalMessenger
 import com.github.livingwithhippos.nullseek.tv.ui.components.ScreenHeader
 import com.github.livingwithhippos.nullseek.tv.ui.components.SectionCard
 import com.github.livingwithhippos.nullseek.tv.ui.components.SwitchRow
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvActionButton
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvDialog
-import com.github.livingwithhippos.nullseek.tv.ui.components.ConfirmDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.launchSafely
 import com.github.livingwithhippos.nullseek.tv.ui.components.onFocusSelect
 import com.github.livingwithhippos.nullseek.tv.ui.components.readTextFromUri

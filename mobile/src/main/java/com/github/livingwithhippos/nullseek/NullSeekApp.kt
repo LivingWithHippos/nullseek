@@ -23,8 +23,8 @@ import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.ui.externalservices.ExternalServicesScreen
 import com.github.livingwithhippos.nullseek.ui.home.HomeScreen
 import com.github.livingwithhippos.nullseek.ui.lists.ListsScreen
-import com.github.livingwithhippos.nullseek.ui.navigation.NavigationActions
 import com.github.livingwithhippos.nullseek.ui.navigation.NEW_DOWNLOAD_DESTINATION
+import com.github.livingwithhippos.nullseek.ui.navigation.NavigationActions
 import com.github.livingwithhippos.nullseek.ui.navigation.NullNavigationWrapper
 import com.github.livingwithhippos.nullseek.ui.navigation.Route
 import com.github.livingwithhippos.nullseek.ui.navigation.SETTINGS_DESTINATION

@@ -1,6 +1,5 @@
 package com.github.livingwithhippos.nullseek.widget
 
-import androidx.glance.LocalContext
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -12,6 +11,7 @@ import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
