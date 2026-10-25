@@ -22,8 +22,8 @@ fun Context.getFileName(uri: Uri): String {
 fun isValidDownloadLink(link: String): Boolean {
     val trimmed = link.trim()
     return trimmed.startsWith("magnet:?xt=urn:btih:", ignoreCase = true) ||
-            trimmed.startsWith("http://", ignoreCase = true) ||
-            trimmed.startsWith("https://", ignoreCase = true)
+        trimmed.startsWith("http://", ignoreCase = true) ||
+        trimmed.startsWith("https://", ignoreCase = true)
 }
 
 /** Splits free text into the links that can be sent to Torbox. */

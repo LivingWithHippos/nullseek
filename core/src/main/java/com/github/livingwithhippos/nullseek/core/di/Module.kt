@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room3.Room
+import com.github.livingwithhippos.nullseek.NullRootViewModel
 import com.github.livingwithhippos.nullseek.core.data.database.NullDatabase
 import com.github.livingwithhippos.nullseek.core.data.database.dao.ExternalServiceDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.IndexerDao
@@ -23,10 +24,6 @@ import com.github.livingwithhippos.nullseek.core.data.repository.StremioAddonRep
 import com.github.livingwithhippos.nullseek.core.data.repository.StremioAddonRepositoryImpl
 import com.github.livingwithhippos.nullseek.core.data.stremio.AddonClient
 import com.github.livingwithhippos.nullseek.core.data.stremio.AddonManager
-import com.github.livingwithhippos.torbox.client.TorboxClient
-import com.github.livingwithhippos.torbox.network.TorboxAuthState
-import com.github.livingwithhippos.torbox.network.TorboxClientConfig
-import com.github.livingwithhippos.nullseek.NullRootViewModel
 import com.github.livingwithhippos.nullseek.core.data.stremio.AddonSearchHelper
 import com.github.livingwithhippos.nullseek.data.remote.IndexerRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.KodiRemoteClient
@@ -47,6 +44,9 @@ import com.github.livingwithhippos.nullseek.ui.providers.ProvidersViewModel
 import com.github.livingwithhippos.nullseek.ui.search.SearchViewModel
 import com.github.livingwithhippos.nullseek.ui.settings.SettingsViewModel
 import com.github.livingwithhippos.nullseek.ui.user.UserViewModel
+import com.github.livingwithhippos.torbox.client.TorboxClient
+import com.github.livingwithhippos.torbox.network.TorboxAuthState
+import com.github.livingwithhippos.torbox.network.TorboxClientConfig
 import okhttp3.OkHttpClient
 import org.koin.dsl.module
 import org.koin.plugin.module.dsl.create

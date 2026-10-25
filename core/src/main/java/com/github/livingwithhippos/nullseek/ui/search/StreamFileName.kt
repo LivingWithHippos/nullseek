@@ -11,7 +11,12 @@ fun resolveStreamFileName(
     title: String,
     url: String,
 ): String {
-    val lines = title.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
+    val lines =
+        title
+            .lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toList()
     for (line in lines) {
         val candidate = line.substringAfterLast('/').substringAfterLast('\\').trim()
         if (isStreamableOrSubtitle(candidate)) {
