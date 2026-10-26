@@ -1,0 +1,74 @@
+name: Build
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    name: Build release APKs (mobile FOSS, tv FOSS)
+    runs-on: ubuntu-latest
+    # skip on pull requests from forks: they cannot access the signing keystore secrets.
+    # build-debug still runs for them.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+      - name: Retrieve keystore for apk signing
+        env:
+          ENCODED_KEYSTORE: ${{ secrets.KEYSTORE }}
+        run: echo "$ENCODED_KEYSTORE" | base64 --decode > "${{ runner.temp }}/release.keystore"
+      - name: Build the apps
+        env:
+          KEYSTORE: ${{ runner.temp }}/release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew :mobile:assembleFossRelease :tv:assembleFossRelease --stacktrace
+      - name: Save mobile apk
+        uses: actions/upload-artifact@v7
+        with:
+          name: nullseek-mobile-foss
+          path: mobile/build/outputs/apk/foss/release/*.apk
+      - name: Save tv apk
+        uses: actions/upload-artifact@v7
+        with:
+          name: nullseek-tv-foss
+          path: tv/build/outputs/apk/foss/release/*.apk
+
+  build-debug:
+    name: Build debug APKs (mobile FOSS, tv FOSS)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+      - name: Build the apps
+        run: ./gradlew :mobile:assembleFossDebug :tv:assembleFossDebug --stacktrace
+      - name: Save mobile apk
+        uses: actions/upload-artifact@v7
+        with:
+          name: nullseek-mobile-foss-debug
+          path: mobile/build/outputs/apk/foss/debug/*.apk
+      - name: Save tv apk
+        uses: actions/upload-artifact@v7
+        with:
+          name: nullseek-tv-foss-debug
+          path: tv/build/outputs/apk/foss/debug/*.apk

@@ -20,3 +20,6 @@ local.properties
 /extra/voiden/.voiden/history
 /extra/torbox/.voiden
 extra/manifest.example.json
+mise.local.toml
+*.jks
+!debug.jks
