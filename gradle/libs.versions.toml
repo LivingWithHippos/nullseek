@@ -44,7 +44,7 @@ targetSdk = "37"
 # @keep
 versionCode = "1"
 # @keep
-versionName = "1.0"
+versionName = "0.1"
 
 [libraries]
 accompanist-adaptive = { module = "com.google.accompanist:accompanist-adaptive", version.ref = "accompanist" }
