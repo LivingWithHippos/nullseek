@@ -28,6 +28,14 @@ UNDER CONSTRUCTION
 ⠈⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠁⠀
 ```
 
+## Features
+
+- view your Torbox account status
+- manage downloads, torrents and usenet lists
+- create new downloads from links/magnets/torrents
+- send media to remote Kodi/VLC devices
+- support for searching files via Torznab/Stremio addons
+
 ## Donate :coffee:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/E1E412NFX7)
