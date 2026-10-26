@@ -6,7 +6,7 @@ on:
       - master
 jobs:
   build:
-    name: Build release APKs (mobile FOSS, tv FOSS)
+    name: Build release APKs
     runs-on: ubuntu-latest
     # skip on pull requests from forks: they cannot access the signing keystore secrets.
     # build-debug still runs for them.
@@ -46,7 +46,7 @@ jobs:
           path: tv/build/outputs/apk/foss/release/*.apk
 
   build-debug:
-    name: Build debug APKs (mobile FOSS, tv FOSS)
+    name: Build debug APKs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
