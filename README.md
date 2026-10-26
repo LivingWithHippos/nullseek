@@ -34,7 +34,12 @@ UNDER CONSTRUCTION
 - manage downloads, torrents and usenet lists
 - create new downloads from links/magnets/torrents
 - send media to remote Kodi/VLC devices
+- two widgets for monitoring/adding links (free for FOSS users, premium on the Play Store (todo))
 - support for searching files via Torznab/Stremio addons
+
+| User                                                                                                              | New Download                                                                                                       | IMDB                                                                                                   | Settings                                                                                                                  |
+|-------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| <img width="150" src="/fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg?raw=true" alt="User Screen"> | <img width="150" src="/fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg?raw=true" alt="New Download"> | <img width="150" src="/fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg?raw=true" alt="IMDB"> | <img width="150" src="/fastlane/metadata/android/en-US/images/phoneScreenshots/4.jpg?raw=true" alt="New download screen"> |
 
 ## Donate :coffee:
 
