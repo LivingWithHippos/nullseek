@@ -29,6 +29,19 @@ android {
         versionName = libs.versions.versionName.get()
     }
 
+    flavorDimensions += "distribution"
+
+    productFlavors {
+        create("foss") {
+            dimension = "distribution"
+            buildConfigField("boolean", "IS_FOSS", "true")
+        }
+        create("playstore") {
+            dimension = "distribution"
+            buildConfigField("boolean", "IS_FOSS", "false")
+        }
+    }
+
     buildTypes {
         release {
             optimization {

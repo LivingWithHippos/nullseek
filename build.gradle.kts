@@ -39,4 +39,85 @@ subprojects {
             ktlint()
         }
     }
+
+    pluginManager.withPlugin("com.android.application") {
+        val debugKeystore = rootProject.file("debug.jks")
+        val githubKeystore =
+            providers
+                .environmentVariable("GITHUB_KEYSTORE")
+                .orElse(providers.environmentVariable("KEYSTORE"))
+                .orNull
+                ?.let(rootProject::file)
+        val playstoreKeystore =
+            providers
+                .environmentVariable("PLAYSTORE_KEYSTORE")
+                .orNull
+                ?.let(rootProject::file)
+
+        configure<com.android.build.api.dsl.ApplicationExtension> {
+            signingConfigs {
+                getByName("debug") {
+                    if (debugKeystore.exists()) {
+                        storeFile = debugKeystore
+                        storePassword = "android"
+                        keyAlias = "androiddebugkey"
+                        keyPassword = "android"
+                    }
+                }
+                create("githubRelease") {
+                    if (githubKeystore?.exists() == true) {
+                        storeFile = githubKeystore
+                        storePassword =
+                            providers
+                                .environmentVariable("GITHUB_KEYSTORE_PASSWORD")
+                                .orElse(providers.environmentVariable("KEYSTORE_PASSWORD"))
+                                .orNull
+                        keyAlias =
+                            providers
+                                .environmentVariable("GITHUB_KEY_ALIAS")
+                                .orElse(providers.environmentVariable("KEY_ALIAS"))
+                                .orNull
+                        keyPassword =
+                            providers
+                                .environmentVariable("GITHUB_KEY_PASSWORD")
+                                .orElse(providers.environmentVariable("KEY_PASSWORD"))
+                                .orNull
+                    }
+                }
+                create("playstoreRelease") {
+                    if (playstoreKeystore?.exists() == true) {
+                        storeFile = playstoreKeystore
+                        storePassword = providers.environmentVariable("PLAYSTORE_KEYSTORE_PASSWORD").orNull
+                        keyAlias = providers.environmentVariable("PLAYSTORE_KEY_ALIAS").orNull
+                        keyPassword = providers.environmentVariable("PLAYSTORE_KEY_PASSWORD").orNull
+                    }
+                }
+            }
+
+            productFlavors.configureEach {
+                when (name) {
+                    "foss" -> {
+                        if (githubKeystore?.exists() == true) {
+                            signingConfig = signingConfigs.getByName("githubRelease")
+                        }
+                    }
+                    "playstore" -> {
+                        if (playstoreKeystore?.exists() == true) {
+                            signingConfig = signingConfigs.getByName("playstoreRelease")
+                        }
+                    }
+                }
+            }
+
+            buildTypes {
+                getByName("debug") {
+                    if (debugKeystore.exists()) {
+                        signingConfig = signingConfigs.getByName("debug")
+                    }
+                    versionNameSuffix = "-dev"
+                    applicationIdSuffix = ".debug"
+                }
+            }
+        }
+    }
 }
