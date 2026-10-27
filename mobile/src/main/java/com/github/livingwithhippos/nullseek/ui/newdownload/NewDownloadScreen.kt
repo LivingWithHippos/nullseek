@@ -73,6 +73,7 @@ fun NewDownloadScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit = {},
     initialLinks: String = "",
+    initialFiles: List<Uri> = emptyList(),
     viewModel: NewDownloadViewModel = koinViewModel()
 ) {
     var linkText by rememberSaveable(initialLinks) { mutableStateOf(initialLinks) }
@@ -80,7 +81,7 @@ fun NewDownloadScreen(
 
     var advancedExpanded by rememberSaveable { mutableStateOf(false) }
 
-    var selectedFiles by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var selectedFiles by remember(initialFiles) { mutableStateOf(initialFiles) }
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
     ) { uris ->

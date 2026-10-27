@@ -3,3 +3,6 @@
 .voiden/*
 !.voiden/env-public.yaml
 !.voiden/env-*-public.yaml
+
+# Voiden
+.voiden-inherited.void

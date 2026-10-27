@@ -30,6 +30,8 @@
     <string name="allow_zipped_downloads">Allow downloads to be zipped if necessary</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_add_downloads">Add Downloads (%1$d)</string>
+    <string name="incoming_nothing_to_download">Nothing to download in the shared content</string>
+    <string name="incoming_setup_provider_first">Set up a provider first to add downloads</string>
     <string name="open_torbox_settings">Open Torbox Web Settings</string>
     <string name="open_torbox_subscription">Open Subscription Page</string>
     <string name="referral_dialog_title">Support NullSeek?</string>
