@@ -2,7 +2,6 @@ package com.github.livingwithhippos.nullseek.ui.user
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToDays
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
@@ -58,7 +58,6 @@ import com.github.livingwithhippos.torbox.model.UserDataDto
 import logcat.asLog
 import logcat.logcat
 import org.koin.compose.viewmodel.koinViewModel
-import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

@@ -2,7 +2,6 @@ package com.github.livingwithhippos.nullseek
 
 import android.net.Uri
 import android.widget.Toast
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
