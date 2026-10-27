@@ -24,7 +24,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,6 +73,7 @@ fun NewDownloadScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit = {},
     initialLinks: String = "",
+    initialFiles: List<Uri> = emptyList(),
     viewModel: NewDownloadViewModel = koinViewModel()
 ) {
     var linkText by rememberSaveable(initialLinks) { mutableStateOf(initialLinks) }
@@ -80,7 +81,7 @@ fun NewDownloadScreen(
 
     var advancedExpanded by rememberSaveable { mutableStateOf(false) }
 
-    var selectedFiles by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var selectedFiles by remember(initialFiles) { mutableStateOf(initialFiles) }
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
     ) { uris ->
@@ -100,7 +101,7 @@ fun NewDownloadScreen(
         R.string.seeding_seed,
         R.string.seeding_dont_seed
     )
-    var selectedSeedingOption by rememberSaveable { mutableStateOf(seedingOptions[0]) }
+    var selectedSeedingOption by rememberSaveable { mutableIntStateOf(seedingOptions[0]) }
 
     val usenetOptions = listOf(
         R.string.usenet_default,
@@ -109,7 +110,7 @@ fun NewDownloadScreen(
         R.string.usenet_repair_unpack,
         R.string.usenet_repair_unpack_delete
     )
-    var selectedUsenetOption by rememberSaveable { mutableStateOf(usenetOptions[0]) }
+    var selectedUsenetOption by rememberSaveable { mutableIntStateOf(usenetOptions[0]) }
 
     var allowZipped by rememberSaveable { mutableStateOf(true) }
 
@@ -420,7 +421,6 @@ fun LinkInputSection(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FileInputSection(
     selectedFiles: List<Uri>,
@@ -500,7 +500,6 @@ fun FileInputSection(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectableOptionCard(
     text: String,

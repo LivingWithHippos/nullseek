@@ -2,7 +2,6 @@ package com.github.livingwithhippos.nullseek.tv.ui.lists
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -206,7 +205,6 @@ fun TvDetailPane(
         }
         item {
             SectionCard(title = stringResource(R.string.actions), icon = R.drawable.ic_tune) {
-                @OptIn(ExperimentalLayoutApi::class)
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -373,7 +371,6 @@ fun DownloadLinkSection(
             color = MaterialTheme.colorScheme.error,
         )
         Text(result.url, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
-        @OptIn(ExperimentalLayoutApi::class)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (isMedia) {
                 TvActionButton(

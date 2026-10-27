@@ -2,7 +2,6 @@ package com.github.livingwithhippos.nullseek.ui.user
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToDays
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
@@ -68,6 +68,7 @@ fun UserScreen(
     error: String?,
     context: Context = LocalContext.current,
     viewModel: UserViewModel = koinViewModel(),
+    enabled: Boolean = true,
 ) {
     if (loading || user == null) {
         Box(
@@ -132,10 +133,10 @@ fun UserScreen(
             }
         },
         context = context,
+        enabled = enabled,
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun UserScreenContent(
     modifier: Modifier = Modifier,
@@ -144,6 +145,7 @@ fun UserScreenContent(
     onOpenSettingsClick: () -> Unit,
     onOpenSubscriptionClick: () -> Unit,
     context: Context = LocalContext.current,
+    enabled: Boolean = true,
 ) {
     Column(
         modifier =
@@ -167,6 +169,7 @@ fun UserScreenContent(
                 onOpenSettingsClick = onOpenSettingsClick,
                 onOpenSubscriptionClick = onOpenSubscriptionClick,
                 context = context,
+                enabled = enabled,
             )
 
             UserStatsCard(user = user)
@@ -204,6 +207,7 @@ private fun AccountOverviewAndActionsCard(
     onOpenSubscriptionClick: () -> Unit,
     context: Context,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
@@ -308,6 +312,7 @@ private fun AccountOverviewAndActionsCard(
             OutlinedButton(
                 onClick = onOpenSettingsClick,
                 modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.primary,
                 ),
@@ -324,6 +329,7 @@ private fun AccountOverviewAndActionsCard(
             OutlinedButton(
                 onClick = onOpenSubscriptionClick,
                 modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.primary,
                 ),
@@ -343,6 +349,7 @@ private fun AccountOverviewAndActionsCard(
                     setClipboardText(context, user.userReferral)
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
                 colors =
                     ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.primary,
@@ -645,7 +652,7 @@ private fun openBrowser(
     url: String,
 ) {
     try {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
         context.startActivity(intent)
     } catch (e: Exception) {
         logcat("UserScreen") { "Failed to open browser: ${e.asLog()}" }

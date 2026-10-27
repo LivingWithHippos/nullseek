@@ -223,7 +223,7 @@ fun NullNavigationRail(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             TOP_LEVEL_DESTINATIONS.forEach { nullDestination ->
-                val isItemEnabled = if (nullDestination.route == Route.Lists) isUserLoaded else true
+                val isItemEnabled = nullDestination.route != Route.Lists || isUserLoaded
                 NavigationRailItem(
                     selected = currentDestination.hasRoute(nullDestination),
                     enabled = isItemEnabled,

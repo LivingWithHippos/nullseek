@@ -588,10 +588,10 @@ private fun UsenetTransferProgressCard(
 private fun UsenetDownloadLinkCard(
     result: DownloadLinkResult,
     context: Context,
+    modifier: Modifier = Modifier,
     defaultPlayer: ExternalService? = null,
     onPlay: () -> Unit = {},
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
@@ -914,9 +914,9 @@ private fun UsenetDownloadFileDto.isSubtitle(): Boolean = isSubtitleFile(name)
 private fun UsenetFilesCard(
     files: List<UsenetDownloadFileDto>,
     isCached: Boolean,
+    modifier: Modifier = Modifier,
     filterFilesFullPath: Boolean = false,
     onDownloadFile: (Int, String) -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var filterVideo by rememberSaveable { mutableStateOf(false) }

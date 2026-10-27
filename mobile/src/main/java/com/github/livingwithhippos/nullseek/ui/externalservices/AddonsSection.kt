@@ -4,7 +4,6 @@ import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -131,7 +130,6 @@ fun AddonsSection(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddonCard(
     addon: StremioAddonEntity,
@@ -262,7 +260,6 @@ fun AddonCard(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddonEditDialog(
     initialAddon: StremioAddonEntity?,

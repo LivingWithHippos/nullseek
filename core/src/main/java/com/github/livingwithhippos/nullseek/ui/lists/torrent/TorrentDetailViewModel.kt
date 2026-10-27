@@ -41,18 +41,22 @@ sealed interface TorrentDetailEvent {
     data class ShowMessage(
         val message: String,
     ) : TorrentDetailEvent
+
+    data object Deleted : TorrentDetailEvent
 }
 
 data class TorrentDetailUiState(
     val torrent: TorrentDto? = null,
     val isRefreshing: Boolean = false,
     val isDownloading: Boolean = false,
+    val isDeleting: Boolean = false,
     val downloadLinkResult: DownloadLinkResult? = null,
     val isExporting: Boolean = false,
     val isLoadingFullInfo: Boolean = false,
     val fullInfo: TorrentInfoDto? = null,
     val isFullInfoExpanded: Boolean = false,
     val showExportDialog: Boolean = false,
+    val showDeleteConfirmDialog: Boolean = false,
     val pendingDownload: PendingDownload? = null,
 )
 
@@ -409,5 +413,24 @@ class TorrentDetailViewModel(
             _uiState.value.copy(
                 isFullInfoExpanded = !_uiState.value.isFullInfoExpanded,
             )
+    }
+
+    fun showDeleteConfirmDialog(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showDeleteConfirmDialog = show)
+    }
+
+    fun deleteTorrent() {
+        val torrent = _uiState.value.torrent ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isDeleting = true, showDeleteConfirmDialog = false)
+            val response = client.torrent.control(torrentId = torrent.id, operation = "Delete")
+            _uiState.value = _uiState.value.copy(isDeleting = false)
+            if (response is ApiResult.Success) {
+                _events.emit(TorrentDetailEvent.ShowMessage("Torrent deleted"))
+                _events.emit(TorrentDetailEvent.Deleted)
+            } else {
+                _events.emit(TorrentDetailEvent.ShowMessage("Failed to delete torrent"))
+            }
+        }
     }
 }

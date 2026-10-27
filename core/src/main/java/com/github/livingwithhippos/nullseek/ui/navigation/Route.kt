@@ -22,9 +22,10 @@ sealed interface Route {
     @Serializable
     data object ManageProviders : Route
 
-    /** [links] optionally prefills the links field. */
+    /** [links] optionally prefills the links field, [files] preselects file URIs. */
     @Serializable
     data class NewDownload(
         val links: String? = null,
+        val files: List<String> = emptyList(),
     ) : Route
 }

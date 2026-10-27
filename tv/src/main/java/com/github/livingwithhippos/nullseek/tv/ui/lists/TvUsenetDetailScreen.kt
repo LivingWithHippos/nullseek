@@ -24,8 +24,8 @@ fun TvUsenetDetailScreen(
     onClose: () -> Unit,
     isFullScreen: Boolean,
     onToggleFullScreen: () -> Unit,
-    onDeleted: () -> Unit = onClose,
     modifier: Modifier = Modifier,
+    onDeleted: () -> Unit = onClose,
     viewModel: UsenetDetailViewModel = koinViewModel(),
 ) {
     BackHandler(onBack = onClose)
@@ -74,7 +74,7 @@ fun TvUsenetDetailScreen(
         defaultPlayer = defaultPlayer,
         mediaPlayers = mediaPlayers,
         onPlayMedia = viewModel::playOnMedia,
-        files = current.files.orEmpty().map { it.toDetailFile() },
+        files = current.files.map { it.toDetailFile() },
         filterFilesFullPath = filterFilesFullPath,
         onDownloadFile = if (current.cached) { file -> viewModel.startDownload(file.id, file.name) } else null,
         actions = {

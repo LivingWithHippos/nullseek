@@ -1,6 +1,7 @@
 package com.github.livingwithhippos.nullseek
 
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
@@ -11,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -19,7 +21,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
+import com.github.livingwithhippos.nullseek.intent.IncomingDownload
 import com.github.livingwithhippos.nullseek.ui.externalservices.ExternalServicesScreen
 import com.github.livingwithhippos.nullseek.ui.home.HomeScreen
 import com.github.livingwithhippos.nullseek.ui.lists.ListsScreen
@@ -51,7 +55,6 @@ private fun NavigationSuiteType.toNullNavType() = when (this) {
     else -> NullNavigationType.BOTTOM_NAVIGATION
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NullSeekApp(
     windowSize: WindowSizeClass,
@@ -64,6 +67,8 @@ fun NullSeekApp(
     reloadProviders: () -> Unit = {},
     pendingWidgetDestination: String? = null,
     onWidgetDestinationConsumed: () -> Unit = {},
+    pendingIncomingDownload: IncomingDownload? = null,
+    onIncomingDownloadConsumed: () -> Unit = {},
     viewmodel: NullViewModel = koinViewModel<NullViewModel>(),
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -149,6 +154,26 @@ fun NullSeekApp(
         }
     }
 
+    val context = LocalContext.current
+    // links and files opened or shared from other apps go straight to New Download
+    LaunchedEffect(pendingIncomingDownload, rootUiState.loading, rootUiState.user) {
+        val incoming = pendingIncomingDownload ?: return@LaunchedEffect
+        if (rootUiState.loading) return@LaunchedEffect
+        if (rootUiState.user != null) {
+            navController.navigate(
+                Route.NewDownload(
+                    links = incoming.links.ifBlank { null },
+                    files = incoming.files.map(Uri::toString),
+                )
+            ) {
+                launchSingleTop = true
+            }
+        } else {
+            Toast.makeText(context, R.string.incoming_setup_provider_first, Toast.LENGTH_LONG).show()
+        }
+        onIncomingDownloadConsumed()
+    }
+
     Surface {
         NullNavigationWrapper(
             currentDestination = currentDestination,
@@ -173,7 +198,7 @@ fun NullSeekApp(
                     navigationActions.navigateTo(SETTINGS_DESTINATION)
                 },
                 showNewDownload = {
-                    navigationActions.navigateTo(com.github.livingwithhippos.nullseek.ui.navigation.NEW_DOWNLOAD_DESTINATION)
+                    navigationActions.navigateTo(NEW_DOWNLOAD_DESTINATION)
                 },
                 closeDetails = closeDetails,
                 reloadProviders = reloadProviders,
@@ -270,6 +295,7 @@ private fun NullNavHost(
             val route = backStackEntry.toRoute<Route.NewDownload>()
             NewDownloadScreen(
                 initialLinks = route.links.orEmpty(),
+                initialFiles = route.files.map(Uri::parse),
                 contentType = contentType,
                 onNavigateBack = { navController.popBackStack() }
             )

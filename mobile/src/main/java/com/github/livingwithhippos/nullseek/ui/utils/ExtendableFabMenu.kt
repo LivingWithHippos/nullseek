@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -33,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ExtendableFabMenu(
     onNewDownload: () -> Unit,

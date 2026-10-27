@@ -235,9 +235,9 @@ private fun WebDownloadDetailScreen(
             )
 
             // Card 5: Files List
-            if (!item.files.isNullOrEmpty()) {
+            if (item.files.isNotEmpty()) {
                 WebFilesCard(
-                    files = item.files!!,
+                    files = item.files,
                     isCached = item.cached,
                     filterFilesFullPath = filterFilesFullPath,
                     onDownloadFile = onDownloadFile,
@@ -586,10 +586,10 @@ private fun WebTransferProgressCard(
 private fun WebDownloadLinkCard(
     result: DownloadLinkResult,
     context: Context,
+    modifier: Modifier = Modifier,
     defaultPlayer: ExternalService? = null,
     onPlay: () -> Unit = {},
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
@@ -912,9 +912,9 @@ private fun WebDownloadFileDto.isSubtitle(): Boolean = isSubtitleFile(name)
 private fun WebFilesCard(
     files: List<WebDownloadFileDto>,
     isCached: Boolean,
+    modifier: Modifier = Modifier,
     filterFilesFullPath: Boolean = false,
     onDownloadFile: (Int, String) -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var filterVideo by rememberSaveable { mutableStateOf(false) }

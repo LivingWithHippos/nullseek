@@ -30,6 +30,8 @@
     <string name="allow_zipped_downloads">Allow downloads to be zipped if necessary</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_add_downloads">Add Downloads (%1$d)</string>
+    <string name="incoming_nothing_to_download">Nothing to download in the shared content</string>
+    <string name="incoming_setup_provider_first">Set up a provider first to add downloads</string>
     <string name="open_torbox_settings">Open Torbox Web Settings</string>
     <string name="open_torbox_subscription">Open Subscription Page</string>
     <string name="referral_dialog_title">Support NullSeek?</string>
@@ -137,6 +139,8 @@
     <string name="web_download_delete_failed">Failed to delete web download</string>
     <string name="delete_web_download_confirm_title">Delete Web Download</string>
     <string name="delete_web_download_confirm_message">Are you sure you want to delete this web download? This action cannot be undone.</string>
+    <string name="delete_torrent_confirm_title">Delete Torrent</string>
+    <string name="delete_torrent_confirm_message">Are you sure you want to delete this torrent? This action cannot be undone.</string>
     <string name="share_source_link">Share Source Link</string>
     <string name="usenet_refreshed">Usenet download info refreshed</string>
     <string name="usenet_refresh_failed">Failed to refresh usenet info</string>
@@ -194,7 +198,7 @@
     <string name="external_services_password_kodi_hint">Kodi requires the password set in its HTTP interface settings.</string>
     <string name="external_services_set_as_default_label">Set as default player</string>
     <string name="external_services_delete_confirm_title">Delete Service</string>
-    <string name="external_services_delete_confirm_message">Are you sure you want to delete %s service \"%s\"?</string>
+    <string name="external_services_delete_confirm_message">Are you sure you want to delete %1$s service \"%2$s\"?</string>
     <string name="action_play">Play</string>
     <string name="action_play_on">Play on %s</string>
     <string name="action_play_external">Play on external player</string>

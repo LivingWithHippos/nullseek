@@ -29,7 +29,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +43,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -101,7 +101,6 @@ private fun openAppSettings(context: Context) {
     context.startActivity(intent)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExternalServicesScreen(
     contentType: NullContentType,
@@ -603,7 +602,7 @@ private fun ServiceEditDialog(
     onDismiss: () -> Unit,
     onSave: (ExternalService) -> Unit,
 ) {
-    var serviceId by rememberSaveable { mutableStateOf(initialService?.id ?: 0L) }
+    var serviceId by rememberSaveable { mutableLongStateOf(initialService?.id ?: 0L) }
     var name by rememberSaveable { mutableStateOf(initialService?.name.orEmpty()) }
     var selectedType by rememberSaveable {
         mutableStateOf(

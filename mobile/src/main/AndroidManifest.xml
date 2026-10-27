@@ -23,12 +23,59 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.NullSeek"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Magnet links clicked in browsers or other apps -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="magnet" />
+            </intent-filter>
+
+            <!-- .torrent and .nzb files opened from file managers or downloads.
+                 octet-stream is needed because many apps report torrents that way;
+                 other files are rejected in code by extension. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/x-bittorrent" />
+                <data android:mimeType="application/x-nzb" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
+
+            <!-- Links shared from the browser or other apps (any hoster, magnets) -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+
+            <!-- .torrent and .nzb files shared from other apps -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="application/x-bittorrent" />
+                <data android:mimeType="application/x-nzb" />
+                <data android:mimeType="application/octet-stream" />
             </intent-filter>
         </activity>
 

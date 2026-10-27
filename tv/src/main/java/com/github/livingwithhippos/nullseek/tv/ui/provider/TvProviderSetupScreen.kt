@@ -58,6 +58,8 @@ fun TvProviderSetupScreen(
     val isRestoring by viewModel.isRestoringBackup.collectAsStateWithLifecycle()
     var token by rememberSaveable { mutableStateOf("") }
     var showReferralDialog by remember { mutableStateOf(false) }
+    // nothing on the setup screen can be used while a backup is being restored
+    val inputsEnabled = !uiState.loading && !isRestoring
 
     val restoredText = stringResource(R.string.backup_restored_success)
     val restoreFailedText = stringResource(R.string.backup_restore_failed)
@@ -79,7 +81,7 @@ fun TvProviderSetupScreen(
 
     val connect = {
         val clean = token.trim()
-        if (clean.isNotBlank()) checkValidToken(provider, clean)
+        if (clean.isNotBlank() && !isRestoring) checkValidToken(provider, clean)
     }
 
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -96,7 +98,7 @@ fun TvProviderSetupScreen(
                         onValueChange = { token = it },
                         label = stringResource(R.string.api_key),
                         placeholder = stringResource(R.string.paste_api_key_placeholder),
-                        enabled = !uiState.loading,
+                        enabled = inputsEnabled,
                         isPassword = true,
                         imeAction = ImeAction.Done,
                         onImeAction = connect,
@@ -106,18 +108,20 @@ fun TvProviderSetupScreen(
                             text = stringResource(R.string.setup_connect_button),
                             primary = true,
                             loading = uiState.loading,
-                            enabled = token.isNotBlank(),
+                            enabled = token.isNotBlank() && !isRestoring,
                             onClick = connect,
                         )
                         TvActionButton(
                             text = stringResource(R.string.paste_from_clipboard),
                             icon = R.drawable.ic_paste,
+                            enabled = inputsEnabled,
                             onClick = { getClipboardText(context)?.let { token = it.trim() } },
                         )
                     }
                     TvActionButton(
                         text = stringResource(R.string.setup_get_key_button),
                         icon = R.drawable.ic_open_in_new,
+                        enabled = !isRestoring,
                         onClick = { safeOpenUrl(context, provider.tokenLink) },
                     )
                     Text(provider.tokenLink, style = MaterialTheme.typography.bodySmall)
@@ -131,6 +135,7 @@ fun TvProviderSetupScreen(
                     TvActionButton(
                         text = stringResource(R.string.setup_signup_button),
                         icon = R.drawable.ic_open_in_new,
+                        enabled = !isRestoring,
                         onClick = {
                             when (referralPreference) {
                                 null -> showReferralDialog = true

@@ -230,6 +230,10 @@ fun TvListsScreen(
                                     onClose = closeDetail,
                                     isFullScreen = detailFullScreen,
                                     onToggleFullScreen = toggle,
+                                    onDeleted = {
+                                        closeDetail()
+                                        torrents.refresh()
+                                    },
                                 )
                             }
 
