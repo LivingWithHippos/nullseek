@@ -97,6 +97,8 @@ private fun UserOverview(
     val messenger = LocalMessenger.current
     val referralPreference by viewModel.includeReferralPreference.collectAsStateWithLifecycle()
     var showReferralDialog by remember { mutableStateOf(false) }
+    val isRestoring by viewModel.isRestoringBackup.collectAsStateWithLifecycle()
+    val enabled = !isRestoring
 
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenHeader(title = stringResource(R.string.account_overview), subtitle = user.email)
@@ -104,10 +106,10 @@ private fun UserOverview(
         // quick actions first: they are the first thing focused when the app opens
         @OptIn(ExperimentalLayoutApi::class)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            TvActionButton(stringResource(R.string.lists), onOpenLists, icon = R.drawable.ic_list_bullet, primary = true)
-            TvActionButton(stringResource(R.string.search), onOpenSearch, icon = R.drawable.ic_manage_search)
-            TvActionButton(stringResource(R.string.new_download), onNewDownload, icon = R.drawable.ic_add)
-            TvActionButton(stringResource(R.string.settings), onOpenSettings, icon = R.drawable.ic_settings)
+            TvActionButton(stringResource(R.string.lists), onOpenLists, icon = R.drawable.ic_list_bullet, primary = true, enabled = enabled)
+            TvActionButton(stringResource(R.string.search), onOpenSearch, icon = R.drawable.ic_manage_search, enabled = enabled)
+            TvActionButton(stringResource(R.string.new_download), onNewDownload, icon = R.drawable.ic_add, enabled = enabled)
+            TvActionButton(stringResource(R.string.settings), onOpenSettings, icon = R.drawable.ic_settings, enabled = enabled)
         }
 
         Row(
@@ -128,6 +130,7 @@ private fun UserOverview(
                     InfoRow(stringResource(R.string.added_on), formatToLocalDate(user.createdAt))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         TvActionButton(
+                            enabled = enabled,
                             text = stringResource(R.string.open_torbox_subscription),
                             icon = R.drawable.ic_open_in_new,
                             onClick = {
@@ -140,6 +143,7 @@ private fun UserOverview(
                             },
                         )
                         TvActionButton(
+                            enabled = enabled,
                             text = stringResource(R.string.open_torbox_settings),
                             icon = R.drawable.ic_settings,
                             onClick = { safeOpenUrl(context, viewModel.getTorboxSettingsUrl()) },
@@ -182,6 +186,7 @@ private fun UserOverview(
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         val copied = stringResource(R.string.copy_referral)
                         TvActionButton(
+                            enabled = enabled,
                             text = stringResource(R.string.copy_referral),
                             icon = R.drawable.ic_copy,
                             onClick = {
@@ -191,6 +196,7 @@ private fun UserOverview(
                         )
                         if (referralPreference != null) {
                             TvActionButton(
+                                enabled = enabled,
                                 text = stringResource(R.string.change_referral_choice),
                                 icon = R.drawable.ic_edit,
                                 onClick = viewModel::resetReferralPreference,

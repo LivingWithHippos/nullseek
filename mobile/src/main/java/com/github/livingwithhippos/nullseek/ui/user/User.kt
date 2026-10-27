@@ -68,6 +68,7 @@ fun UserScreen(
     error: String?,
     context: Context = LocalContext.current,
     viewModel: UserViewModel = koinViewModel(),
+    enabled: Boolean = true,
 ) {
     if (loading || user == null) {
         Box(
@@ -132,6 +133,7 @@ fun UserScreen(
             }
         },
         context = context,
+        enabled = enabled,
     )
 }
 
@@ -144,6 +146,7 @@ fun UserScreenContent(
     onOpenSettingsClick: () -> Unit,
     onOpenSubscriptionClick: () -> Unit,
     context: Context = LocalContext.current,
+    enabled: Boolean = true,
 ) {
     Column(
         modifier =
@@ -167,6 +170,7 @@ fun UserScreenContent(
                 onOpenSettingsClick = onOpenSettingsClick,
                 onOpenSubscriptionClick = onOpenSubscriptionClick,
                 context = context,
+                enabled = enabled,
             )
 
             UserStatsCard(user = user)
@@ -204,6 +208,7 @@ private fun AccountOverviewAndActionsCard(
     onOpenSubscriptionClick: () -> Unit,
     context: Context,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
@@ -308,6 +313,7 @@ private fun AccountOverviewAndActionsCard(
             OutlinedButton(
                 onClick = onOpenSettingsClick,
                 modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.primary,
                 ),
@@ -324,6 +330,7 @@ private fun AccountOverviewAndActionsCard(
             OutlinedButton(
                 onClick = onOpenSubscriptionClick,
                 modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.primary,
                 ),
@@ -343,6 +350,7 @@ private fun AccountOverviewAndActionsCard(
                     setClipboardText(context, user.userReferral)
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
                 colors =
                     ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.primary,

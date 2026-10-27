@@ -232,6 +232,7 @@ fun ProviderSetupContent(
             ProviderOnboardingCard(
                 provider = provider,
                 onSignUpClick = onSignUpClick,
+                enabled = !isRestoringBackup,
             )
 
             // Card 2: API Token Configuration Card
@@ -239,6 +240,7 @@ fun ProviderSetupContent(
                 token = token,
                 onTokenChange = { token = it },
                 loading = loading,
+                enabled = !loading && !isRestoringBackup,
                 onGetTokenClick = onGetTokenClick,
                 onConnectClick = {
                     val currentToken = token.trim()
@@ -283,6 +285,7 @@ private fun ProviderOnboardingCard(
     provider: NetProvider,
     onSignUpClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
@@ -319,6 +322,7 @@ private fun ProviderOnboardingCard(
             OutlinedButton(
                 onClick = onSignUpClick,
                 modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_contact_page),
@@ -342,6 +346,7 @@ private fun ProviderTokenConfigCard(
     onConnectClick: () -> Unit,
     context: Context,
     modifier: Modifier = Modifier,
+    enabled: Boolean = !loading,
 ) {
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
@@ -365,7 +370,7 @@ private fun ProviderTokenConfigCard(
             OutlinedButton(
                 onClick = onGetTokenClick,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !loading,
+                enabled = enabled,
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_settings),
@@ -385,7 +390,7 @@ private fun ProviderTokenConfigCard(
                 placeholder = { Text(text = stringResource(id = R.string.paste_api_key_placeholder)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                enabled = !loading,
+                enabled = enabled,
                 trailingIcon = {
                     OutlinedIconButton(
                         onClick = {
@@ -394,7 +399,8 @@ private fun ProviderTokenConfigCard(
                             }
                         },
                         modifier = Modifier.size(36.dp),
-                        border = ButtonDefaults.outlinedButtonBorder(),
+                        enabled = enabled,
+                        border = ButtonDefaults.outlinedButtonBorder(enabled),
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_paste),
@@ -410,7 +416,7 @@ private fun ProviderTokenConfigCard(
             FilledTonalButton(
                 onClick = onConnectClick,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !loading && token.trim().length > 10,
+                enabled = enabled && token.trim().length > 10,
             ) {
                 if (loading) {
                     LoadingIndicator(
