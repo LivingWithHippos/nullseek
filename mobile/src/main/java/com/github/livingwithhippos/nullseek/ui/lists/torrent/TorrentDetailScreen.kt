@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -117,6 +118,10 @@ fun TorrentDetailScreen(
                 is TorrentDetailEvent.ShowMessage -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
+
+                TorrentDetailEvent.Deleted -> {
+                    closeDetails()
+                }
             }
         }
     }
@@ -152,6 +157,8 @@ fun TorrentDetailScreen(
             onExportMagnet = { context -> viewModel.exportMagnet(context) },
             onExportTorrentFile = { context -> viewModel.exportTorrentFile(context) },
             onToggleFullInfo = { viewModel.loadFullInfo() },
+            onShowDeleteDialog = { viewModel.showDeleteConfirmDialog(it) },
+            onConfirmDelete = { viewModel.deleteTorrent() },
         )
     }
 }
@@ -176,6 +183,8 @@ private fun TorrentDetailScreen(
     onExportMagnet: (Context) -> Unit,
     onExportTorrentFile: (Context) -> Unit,
     onToggleFullInfo: () -> Unit,
+    onShowDeleteDialog: (Boolean) -> Unit,
+    onConfirmDelete: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     var showPlayChoiceDialog by remember { mutableStateOf(false) }
@@ -235,6 +244,7 @@ private fun TorrentDetailScreen(
                 onDownloadZip = onDownloadZip,
                 onShowExportDialog = { onShowExportDialog(true) },
                 onToggleFullInfo = onToggleFullInfo,
+                onDelete = { onShowDeleteDialog(true) },
             )
 
             // Expandable Card: Full BitTorrent Swarm Info
@@ -287,6 +297,30 @@ private fun TorrentDetailScreen(
             onDismiss = { onShowExportDialog(false) },
             onExportMagnet = onExportMagnet,
             onExportTorrentFile = onExportTorrentFile,
+        )
+    }
+
+    if (uiState.showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { onShowDeleteDialog(false) },
+            title = { Text(text = stringResource(id = R.string.delete_torrent_confirm_title)) },
+            text = { Text(text = stringResource(id = R.string.delete_torrent_confirm_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = onConfirmDelete,
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                ) {
+                    Text(text = stringResource(id = R.string.action_delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onShowDeleteDialog(false) }) {
+                    Text(text = stringResource(id = R.string.action_cancel))
+                }
+            },
         )
     }
 }
@@ -824,6 +858,7 @@ private fun TorrentActionsCard(
     onDownloadZip: () -> Unit,
     onShowExportDialog: () -> Unit,
     onToggleFullInfo: () -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
@@ -945,6 +980,32 @@ private fun TorrentActionsCard(
                         },
                     )
                 }
+            }
+
+            // Delete Button
+            OutlinedButton(
+                onClick = onDelete,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isDeleting,
+                colors =
+                    ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+            ) {
+                if (uiState.isDeleting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_delete),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = stringResource(id = R.string.action_delete))
             }
         }
     }
@@ -1367,6 +1428,8 @@ fun TorrentDetailScreenPreview() {
                 onExportMagnet = {},
                 onExportTorrentFile = {},
                 onToggleFullInfo = {},
+                onShowDeleteDialog = {},
+                onConfirmDelete = {},
             )
         }
     }

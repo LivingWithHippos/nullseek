@@ -12,6 +12,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.tv.ui.components.ConfirmDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.InfoRow
 import com.github.livingwithhippos.nullseek.tv.ui.components.LocalMessenger
 import com.github.livingwithhippos.nullseek.tv.ui.components.SectionCard
@@ -28,6 +29,7 @@ fun TvTorrentDetailScreen(
     onClose: () -> Unit,
     isFullScreen: Boolean,
     onToggleFullScreen: () -> Unit,
+    onDeleted: () -> Unit = onClose,
     modifier: Modifier = Modifier,
     viewModel: TorrentDetailViewModel = koinViewModel(),
 ) {
@@ -46,6 +48,7 @@ fun TvTorrentDetailScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is TorrentDetailEvent.ShowMessage -> messenger.show(event.message)
+                TorrentDetailEvent.Deleted -> onDeleted()
             }
         }
     }
@@ -110,6 +113,12 @@ fun TvTorrentDetailScreen(
                 loading = uiState.isLoadingFullInfo,
                 onClick = viewModel::loadFullInfo,
             )
+            TvActionButton(
+                text = stringResource(R.string.action_delete),
+                icon = R.drawable.ic_delete,
+                loading = uiState.isDeleting,
+                onClick = { viewModel.showDeleteConfirmDialog(true) },
+            )
         },
         extraSections = {
             if (!torrent.cached) {
@@ -162,5 +171,19 @@ fun TvTorrentDetailScreen(
                 onClick = { viewModel.exportTorrentFile(context) },
             )
         }
+    }
+
+    if (uiState.showDeleteConfirmDialog) {
+        ConfirmDialog(
+            title = stringResource(R.string.delete_torrent_confirm_title),
+            message = stringResource(R.string.delete_torrent_confirm_message),
+            confirmText = stringResource(R.string.delete),
+            onConfirm = {
+                viewModel.showDeleteConfirmDialog(false)
+                viewModel.deleteTorrent()
+            },
+            onDismiss = { viewModel.showDeleteConfirmDialog(false) },
+            dismissText = stringResource(R.string.cancel),
+        )
     }
 }

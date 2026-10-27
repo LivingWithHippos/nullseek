@@ -137,6 +137,8 @@
     <string name="web_download_delete_failed">Failed to delete web download</string>
     <string name="delete_web_download_confirm_title">Delete Web Download</string>
     <string name="delete_web_download_confirm_message">Are you sure you want to delete this web download? This action cannot be undone.</string>
+    <string name="delete_torrent_confirm_title">Delete Torrent</string>
+    <string name="delete_torrent_confirm_message">Are you sure you want to delete this torrent? This action cannot be undone.</string>
     <string name="share_source_link">Share Source Link</string>
     <string name="usenet_refreshed">Usenet download info refreshed</string>
     <string name="usenet_refresh_failed">Failed to refresh usenet info</string>
