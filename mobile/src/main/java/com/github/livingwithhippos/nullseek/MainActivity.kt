@@ -31,7 +31,6 @@ import com.github.livingwithhippos.nullseek.widget.TorboxWidgetUpdateWorker
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 @OptIn(
-    ExperimentalMaterial3ExpressiveApi::class,
     ExperimentalMaterial3WindowSizeClassApi::class,
 )
 class MainActivity : ComponentActivity() {

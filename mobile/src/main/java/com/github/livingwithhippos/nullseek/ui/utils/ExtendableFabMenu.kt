@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ExtendableFabMenu(
     onNewDownload: () -> Unit,

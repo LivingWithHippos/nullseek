@@ -62,7 +62,6 @@ fun CardStatPreview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CopyButton(
     text: String?,

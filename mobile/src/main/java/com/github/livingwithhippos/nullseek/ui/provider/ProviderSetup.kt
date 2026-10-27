@@ -195,7 +195,6 @@ fun ProviderSetup(
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ProviderSetupContent(
     modifier: Modifier = Modifier,

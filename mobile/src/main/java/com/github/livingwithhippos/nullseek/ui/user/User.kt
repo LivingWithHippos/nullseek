@@ -58,6 +58,7 @@ import com.github.livingwithhippos.torbox.model.UserDataDto
 import logcat.asLog
 import logcat.logcat
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -137,7 +138,6 @@ fun UserScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun UserScreenContent(
     modifier: Modifier = Modifier,
@@ -653,7 +653,7 @@ private fun openBrowser(
     url: String,
 ) {
     try {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
         context.startActivity(intent)
     } catch (e: Exception) {
         logcat("UserScreen") { "Failed to open browser: ${e.asLog()}" }

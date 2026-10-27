@@ -1,6 +1,5 @@
 package com.github.livingwithhippos.nullseek.core.data.database
 
-import androidx.room3.AutoMigration
 import androidx.room3.Database
 import androidx.room3.RoomDatabase
 import com.github.livingwithhippos.nullseek.core.data.database.dao.ExternalServiceDao

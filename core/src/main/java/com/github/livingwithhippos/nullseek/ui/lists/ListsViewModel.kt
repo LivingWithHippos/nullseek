@@ -24,7 +24,7 @@ import org.koin.core.annotation.KoinViewModel
 @KoinViewModel
 class ListsViewModel(
     private val client: TorboxClient,
-    private val preferencesRepository: PreferencesRepository,
+    preferencesRepository: PreferencesRepository,
 ) : ViewModel() {
     val torrentsPagingFlow: Flow<PagingData<TorrentDto>> =
         preferencesRepository.pagingLoadSize

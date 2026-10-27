@@ -257,9 +257,9 @@ private fun TorrentDetailScreen(
             }
 
             // Card 5: Files List (with per-file download buttons)
-            if (!item.files.isNullOrEmpty()) {
+            if (item.files.isNotEmpty()) {
                 TorrentFilesCard(
-                    files = item.files!!,
+                    files = item.files,
                     isCached = item.cached,
                     filterFilesFullPath = filterFilesFullPath,
                     onDownloadFile = onDownloadFile,
@@ -642,10 +642,10 @@ private fun TorrentTransferProgressCard(
 private fun TorrentDownloadLinkCard(
     result: DownloadLinkResult,
     context: Context,
+    modifier: Modifier = Modifier,
     defaultPlayer: ExternalService? = null,
     onPlay: () -> Unit = {},
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
@@ -1199,9 +1199,9 @@ private fun TorrentFileDto.isSubtitle(): Boolean = isSubtitleFile(name)
 private fun TorrentFilesCard(
     files: List<TorrentFileDto>,
     isCached: Boolean,
+    modifier: Modifier = Modifier,
     filterFilesFullPath: Boolean = false,
     onDownloadFile: (Int, String) -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var filterVideo by rememberSaveable { mutableStateOf(false) }

@@ -164,7 +164,6 @@ fun SearchScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchContent(
     state: SearchUiState,

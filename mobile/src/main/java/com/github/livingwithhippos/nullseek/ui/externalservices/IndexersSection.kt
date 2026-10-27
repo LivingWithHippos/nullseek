@@ -27,6 +27,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -228,7 +229,7 @@ fun IndexerEditDialog(
     onDismiss: () -> Unit,
     onSave: (Indexer) -> Unit,
 ) {
-    var indexerId by rememberSaveable { mutableStateOf(initialIndexer?.id ?: 0L) }
+    var indexerId by rememberSaveable { mutableLongStateOf(initialIndexer?.id ?: 0L) }
     var name by rememberSaveable { mutableStateOf(initialIndexer?.name.orEmpty()) }
     var selectedType by rememberSaveable { mutableStateOf(initialIndexer?.type ?: IndexerType.JACKETT) }
     var address by rememberSaveable { mutableStateOf(initialIndexer?.address.orEmpty()) }

@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -150,7 +149,6 @@ fun TvSearchResultDetail(
             Text(result.title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f), maxLines = 4)
             TvActionButton(stringResource(R.string.search_detail_back), onClose, icon = R.drawable.ic_close)
         }
-        @OptIn(ExperimentalLayoutApi::class)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Badge(result.indexerName)
             if (result.sizeBytes > 0) Badge(convertToSize(result.sizeBytes), color = MaterialTheme.colorScheme.secondary)
@@ -180,7 +178,6 @@ fun TvSearchResultDetail(
                 if (link != null) {
                     Text(link, maxLines = 3, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
                 }
-                @OptIn(ExperimentalLayoutApi::class)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (link != null && canAddDownloads) {
                         TvActionButton(

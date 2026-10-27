@@ -41,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -101,7 +102,7 @@ fun NewDownloadScreen(
         R.string.seeding_seed,
         R.string.seeding_dont_seed
     )
-    var selectedSeedingOption by rememberSaveable { mutableStateOf(seedingOptions[0]) }
+    var selectedSeedingOption by rememberSaveable { mutableIntStateOf(seedingOptions[0]) }
 
     val usenetOptions = listOf(
         R.string.usenet_default,
@@ -110,7 +111,7 @@ fun NewDownloadScreen(
         R.string.usenet_repair_unpack,
         R.string.usenet_repair_unpack_delete
     )
-    var selectedUsenetOption by rememberSaveable { mutableStateOf(usenetOptions[0]) }
+    var selectedUsenetOption by rememberSaveable { mutableIntStateOf(usenetOptions[0]) }
 
     var allowZipped by rememberSaveable { mutableStateOf(true) }
 
@@ -421,7 +422,6 @@ fun LinkInputSection(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FileInputSection(
     selectedFiles: List<Uri>,
@@ -501,7 +501,6 @@ fun FileInputSection(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectableOptionCard(
     text: String,

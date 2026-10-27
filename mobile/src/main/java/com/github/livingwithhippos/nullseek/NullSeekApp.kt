@@ -56,7 +56,6 @@ private fun NavigationSuiteType.toNullNavType() = when (this) {
     else -> NullNavigationType.BOTTOM_NAVIGATION
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NullSeekApp(
     windowSize: WindowSizeClass,
@@ -200,7 +199,7 @@ fun NullSeekApp(
                     navigationActions.navigateTo(SETTINGS_DESTINATION)
                 },
                 showNewDownload = {
-                    navigationActions.navigateTo(com.github.livingwithhippos.nullseek.ui.navigation.NEW_DOWNLOAD_DESTINATION)
+                    navigationActions.navigateTo(NEW_DOWNLOAD_DESTINATION)
                 },
                 closeDetails = closeDetails,
                 reloadProviders = reloadProviders,

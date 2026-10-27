@@ -74,7 +74,6 @@ private sealed interface ProviderDialog {
 }
 
 @SuppressLint("LocalContextGetResourceValueCall")
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProvidersScreen(
     onNavigateBack: () -> Unit,

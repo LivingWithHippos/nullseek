@@ -2,7 +2,6 @@ package com.github.livingwithhippos.nullseek.tv.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -104,7 +103,6 @@ private fun UserOverview(
         ScreenHeader(title = stringResource(R.string.account_overview), subtitle = user.email)
 
         // quick actions first: they are the first thing focused when the app opens
-        @OptIn(ExperimentalLayoutApi::class)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             TvActionButton(stringResource(R.string.lists), onOpenLists, icon = R.drawable.ic_list_bullet, primary = true, enabled = enabled)
             TvActionButton(stringResource(R.string.search), onOpenSearch, icon = R.drawable.ic_manage_search, enabled = enabled)

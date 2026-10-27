@@ -29,8 +29,8 @@ fun TvTorrentDetailScreen(
     onClose: () -> Unit,
     isFullScreen: Boolean,
     onToggleFullScreen: () -> Unit,
-    onDeleted: () -> Unit = onClose,
     modifier: Modifier = Modifier,
+    onDeleted: () -> Unit = onClose,
     viewModel: TorrentDetailViewModel = koinViewModel(),
 ) {
     BackHandler(onBack = onClose)
@@ -83,7 +83,7 @@ fun TvTorrentDetailScreen(
         defaultPlayer = defaultPlayer,
         mediaPlayers = mediaPlayers,
         onPlayMedia = viewModel::playOnMedia,
-        files = torrent.files.orEmpty().map { it.toDetailFile() },
+        files = torrent.files.map { it.toDetailFile() },
         filterFilesFullPath = filterFilesFullPath,
         onDownloadFile = if (torrent.cached) { file -> viewModel.startDownload(file.id, file.name) } else null,
         actions = {

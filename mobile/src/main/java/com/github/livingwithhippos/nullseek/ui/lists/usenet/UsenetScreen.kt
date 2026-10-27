@@ -90,7 +90,6 @@ fun UsenetScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UsenetScreen(
     modifier: Modifier = Modifier,

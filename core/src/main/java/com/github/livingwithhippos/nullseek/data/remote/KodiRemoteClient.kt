@@ -77,7 +77,7 @@ class KodiRemoteClient(
                     if (!response.isSuccessful) {
                         return@withContext Result.failure(IOException("Kodi HTTP error ${response.code}: ${response.message}"))
                     }
-                    val responseBody = response.body.string().orEmpty()
+                    val responseBody = response.body.string()
                     if (responseBody.contains("\"error\"")) {
                         return@withContext Result.failure(IOException("Kodi returned error: $responseBody"))
                     }
@@ -102,7 +102,7 @@ class KodiRemoteClient(
                     if (!response.isSuccessful) {
                         return@withContext Result.failure(IOException("Kodi HTTP error ${response.code}: ${response.message}"))
                     }
-                    val responseBody = response.body.string().orEmpty()
+                    val responseBody = response.body.string()
                     if (responseBody.contains("\"error\"")) {
                         return@withContext Result.failure(IOException("Kodi authentication/error: $responseBody"))
                     }
