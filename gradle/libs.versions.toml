@@ -42,9 +42,9 @@ minSdk = "27"
 # @keep
 targetSdk = "37"
 # @keep
-versionCode = "1"
+versionCode = "2"
 # @keep
-versionName = "0.1"
+versionName = "0.2"
 
 [libraries]
 accompanist-adaptive = { module = "com.google.accompanist:accompanist-adaptive", version.ref = "accompanist" }
