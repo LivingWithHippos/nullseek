@@ -16,9 +16,14 @@ import kotlin.time.Instant
 const val MAGNET_PATTERN: String = "magnet:\\?xt=urn:btih:([a-zA-Z0-9]{32,})"
 const val TORRENT_PATTERN: String = "https?://[^\\s]{7,}\\.torrent"
 
+const val FREE_PLAN = 0
+
+// The download cooldown only applies to free accounts
+fun isFreePlan(plan: Int): Boolean = plan == FREE_PLAN
+
 fun getPlanName(plan: Int): String =
     when (plan) {
-        0 -> "Free"
+        FREE_PLAN -> "Free"
         1 -> "Essential"
         2 -> "Pro"
         3 -> "Standard"

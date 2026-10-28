@@ -29,6 +29,7 @@ import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.core.utils.getPlanName
 import com.github.livingwithhippos.nullseek.core.utils.isDateNotInPast
+import com.github.livingwithhippos.nullseek.core.utils.isFreePlan
 import com.github.livingwithhippos.nullseek.tv.ui.components.Badge
 import com.github.livingwithhippos.nullseek.tv.ui.components.ErrorBanner
 import com.github.livingwithhippos.nullseek.tv.ui.components.InfoRow
@@ -154,7 +155,7 @@ private fun UserOverview(
                     InfoRow(stringResource(R.string.long_term_seeding), yesNo(user.longTermSeeding))
                     InfoRow(stringResource(R.string.long_term_storage), yesNo(user.longTermStorage))
                     val cooldown = user.cooldownUntil
-                    if (isDateNotInPast(cooldown)) {
+                    if (isFreePlan(user.plan) && isDateNotInPast(cooldown)) {
                         InfoRow(stringResource(R.string.cooldown_active), formatToLocalDate(cooldown))
                     }
                 }
