@@ -71,6 +71,7 @@ import com.github.livingwithhippos.nullseek.billing.EntitlementState
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
+import com.github.livingwithhippos.nullseek.data.repository.PAGING_LOAD_SIZE_PRESETS
 import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
 import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
 import com.github.livingwithhippos.nullseek.ui.theme.Button
@@ -92,8 +93,6 @@ import org.koin.compose.koinInject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-private val PAGING_LOAD_SIZE_PRESETS = listOf(100, 500, 1000, 5000)
 
 private fun defaultBackupFileName(): String {
     val formatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
