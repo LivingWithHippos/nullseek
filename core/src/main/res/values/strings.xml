@@ -32,10 +32,10 @@
     <string name="action_add_downloads">Add Downloads (%1$d)</string>
     <string name="incoming_nothing_to_download">Nothing to download in the shared content</string>
     <string name="incoming_setup_provider_first">Set up a provider first to add downloads</string>
-    <string name="open_torbox_settings">Open Torbox Web Settings</string>
+    <string name="open_torbox_settings">Open TorBox Web Settings</string>
     <string name="open_torbox_subscription">Open Subscription Page</string>
     <string name="referral_dialog_title">Support NullSeek?</string>
-    <string name="referral_dialog_message">Would you like to include our referral code when opening Torbox in your browser? Your choice will be saved for next runs.</string>
+    <string name="referral_dialog_message">Would you like to include our referral code when opening TorBox in your browser? Your choice will be saved for next runs.</string>
     <string name="referral_dialog_positive">Yes, Include Referral</string>
     <string name="referral_dialog_negative">No, Open Directly</string>
     <string name="account_overview">Account Overview</string>
@@ -125,7 +125,7 @@
     <string name="load_full_info_failed">Failed to load full info</string>
     <string name="torrent_refreshed">Torrent info refreshed</string>
     <string name="refresh_failed">Failed to refresh torrent info</string>
-    <string name="download_link_api_key_warning">Warning: This download link includes your Torbox API key. Do not share it publicly!</string>
+    <string name="download_link_api_key_warning">Warning: This download link includes your TorBox API key. Do not share it publicly!</string>
     <string name="search_files_hint">Filter files…</string>
     <string name="no_files_found">No files matching filter</string>
     <string name="clear_search">Clear search</string>
