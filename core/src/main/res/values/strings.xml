@@ -387,6 +387,11 @@
     <string name="theme_color_torbox">TorBox</string>
     <string name="theme_standard_font_title">Standard font</string>
     <string name="theme_standard_font_summary">Use the system font instead of monospace</string>
+    <string name="donate_title">Support NullSeek</string>
+    <string name="donate_summary">NullSeek is free and open source. If you find it useful, consider buying me a coffee.</string>
+    <string name="donate_github_hint">The GitHub page always has the latest donation options.</string>
+    <string name="donate_kofi_button">Ko-fi</string>
+    <string name="donate_github_button">GitHub</string>
 
     <!-- External Content Disclaimer -->
     <string name="external_content_disclaimer_title">Disclaimer</string>

@@ -38,6 +38,7 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.tv.BuildConfig
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
 import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
@@ -51,6 +52,7 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.TvDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.launchSafely
 import com.github.livingwithhippos.nullseek.tv.ui.components.onFocusSelect
 import com.github.livingwithhippos.nullseek.tv.ui.components.readTextFromUri
+import com.github.livingwithhippos.nullseek.tv.ui.components.safeOpenUrl
 import com.github.livingwithhippos.nullseek.tv.ui.components.writeTextToUri
 import com.github.livingwithhippos.nullseek.tv.ui.theme.shouldUseDarkTheme
 import com.github.livingwithhippos.nullseek.tv.ui.theme.swatchColor
@@ -74,7 +76,12 @@ private enum class SettingsSection(
     APPEARANCE(R.string.theme_preference_title, R.string.theme_preference_summary, R.drawable.ic_tune),
     DOWNLOADS(R.string.settings_downloads_section, R.string.download_zip_preference_summary, R.drawable.ic_download),
     BACKUP(R.string.backup_preference_title, R.string.backup_preference_summary, R.drawable.ic_history),
+    DONATE(R.string.donate_title, R.string.donate_summary, R.drawable.ic_favorite),
 }
+
+// The donation links are only set in the FOSS build
+private val visibleSections =
+    SettingsSection.entries.filter { it != SettingsSection.DONATE || BuildConfig.DONATE_KOFI_URL.isNotEmpty() }
 
 private fun defaultBackupFileName(): String {
     val formatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
@@ -145,7 +152,7 @@ fun TvSettingsScreen(
                 modifier = Modifier.weight(0.38f).fillMaxHeight().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                SettingsSection.entries.forEachIndexed { index, entry ->
+                visibleSections.forEachIndexed { index, entry ->
                     ListItem(
                         selected = section == index,
                         onClick = {
@@ -169,7 +176,7 @@ fun TvSettingsScreen(
                 modifier = Modifier.weight(0.62f).fillMaxHeight().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                when (SettingsSection.entries[section]) {
+                when (visibleSections[section]) {
                     SettingsSection.ACCOUNTS ->
                         SectionCard(title = stringResource(R.string.providers_title), icon = R.drawable.ic_contact_page) {
                             Text(stringResource(R.string.providers_summary))
@@ -206,6 +213,28 @@ fun TvSettingsScreen(
                                     onClick = { showRestoreConfirm = true },
                                 )
                             }
+                        }
+
+                    SettingsSection.DONATE ->
+                        SectionCard(title = stringResource(R.string.donate_title), icon = R.drawable.ic_favorite) {
+                            Text(stringResource(R.string.donate_summary))
+                            Text(stringResource(R.string.donate_github_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                TvActionButton(
+                                    text = stringResource(R.string.donate_kofi_button),
+                                    icon = R.drawable.ic_open_in_new,
+                                    primary = true,
+                                    onClick = { safeOpenUrl(context, BuildConfig.DONATE_KOFI_URL) },
+                                )
+                                TvActionButton(
+                                    text = stringResource(R.string.donate_github_button),
+                                    icon = R.drawable.ic_open_in_new,
+                                    onClick = { safeOpenUrl(context, BuildConfig.DONATE_GITHUB_URL) },
+                                )
+                            }
+                            // many TVs have no browser: show the links so they can be typed elsewhere
+                            Text(BuildConfig.DONATE_KOFI_URL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(BuildConfig.DONATE_GITHUB_URL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                 }
             }

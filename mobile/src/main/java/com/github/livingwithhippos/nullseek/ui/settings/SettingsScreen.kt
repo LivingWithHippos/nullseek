@@ -55,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -266,6 +267,7 @@ fun SettingsScreen(
     onThemeColorSelected: (ThemeColor) -> Unit = {},
     useStandardFont: Boolean = false,
     onUseStandardFontChanged: (Boolean) -> Unit = {},
+    showDonations: Boolean = BuildConfig.DONATE_KOFI_URL.isNotEmpty(),
     externalDisclaimerAccepted: Boolean = false,
     onAcceptExternalDisclaimer: () -> Unit = {},
     isBackupBusy: Boolean = false,
@@ -752,6 +754,86 @@ fun SettingsScreen(
                             Text(text = stringResource(id = R.string.backup_restore_button))
                         }
                     }
+                }
+            }
+
+            if (showDonations) {
+                DonationSettingsCard()
+            }
+        }
+    }
+}
+
+@Composable
+private fun DonationSettingsCard() {
+    val uriHandler = LocalUriHandler.current
+    // openUri throws when no app can handle the link
+    val openLink: (String) -> Unit = { url -> runCatching { uriHandler.openUri(url) } }
+
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_favorite),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = stringResource(id = R.string.donate_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Text(
+                text = stringResource(id = R.string.donate_summary),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(id = R.string.donate_github_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Button(
+                    onClick = { openLink(BuildConfig.DONATE_KOFI_URL) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(text = stringResource(id = R.string.donate_kofi_button))
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_open_in_new),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = { openLink(BuildConfig.DONATE_GITHUB_URL) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(text = stringResource(id = R.string.donate_github_button))
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_open_in_new),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
                 }
             }
         }
