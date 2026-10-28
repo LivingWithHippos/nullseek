@@ -108,13 +108,6 @@ fun TvTorrentDetailScreen(
                 )
             }
             TvActionButton(
-                text = stringResource(R.string.action_refresh),
-                icon = R.drawable.ic_refresh,
-                loading = uiState.isRefreshing,
-                enabled = !uiState.isDeleting,
-                onClick = viewModel::refreshTorrent,
-            )
-            TvActionButton(
                 text = stringResource(R.string.action_export),
                 icon = R.drawable.ic_magnet,
                 loading = uiState.isExporting,
@@ -128,6 +121,16 @@ fun TvTorrentDetailScreen(
                 enabled = !uiState.isDeleting,
                 onClick = viewModel::loadFullInfo,
             )
+            // nothing to refresh once the item is cached or fully downloaded
+            if (!(torrent.cached || torrent.downloadFinished || torrent.progress >= 1.0)) {
+                TvActionButton(
+                    text = stringResource(R.string.action_refresh),
+                    icon = R.drawable.ic_refresh,
+                    loading = uiState.isRefreshing,
+                    enabled = !uiState.isDeleting,
+                    onClick = viewModel::refreshTorrent,
+                )
+            }
             TvActionButton(
                 text = stringResource(R.string.action_delete),
                 icon = R.drawable.ic_delete,

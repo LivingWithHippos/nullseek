@@ -98,13 +98,16 @@ fun TvUsenetDetailScreen(
                     onClick = { viewModel.downloadDirect(largestVideo.id, largestVideo.name) },
                 )
             }
-            TvActionButton(
-                text = stringResource(R.string.action_refresh),
-                icon = R.drawable.ic_refresh,
-                loading = uiState.isRefreshing,
-                enabled = !uiState.isDeleting,
-                onClick = viewModel::refreshUsenet,
-            )
+            // nothing to refresh once the item is cached or fully downloaded
+            if (!(current.cached || current.downloadFinished || current.progress >= 1.0)) {
+                TvActionButton(
+                    text = stringResource(R.string.action_refresh),
+                    icon = R.drawable.ic_refresh,
+                    loading = uiState.isRefreshing,
+                    enabled = !uiState.isDeleting,
+                    onClick = viewModel::refreshUsenet,
+                )
+            }
             TvActionButton(
                 text = stringResource(R.string.action_delete),
                 icon = R.drawable.ic_delete,

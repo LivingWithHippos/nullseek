@@ -885,33 +885,14 @@ private fun TorrentActionsCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // nothing to refresh once the item is cached or fully downloaded
+            val isRefreshable = !(item.cached || item.downloadFinished || item.progress >= 1.0)
+
             Text(
                 text = stringResource(id = R.string.actions),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
             )
-
-            // Refresh Button
-            OutlinedButton(
-                onClick = onRefresh,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isRefreshing && !uiState.isDeleting,
-            ) {
-                if (uiState.isRefreshing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_refresh),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.action_refresh))
-            }
 
             // Download as Zip Button (Checks item.cached)
             FilledTonalButton(
@@ -1012,6 +993,30 @@ private fun TorrentActionsCard(
                             stringResource(R.string.show_full_info)
                         },
                     )
+                }
+            }
+
+            if (isRefreshable) {
+                // Refresh Button
+                OutlinedButton(
+                    onClick = onRefresh,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !uiState.isRefreshing && !uiState.isDeleting,
+                ) {
+                    if (uiState.isRefreshing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_refresh),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(id = R.string.action_refresh))
                 }
             }
 
