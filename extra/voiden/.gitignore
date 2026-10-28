@@ -1,0 +1,7 @@
+# Voiden
+.voiden/*
+!.voiden/env-public.yaml
+!.voiden/env-*-public.yaml
+.voiden-inherited.void
+.voiden/**
+.voiden/history/torrents-6c58f5ca-history.json
