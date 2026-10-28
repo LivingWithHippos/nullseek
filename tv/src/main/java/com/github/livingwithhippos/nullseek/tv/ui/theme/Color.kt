@@ -212,6 +212,41 @@ internal val RedLightColorScheme =
         onTertiaryContainer = Color(0xFF261900),
     )
 
+// TorBox
+val TorBoxGreen = Color(0xFF04BF8A)
+
+internal val TorBoxDarkColorScheme =
+    darkColorScheme(
+        primary = TorBoxGreen,
+        onPrimary = Color(0xFF00382A),
+        primaryContainer = Color(0xFF00513C),
+        onPrimaryContainer = Color(0xFF8AF7CB),
+        secondary = Color(0xFFB3CCC0),
+        onSecondary = Color(0xFF1F352C),
+        secondaryContainer = Color(0xFF354B42),
+        onSecondaryContainer = Color(0xFFCFE9DC),
+        tertiary = Color(0xFFA6CCE0),
+        onTertiary = Color(0xFF0A3445),
+        tertiaryContainer = Color(0xFF254B5C),
+        onTertiaryContainer = Color(0xFFC2E8FD),
+    )
+
+internal val TorBoxLightColorScheme =
+    lightColorScheme(
+        primary = TorBoxGreen,
+        onPrimary = Color(0xFF00382A),
+        primaryContainer = Color(0xFF8AF7CB),
+        onPrimaryContainer = Color(0xFF002116),
+        secondary = Color(0xFF4C6358),
+        onSecondary = Color.White,
+        secondaryContainer = Color(0xFFCFE9DC),
+        onSecondaryContainer = Color(0xFF092017),
+        tertiary = Color(0xFF3E6374),
+        onTertiary = Color.White,
+        tertiaryContainer = Color(0xFFC2E8FD),
+        onTertiaryContainer = Color(0xFF001F2A),
+    )
+
 fun ThemeColor.colorScheme(darkTheme: Boolean): ColorScheme =
     when (this) {
         ThemeColor.SYSTEM, ThemeColor.PURPLE -> if (darkTheme) PurpleDarkColorScheme else PurpleLightColorScheme
@@ -220,6 +255,7 @@ fun ThemeColor.colorScheme(darkTheme: Boolean): ColorScheme =
         ThemeColor.GREEN -> if (darkTheme) GreenDarkColorScheme else GreenLightColorScheme
         ThemeColor.ORANGE -> if (darkTheme) OrangeDarkColorScheme else OrangeLightColorScheme
         ThemeColor.RED -> if (darkTheme) RedDarkColorScheme else RedLightColorScheme
+        ThemeColor.TORBOX -> if (darkTheme) TorBoxDarkColorScheme else TorBoxLightColorScheme
     }
 
 fun ThemeColor.swatchColor(darkTheme: Boolean): Color? =

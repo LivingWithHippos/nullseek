@@ -39,22 +39,27 @@ fun Context.parseIncomingDownload(intent: Intent): IncomingDownload? {
             intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.let { text ->
                 links += extractLinks(text.toString())
             }
-            IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+            IntentCompat
+                .getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
                 ?.let(files::add)
         }
 
         Intent.ACTION_SEND_MULTIPLE -> {
-            IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+            IntentCompat
+                .getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
                 ?.let(files::addAll)
         }
 
-        else -> return null
+        else -> {
+            return null
+        }
     }
 
-    val supportedFiles = files.filter { uri ->
-        val name = runCatching { getFileName(uri) }.getOrDefault("")
-        SUPPORTED_FILE_EXTENSIONS.any { name.endsWith(it, ignoreCase = true) }
-    }
+    val supportedFiles =
+        files.filter { uri ->
+            val name = runCatching { getFileName(uri) }.getOrDefault("")
+            SUPPORTED_FILE_EXTENSIONS.any { name.endsWith(it, ignoreCase = true) }
+        }
 
     if (links.isEmpty() && supportedFiles.isEmpty()) return null
     return IncomingDownload(
@@ -64,7 +69,8 @@ fun Context.parseIncomingDownload(intent: Intent): IncomingDownload? {
 }
 
 internal fun extractLinks(text: String): List<String> =
-    LINK_REGEX.findAll(text)
+    LINK_REGEX
+        .findAll(text)
         .map { it.value.trimEnd('.', ',', ')', ']', ';') }
         .filter { isValidDownloadLink(it) }
         .toList()

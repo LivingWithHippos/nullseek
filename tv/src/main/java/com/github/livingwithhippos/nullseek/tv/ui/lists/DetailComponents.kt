@@ -35,6 +35,7 @@ import androidx.tv.material3.RadioButton
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
+import com.github.livingwithhippos.nullseek.core.utils.formatSpeed
 import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
@@ -47,10 +48,12 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.TvActionButton
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvTextField
 import com.github.livingwithhippos.nullseek.tv.ui.components.safeOpenUrl
+import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.isAudioFile
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.nullseek.utils.isSubtitleFile
 import com.github.livingwithhippos.nullseek.utils.isVideoFile
+import com.github.livingwithhippos.nullseek.utils.largestVideoFile
 import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
@@ -117,7 +120,24 @@ data class DetailOverview(
 data class LinkResult(
     val title: String,
     val url: String,
+    val isZipped: Boolean = false,
+    val fileType: FileTypeCategory? = null,
 )
+
+private fun FileTypeCategory.labelRes(): Int =
+    when (this) {
+        FileTypeCategory.VIDEO -> R.string.file_type_video
+        FileTypeCategory.AUDIO -> R.string.file_type_audio
+        FileTypeCategory.DOCUMENT -> R.string.file_type_document
+        FileTypeCategory.BOOK -> R.string.file_type_book
+        FileTypeCategory.ARCHIVE -> R.string.file_type_archive
+        FileTypeCategory.SUBTITLE -> R.string.file_type_subtitle
+        FileTypeCategory.EXECUTABLE -> R.string.file_type_executable
+    }
+
+/** The biggest video, offered as a direct link when downloading everything would create a zip. */
+fun List<DetailFile>.largestVideoForDirectLink(): DetailFile? =
+    if (size > 1) largestVideoFile(this, { it.name }, { it.mimetype }, { it.size }) else null
 
 /**
  * Detail pane skeleton. Everything lives in one lazy list, so long file lists stay fast
@@ -138,6 +158,9 @@ fun TvDetailPane(
     filterFilesFullPath: Boolean,
     onDownloadFile: ((DetailFile) -> Unit)?,
     modifier: Modifier = Modifier,
+    // null hides the largest-video shortcut, as onDownloadFile does for file rows
+    onDownloadDirect: ((DetailFile) -> Unit)? = null,
+    isDownloading: Boolean = false,
     actions: @Composable () -> Unit,
     extraSections: LazyListScope.() -> Unit = {},
 ) {
@@ -162,6 +185,9 @@ fun TvDetailPane(
                 matchesQuery && matchesType
             }
         }
+
+    // downloading everything would zip it: offer a direct link to the main video
+    val largestVideo = remember(files) { files.largestVideoForDirectLink() }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -210,6 +236,14 @@ fun TvDetailPane(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     actions()
+                }
+                if (onDownloadDirect != null && largestVideo != null) {
+                    LargestVideoShortcut(
+                        video = largestVideo,
+                        enabled = true,
+                        loading = isDownloading,
+                        onClick = { onDownloadDirect(largestVideo) },
+                    )
                 }
             }
         }
@@ -260,9 +294,6 @@ private fun OverviewSection(overview: DetailOverview) {
             if (overview.active) Badge(stringResource(R.string.active), color = MaterialTheme.colorScheme.secondary)
         }
         InfoRow(stringResource(R.string.size), convertToSize(overview.sizeBytes))
-        overview.createdAt?.let { InfoRow(stringResource(R.string.added_on), formatToLocalDate(it)) }
-        overview.expiresAt?.let { InfoRow(stringResource(R.string.expires), formatToLocalDate(it)) }
-        overview.hash?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.hash), it, maxLines = 1) }
 
         val complete = overview.progress >= 1.0
         if (!(overview.cached && complete)) {
@@ -271,8 +302,8 @@ private fun OverviewSection(overview: DetailOverview) {
                 progress = { overview.progress.toFloat().coerceIn(0f, 1f) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            InfoRow(stringResource(R.string.download_speed), convertToSize(overview.downloadSpeed) + "/s")
-            overview.uploadSpeed?.let { InfoRow(stringResource(R.string.upload_speed), convertToSize(it) + "/s") }
+            InfoRow(stringResource(R.string.download_speed), formatSpeed(overview.downloadSpeed))
+            overview.uploadSpeed?.let { InfoRow(stringResource(R.string.upload_speed), formatSpeed(it)) }
             if (overview.eta > 0) InfoRow(stringResource(R.string.eta), formatEta(overview.eta))
         }
         if (overview.seeds != null && overview.peers != null) {
@@ -282,6 +313,17 @@ private fun OverviewSection(overview: DetailOverview) {
         overview.error?.takeIf { it.isNotBlank() }?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
         }
+        // secondary rows start collapsed
+        var expanded by rememberSaveable(overview.name) { mutableStateOf(false) }
+        TvActionButton(
+            text = stringResource(if (expanded) R.string.overview_less_details else R.string.overview_more_details),
+            icon = if (expanded) R.drawable.ic_arrow_drop_up else R.drawable.ic_arrow_drop_down,
+            onClick = { expanded = !expanded },
+        )
+        if (!expanded) return@SectionCard
+        overview.createdAt?.let { InfoRow(stringResource(R.string.added_on), formatToLocalDate(it)) }
+        overview.expiresAt?.let { InfoRow(stringResource(R.string.expires), formatToLocalDate(it)) }
+        overview.hash?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.hash), it, maxLines = 1) }
         val link = overview.sourceLink
         if (!link.isNullOrBlank() && overview.sourceLabel != null) {
             Text(overview.sourceLabel, style = MaterialTheme.typography.titleSmall)
@@ -346,6 +388,38 @@ private fun FileRow(
     )
 }
 
+/** Offered when downloading a whole item would zip it, but it contains a video that could be streamed. */
+@Composable
+fun LargestVideoShortcut(
+    video: DetailFile,
+    enabled: Boolean,
+    loading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        TvActionButton(
+            text = stringResource(R.string.download_largest_video),
+            icon = R.drawable.ic_play_arrow,
+            enabled = enabled,
+            loading = loading,
+            onClick = onClick,
+        )
+        Text(
+            text = "${stringResource(R.string.selected_video)} ${video.displayName} · ${convertToSize(video.size)}",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            maxLines = 4,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = stringResource(R.string.download_mixed_notice),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 /** Generated link with the actions: play on a media player, open, copy and share. */
 @Composable
 fun DownloadLinkSection(
@@ -365,6 +439,20 @@ fun DownloadLinkSection(
 
     SectionCard(modifier = modifier, title = stringResource(R.string.download_link_title), icon = R.drawable.ic_download) {
         Text(result.title, fontWeight = FontWeight.SemiBold, maxLines = 4, overflow = TextOverflow.Ellipsis)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Badge(
+                text = stringResource(if (result.isZipped) R.string.download_link_zipped else R.string.download_link_direct),
+                color = if (result.isZipped) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
+            )
+            result.fileType?.let { Badge(text = stringResource(it.labelRes()), color = MaterialTheme.colorScheme.secondary) }
+        }
+        if (result.isZipped) {
+            Text(
+                text = stringResource(R.string.download_link_zipped_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Text(
             text = stringResource(R.string.download_link_api_key_warning),
             style = MaterialTheme.typography.bodySmall,
@@ -474,6 +562,8 @@ fun DownloadZipDialog(
     itemName: String,
     onConfirm: (DownloadZipMode, Boolean) -> Unit,
     onDismiss: () -> Unit,
+    // true for a whole download with several files: the server zips it whatever is picked
+    alwaysZipped: Boolean = false,
 ) {
     var mode by remember { mutableStateOf(DownloadZipMode.ZIP_NON_MEDIA) }
     var rememberChoice by remember { mutableStateOf(false) }
@@ -491,6 +581,13 @@ fun DownloadZipDialog(
         dismissText = stringResource(R.string.cancel),
     ) {
         Text(itemName, maxLines = 2, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold)
+        if (alwaysZipped) {
+            Text(
+                text = stringResource(R.string.download_zip_notice_multi),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
+        }
         options.forEach { (option, label) ->
             ListItem(
                 selected = mode == option,

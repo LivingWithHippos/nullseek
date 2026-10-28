@@ -55,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -70,6 +71,7 @@ import com.github.livingwithhippos.nullseek.billing.EntitlementState
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
+import com.github.livingwithhippos.nullseek.data.repository.PAGING_LOAD_SIZE_PRESETS
 import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
 import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
 import com.github.livingwithhippos.nullseek.ui.theme.Button
@@ -91,8 +93,6 @@ import org.koin.compose.koinInject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-private val PAGING_LOAD_SIZE_PRESETS = listOf(100, 500, 1000, 5000)
 
 private fun defaultBackupFileName(): String {
     val formatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
@@ -122,6 +122,7 @@ fun SettingsScreen(
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
+    val useStandardFont by viewModel.useStandardFont.collectAsStateWithLifecycle()
     val externalDisclaimerAccepted by viewModel.externalDisclaimerAccepted.collectAsStateWithLifecycle()
     val isBackupBusy by viewModel.isBackupBusy.collectAsStateWithLifecycle()
     val entitlementState by billingManager.entitlementState.collectAsStateWithLifecycle()
@@ -209,6 +210,8 @@ fun SettingsScreen(
             onThemeModeSelected = { viewModel.setThemeMode(it) },
             themeColor = themeColor,
             onThemeColorSelected = { viewModel.setThemeColor(it) },
+            useStandardFont = useStandardFont,
+            onUseStandardFontChanged = { viewModel.setUseStandardFont(it) },
             externalDisclaimerAccepted = externalDisclaimerAccepted,
             onAcceptExternalDisclaimer = { viewModel.acceptExternalDisclaimer() },
             isBackupBusy = isBackupBusy,
@@ -261,6 +264,9 @@ fun SettingsScreen(
     onThemeModeSelected: (ThemeMode) -> Unit = {},
     themeColor: ThemeColor = ThemeColor.SYSTEM,
     onThemeColorSelected: (ThemeColor) -> Unit = {},
+    useStandardFont: Boolean = false,
+    onUseStandardFontChanged: (Boolean) -> Unit = {},
+    showDonations: Boolean = BuildConfig.DONATE_KOFI_URL.isNotEmpty(),
     externalDisclaimerAccepted: Boolean = false,
     onAcceptExternalDisclaimer: () -> Unit = {},
     isBackupBusy: Boolean = false,
@@ -513,6 +519,34 @@ fun SettingsScreen(
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.theme_standard_font_title),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = stringResource(id = R.string.theme_standard_font_summary),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = useStandardFont,
+                            onCheckedChange = onUseStandardFontChanged,
+                        )
+                    }
                 }
             }
 
@@ -721,6 +755,86 @@ fun SettingsScreen(
                     }
                 }
             }
+
+            if (showDonations) {
+                DonationSettingsCard()
+            }
+        }
+    }
+}
+
+@Composable
+private fun DonationSettingsCard() {
+    val uriHandler = LocalUriHandler.current
+    // openUri throws when no app can handle the link
+    val openLink: (String) -> Unit = { url -> runCatching { uriHandler.openUri(url) } }
+
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_favorite),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = stringResource(id = R.string.donate_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Text(
+                text = stringResource(id = R.string.donate_summary),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(id = R.string.donate_github_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Button(
+                    onClick = { openLink(BuildConfig.DONATE_KOFI_URL) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(text = stringResource(id = R.string.donate_kofi_button))
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_open_in_new),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = { openLink(BuildConfig.DONATE_GITHUB_URL) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(text = stringResource(id = R.string.donate_github_button))
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_open_in_new),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -904,6 +1018,7 @@ private fun ThemeMode.labelRes(): Int =
         ThemeMode.SYSTEM -> R.string.theme_mode_system
         ThemeMode.LIGHT -> R.string.theme_mode_light
         ThemeMode.DARK -> R.string.theme_mode_dark
+        ThemeMode.AMOLED -> R.string.theme_mode_amoled
     }
 
 private fun ThemeColor.labelRes(): Int =
@@ -915,6 +1030,7 @@ private fun ThemeColor.labelRes(): Int =
         ThemeColor.GREEN -> R.string.theme_color_green
         ThemeColor.ORANGE -> R.string.theme_color_orange
         ThemeColor.RED -> R.string.theme_color_red
+        ThemeColor.TORBOX -> R.string.theme_color_torbox
     }
 
 @Preview

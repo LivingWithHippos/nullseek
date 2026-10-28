@@ -33,8 +33,9 @@ class BackupRepositoryTest {
                         stremioSortOption = "SIZE",
                         stremioSortAscending = false,
                         searchHistory = listOf("ubuntu", "debian"),
-                        themeMode = ThemeMode.DARK.name,
-                        themeColor = ThemeColor.TEAL.name,
+                        themeMode = ThemeMode.AMOLED.name,
+                        themeColor = ThemeColor.TORBOX.name,
+                        useStandardFont = true,
                         externalDisclaimerAccepted = true,
                     ),
                 providers =

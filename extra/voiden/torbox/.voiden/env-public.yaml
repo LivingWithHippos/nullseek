@@ -1,3 +1,0 @@
-torbox:
-  variables:
-    BASE_URL: "api.torbox.app/v1/api"

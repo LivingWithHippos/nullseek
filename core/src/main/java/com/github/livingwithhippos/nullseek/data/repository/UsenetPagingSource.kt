@@ -13,7 +13,6 @@ class UsenetPagingSource(
 ) : PagingSource<Int, UsenetDownloadDto>() {
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, UsenetDownloadDto> {
         try {
-            // Start refresh at page 0 if undefined.
             val nextPageNumber = params.key ?: 0
             val nextOffset = nextPageNumber * pageSize
             val response = client.usenet.list(offset = nextOffset, limit = pageSize)

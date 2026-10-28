@@ -199,6 +199,14 @@ fun detectFileTypeCategory(
         else -> null
     }
 
+/** The biggest video among [files], used to offer a direct link when a full download would be zipped. */
+fun <T> largestVideoFile(
+    files: List<T>,
+    name: (T) -> String,
+    mimetype: (T) -> String?,
+    size: (T) -> Long,
+): T? = files.filter { isVideoFile(name(it), mimetype(it)) }.maxByOrNull(size)
+
 /** Media and subtitles are kept uncompressed so they can be streamed or sent to external players. */
 fun isStreamableOrSubtitle(
     name: String,

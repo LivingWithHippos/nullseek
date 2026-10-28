@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -58,7 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
-import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
+import com.github.livingwithhippos.nullseek.core.utils.formatSpeed
 import com.github.livingwithhippos.nullseek.core.utils.mockUsenetDownload
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
@@ -69,22 +70,28 @@ import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
-import com.github.livingwithhippos.nullseek.ui.utils.CopyButton
+import com.github.livingwithhippos.nullseek.ui.utils.DeletingOverlay
+import com.github.livingwithhippos.nullseek.ui.utils.DetailOverviewCard
+import com.github.livingwithhippos.nullseek.ui.utils.DownloadLinkTypeRow
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.FileTypeBadge
+import com.github.livingwithhippos.nullseek.ui.utils.LargestVideoShortcut
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.ui.utils.OverviewInfo
 import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.isAudioFile
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.nullseek.utils.isSubtitleFile
 import com.github.livingwithhippos.nullseek.utils.isVideoFile
+import com.github.livingwithhippos.nullseek.utils.largestVideoFile
 import com.github.livingwithhippos.nullseek.utils.openWebPage
 import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
 import com.github.livingwithhippos.torbox.model.UsenetDownloadFileDto
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -115,7 +122,8 @@ fun UsenetDetailScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is UsenetDetailEvent.ShowMessage -> {
-                    snackbarHostState.showSnackbar(event.message)
+                    // don't wait for the snackbar, or Deleted would be handled only after it hides
+                    launch { snackbarHostState.showSnackbar(event.message) }
                 }
 
                 is UsenetDetailEvent.Deleted -> {
@@ -129,28 +137,32 @@ fun UsenetDetailScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         modifier = modifier,
     ) { innerPadding ->
-        UsenetDetailScreen(
-            modifier = Modifier.padding(innerPadding),
-            context = LocalContext.current,
-            item = currentItem,
-            uiState = uiState,
-            defaultPlayer = defaultPlayer,
-            mediaPlayers = mediaPlayers,
-            filterFilesFullPath = filterFilesFullPath,
-            onPlayMedia = { service, url, setAsDefault ->
-                viewModel.playOnMedia(service, url, setAsDefault)
-            },
-            onRefresh = { viewModel.refreshUsenet() },
-            onDownloadZip = { viewModel.startDownload() },
-            onDownloadFile = { fileId, fileName -> viewModel.startDownload(fileId, fileName) },
-            onDismissDownloadLink = { viewModel.dismissDownloadLink() },
-            onConfirmDownloadModal = { mode, rememberChoice ->
-                viewModel.confirmDownloadModal(mode, rememberChoice)
-            },
-            onDismissDownloadModal = { viewModel.dismissDownloadModal() },
-            onShowDeleteDialog = { viewModel.showDeleteConfirmDialog(it) },
-            onConfirmDelete = { viewModel.deleteUsenet() },
-        )
+        Box(modifier = Modifier.padding(innerPadding)) {
+            UsenetDetailScreen(
+                modifier = Modifier.fillMaxSize(),
+                context = LocalContext.current,
+                item = currentItem,
+                uiState = uiState,
+                defaultPlayer = defaultPlayer,
+                mediaPlayers = mediaPlayers,
+                filterFilesFullPath = filterFilesFullPath,
+                onPlayMedia = { service, url, setAsDefault ->
+                    viewModel.playOnMedia(service, url, setAsDefault)
+                },
+                onRefresh = { viewModel.refreshUsenet() },
+                onDownloadZip = { viewModel.startDownload() },
+                onDownloadDirect = { fileId, fileName -> viewModel.downloadDirect(fileId, fileName) },
+                onDownloadFile = { fileId, fileName -> viewModel.startDownload(fileId, fileName) },
+                onDismissDownloadLink = { viewModel.dismissDownloadLink() },
+                onConfirmDownloadModal = { mode, rememberChoice ->
+                    viewModel.confirmDownloadModal(mode, rememberChoice)
+                },
+                onDismissDownloadModal = { viewModel.dismissDownloadModal() },
+                onShowDeleteDialog = { viewModel.showDeleteConfirmDialog(it) },
+                onConfirmDelete = { viewModel.deleteUsenet() },
+            )
+            DeletingOverlay(visible = uiState.isDeleting)
+        }
     }
 }
 
@@ -167,6 +179,7 @@ private fun UsenetDetailScreen(
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
     onDownloadFile: (Int, String) -> Unit,
+    onDownloadDirect: (Int, String) -> Unit = { _, _ -> },
     onDismissDownloadLink: () -> Unit,
     onConfirmDownloadModal: (DownloadZipMode, Boolean) -> Unit,
     onDismissDownloadModal: () -> Unit,
@@ -200,7 +213,7 @@ private fun UsenetDetailScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Card 1: Overview (with integrated Source Link)
-            UsenetOverviewCard(item = item, context = context)
+            DetailOverviewCard(info = item.toOverviewInfo())
 
             // Card 2: Transfer & Progress (hide if cached and completed)
             val isCompleted = item.progress >= 1.0 || item.downloadFinished
@@ -231,6 +244,7 @@ private fun UsenetDetailScreen(
                 uiState = uiState,
                 onRefresh = onRefresh,
                 onDownloadZip = onDownloadZip,
+                onDownloadDirect = onDownloadDirect,
                 onDelete = { onShowDeleteDialog(true) },
             )
 
@@ -264,6 +278,7 @@ private fun UsenetDetailScreen(
     uiState.pendingDownload?.let { pending ->
         DownloadZipModal(
             itemName = pending.fileName ?: item.name,
+            alwaysZipped = pending.fileId == null && item.files.size > 1,
             onDismiss = onDismissDownloadModal,
             onConfirm = onConfirmDownloadModal,
         )
@@ -294,206 +309,19 @@ private fun UsenetDetailScreen(
     }
 }
 
-@Composable
-private fun UsenetOverviewCard(
-    item: UsenetDownloadDto,
-    context: Context,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedCard(
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(id = R.string.usenet_overview),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-            )
-
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.hash),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f, fill = false),
-                ) {
-                    Text(
-                        text = item.hash,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    CopyButton(
-                        text = item.hash,
-                        description = "Copy Hash",
-                        context = context,
-                    )
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = convertToSize(item.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.status),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = item.downloadState.replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.state),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text =
-                        buildString {
-                            append(if (item.active) stringResource(R.string.active) else stringResource(R.string.inactive))
-                            if (item.cached) append(" • " + stringResource(R.string.cached))
-                        },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.added_on),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = formatToLocalDate(item.createdAt),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            if (item.expiresAt != null) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.expires),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Text(
-                        text = formatToLocalDate(item.expiresAt),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
-
-            if (item.originalUrl.isNotBlank()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.source_link_title),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Row {
-                            IconButton(
-                                onClick = { setClipboardText(context, item.originalUrl) },
-                                modifier = Modifier.size(32.dp),
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_copy),
-                                    contentDescription = stringResource(id = R.string.copy_source_link),
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(4.dp))
-                            IconButton(
-                                onClick = { shareText(context, item.originalUrl, item.name) },
-                                modifier = Modifier.size(32.dp),
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_share),
-                                    contentDescription = stringResource(id = R.string.action_share),
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+private fun UsenetDownloadDto.toOverviewInfo() =
+    OverviewInfo(
+        titleRes = R.string.usenet_overview,
+        name = name,
+        sizeBytes = size,
+        downloadState = downloadState,
+        active = active,
+        cached = cached,
+        createdAt = createdAt,
+        expiresAt = expiresAt,
+        hash = hash,
+        link = originalUrl.takeIf { it.isNotBlank() },
+    )
 
 @Composable
 private fun UsenetTransferProgressCard(
@@ -550,7 +378,7 @@ private fun UsenetTransferProgressCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = stringResource(R.string.speed_kbps, item.downloadSpeed),
+                    text = formatSpeed(item.downloadSpeed),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -641,6 +469,8 @@ private fun UsenetDownloadLinkCard(
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
             )
+
+            DownloadLinkTypeRow(isZipped = result.isZipped, fileType = result.fileType)
 
             // Security Warning Banner
             Surface(
@@ -802,6 +632,7 @@ private fun UsenetActionsCard(
     uiState: UsenetDetailUiState,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
+    onDownloadDirect: (Int, String) -> Unit = { _, _ -> },
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -812,39 +643,20 @@ private fun UsenetActionsCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // nothing to refresh once the item is cached or fully downloaded
+            val isRefreshable = !(item.cached || item.downloadFinished || item.progress >= 1.0)
+
             Text(
                 text = stringResource(id = R.string.actions),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
             )
 
-            // Refresh Button
-            OutlinedButton(
-                onClick = onRefresh,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isRefreshing,
-            ) {
-                if (uiState.isRefreshing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_refresh),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.action_refresh))
-            }
-
             // Download as Zip Button (Checks item.cached)
             FilledTonalButton(
                 onClick = onDownloadZip,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = item.cached && !uiState.isDownloading,
+                enabled = item.cached && !uiState.isDownloading && !uiState.isDeleting,
             ) {
                 if (uiState.isDownloading) {
                     CircularProgressIndicator(
@@ -862,12 +674,52 @@ private fun UsenetActionsCard(
                 Text(text = stringResource(id = R.string.action_download))
             }
 
+            // a full download with several files is zipped: offer a direct link to the main video
+            val largestVideo =
+                if (item.cached && item.files.size > 1) {
+                    largestVideoFile(item.files, { it.name }, { it.mimetype }, { it.size })
+                } else {
+                    null
+                }
+            if (largestVideo != null) {
+                LargestVideoShortcut(
+                    fileName = largestVideo.name,
+                    sizeText = convertToSize(largestVideo.size),
+                    enabled = !uiState.isDownloading && !uiState.isDeleting,
+                    onClick = { onDownloadDirect(largestVideo.id, largestVideo.name) },
+                )
+            }
+
             if (!item.cached) {
                 Text(
                     text = stringResource(id = R.string.usenet_not_cached_warning),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+
+            if (isRefreshable) {
+                // Refresh Button
+                OutlinedButton(
+                    onClick = onRefresh,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !uiState.isRefreshing && !uiState.isDeleting,
+                ) {
+                    if (uiState.isRefreshing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_refresh),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(id = R.string.action_refresh))
+                }
             }
 
             // Delete Button

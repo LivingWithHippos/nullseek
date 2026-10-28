@@ -11,7 +11,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 
-const val DEFAULT_PAGING_LOAD_SIZE = 1000
+val PAGING_LOAD_SIZE_PRESETS = listOf(50, 100, 500, 1000, 5000)
+const val DEFAULT_PAGING_LOAD_SIZE = 100
 const val MAX_SEARCH_HISTORY = 20
 
 private val historyJson =
@@ -47,6 +48,7 @@ enum class ThemeMode {
     SYSTEM,
     LIGHT,
     DARK,
+    AMOLED,
 }
 
 enum class ThemeColor {
@@ -57,6 +59,7 @@ enum class ThemeColor {
     GREEN,
     ORANGE,
     RED,
+    TORBOX,
 }
 
 class PreferencesRepository(
@@ -78,6 +81,7 @@ class PreferencesRepository(
     private val searchHistoryKey = stringPreferencesKey("search_history")
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val themeColorKey = stringPreferencesKey("theme_color")
+    private val useStandardFontKey = booleanPreferencesKey("use_standard_font")
     private val externalDisclaimerAcceptedKey = booleanPreferencesKey("external_disclaimer_accepted")
 
     // null means the user has not chosen yet
@@ -143,6 +147,21 @@ class PreferencesRepository(
             val raw = preferences[themeColorKey]
             ThemeColor.entries.firstOrNull { it.name == raw } ?: ThemeColor.SYSTEM
         }
+
+    val useStandardFont: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[useStandardFontKey] ?: false
+        }
+
+    suspend fun setUseStandardFont(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            if (enabled) {
+                preferences[useStandardFontKey] = true
+            } else {
+                preferences.remove(useStandardFontKey)
+            }
+        }
+    }
 
     val externalDisclaimerAccepted: Flow<Boolean> =
         dataStore.data.map { preferences ->

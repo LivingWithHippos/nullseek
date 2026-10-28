@@ -69,29 +69,35 @@ fun TvWebDownloadDetailScreen(
         onClose = onClose,
         isFullScreen = isFullScreen,
         onToggleFullScreen = onToggleFullScreen,
-        linkResult = uiState.downloadLinkResult?.let { LinkResult(it.title, it.url) },
+        linkResult = uiState.downloadLinkResult?.let { LinkResult(it.title, it.url, it.isZipped, it.fileType) },
         onDismissLink = viewModel::dismissDownloadLink,
         defaultPlayer = defaultPlayer,
         mediaPlayers = mediaPlayers,
         onPlayMedia = viewModel::playOnMedia,
         files = current.files.map { it.toDetailFile() },
         filterFilesFullPath = filterFilesFullPath,
-        onDownloadFile = if (current.cached) { file -> viewModel.startDownload(file.id, file.name) } else null,
+        onDownloadFile = if (current.cached && !uiState.isDeleting) { file -> viewModel.startDownload(file.id, file.name) } else null,
+        onDownloadDirect = if (current.cached && !uiState.isDeleting) { file -> viewModel.downloadDirect(file.id, file.name) } else null,
+        isDownloading = uiState.isDownloading,
         actions = {
             TvActionButton(
                 text = stringResource(R.string.action_download),
                 icon = R.drawable.ic_download,
                 primary = true,
-                enabled = current.cached,
+                enabled = current.cached && !uiState.isDeleting,
                 loading = uiState.isDownloading,
                 onClick = { viewModel.startDownload() },
             )
-            TvActionButton(
-                text = stringResource(R.string.action_refresh),
-                icon = R.drawable.ic_refresh,
-                loading = uiState.isRefreshing,
-                onClick = viewModel::refreshWebDownload,
-            )
+            // nothing to refresh once the item is cached or fully downloaded
+            if (!(current.cached || current.downloadFinished || current.progress >= 1.0)) {
+                TvActionButton(
+                    text = stringResource(R.string.action_refresh),
+                    icon = R.drawable.ic_refresh,
+                    loading = uiState.isRefreshing,
+                    enabled = !uiState.isDeleting,
+                    onClick = viewModel::refreshWebDownload,
+                )
+            }
             TvActionButton(
                 text = stringResource(R.string.action_delete),
                 icon = R.drawable.ic_delete,
@@ -109,6 +115,7 @@ fun TvWebDownloadDetailScreen(
     uiState.pendingDownload?.let { pending ->
         DownloadZipDialog(
             itemName = pending.fileName ?: current.name,
+            alwaysZipped = pending.fileId == null && current.files.size > 1,
             onConfirm = viewModel::confirmDownloadModal,
             onDismiss = viewModel::dismissDownloadModal,
         )

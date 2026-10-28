@@ -13,7 +13,6 @@ class WebPagingSource(
 ) : PagingSource<Int, WebDownloadDto>() {
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, WebDownloadDto> {
         try {
-            // Start refresh at page 0 if undefined.
             val nextPageNumber = params.key ?: 0
             val nextOffset = nextPageNumber * pageSize
             val response = client.web.list(offset = nextOffset, limit = pageSize)

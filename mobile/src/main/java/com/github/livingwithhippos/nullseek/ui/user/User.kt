@@ -49,6 +49,7 @@ import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.core.utils.getPlanName
 import com.github.livingwithhippos.nullseek.core.utils.isDateNotInPast
+import com.github.livingwithhippos.nullseek.core.utils.isFreePlan
 import com.github.livingwithhippos.nullseek.core.utils.mockUser
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
@@ -318,12 +319,12 @@ private fun AccountOverviewAndActionsCard(
                 ),
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_settings),
+                    painter = painterResource(id = R.drawable.ic_link),
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.open_torbox_settings))
+                Text(text = stringResource(id = R.string.open_torbox_web))
             }
 
             OutlinedButton(
@@ -493,7 +494,7 @@ private fun AccountFeaturesCard(
                 }
             }
 
-            if (coolDown != null && isDateNotInPast(coolDown)) {
+            if (isFreePlan(user.plan) && coolDown != null && isDateNotInPast(coolDown)) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 Row(

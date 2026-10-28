@@ -78,41 +78,49 @@ fun TvTorrentDetailScreen(
         onClose = onClose,
         isFullScreen = isFullScreen,
         onToggleFullScreen = onToggleFullScreen,
-        linkResult = uiState.downloadLinkResult?.let { LinkResult(it.title, it.url) },
+        linkResult = uiState.downloadLinkResult?.let { LinkResult(it.title, it.url, it.isZipped, it.fileType) },
         onDismissLink = viewModel::dismissDownloadLink,
         defaultPlayer = defaultPlayer,
         mediaPlayers = mediaPlayers,
         onPlayMedia = viewModel::playOnMedia,
         files = torrent.files.map { it.toDetailFile() },
         filterFilesFullPath = filterFilesFullPath,
-        onDownloadFile = if (torrent.cached) { file -> viewModel.startDownload(file.id, file.name) } else null,
+        onDownloadFile = if (torrent.cached && !uiState.isDeleting) { file -> viewModel.startDownload(file.id, file.name) } else null,
+        onDownloadDirect = if (torrent.cached && !uiState.isDeleting) { file -> viewModel.downloadDirect(file.id, file.name) } else null,
+        isDownloading = uiState.isDownloading,
         actions = {
             TvActionButton(
                 text = stringResource(R.string.action_download),
                 icon = R.drawable.ic_download,
                 primary = true,
-                enabled = torrent.cached,
+                enabled = torrent.cached && !uiState.isDeleting,
                 loading = uiState.isDownloading,
                 onClick = { viewModel.startDownload() },
-            )
-            TvActionButton(
-                text = stringResource(R.string.action_refresh),
-                icon = R.drawable.ic_refresh,
-                loading = uiState.isRefreshing,
-                onClick = viewModel::refreshTorrent,
             )
             TvActionButton(
                 text = stringResource(R.string.action_export),
                 icon = R.drawable.ic_magnet,
                 loading = uiState.isExporting,
+                enabled = !uiState.isDeleting,
                 onClick = { viewModel.showExportDialog(true) },
             )
             TvActionButton(
                 text = stringResource(R.string.action_full_info),
                 icon = R.drawable.ic_info,
                 loading = uiState.isLoadingFullInfo,
+                enabled = !uiState.isDeleting,
                 onClick = viewModel::loadFullInfo,
             )
+            // nothing to refresh once the item is cached or fully downloaded
+            if (!(torrent.cached || torrent.downloadFinished || torrent.progress >= 1.0)) {
+                TvActionButton(
+                    text = stringResource(R.string.action_refresh),
+                    icon = R.drawable.ic_refresh,
+                    loading = uiState.isRefreshing,
+                    enabled = !uiState.isDeleting,
+                    onClick = viewModel::refreshTorrent,
+                )
+            }
             TvActionButton(
                 text = stringResource(R.string.action_delete),
                 icon = R.drawable.ic_delete,
@@ -148,6 +156,7 @@ fun TvTorrentDetailScreen(
     uiState.pendingDownload?.let { pending ->
         DownloadZipDialog(
             itemName = pending.fileName ?: torrent.name,
+            alwaysZipped = pending.fileId == null && torrent.files.size > 1,
             onConfirm = viewModel::confirmDownloadModal,
             onDismiss = viewModel::dismissDownloadModal,
         )

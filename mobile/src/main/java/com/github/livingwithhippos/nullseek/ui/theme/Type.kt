@@ -1,6 +1,8 @@
 package com.github.livingwithhippos.nullseek.ui.theme
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -34,10 +36,24 @@ val Typography =
         labelSmall = defaultTypography.labelSmall.copy(fontFamily = FontFamily.Monospace),
     )
 
+// Same sizes as Typography, with the system default font
+val StandardTypography =
+    defaultTypography.copy(
+        bodyLarge =
+            defaultTypography.bodyLarge.copy(
+                fontWeight = FontWeight.Normal,
+                fontSize = 16.sp,
+                lineHeight = 24.sp,
+                letterSpacing = 0.5.sp,
+            ),
+    )
+
 object CustomTypography {
-    val cardBoldValue =
-        Typography.bodyLarge.copy(
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
-        )
+    // Reads the current theme so it follows the standard font setting
+    val cardBoldValue
+        @Composable get() =
+            MaterialTheme.typography.bodyLarge.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+            )
 }

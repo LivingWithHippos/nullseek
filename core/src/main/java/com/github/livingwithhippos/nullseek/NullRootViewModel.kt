@@ -46,6 +46,13 @@ class NullRootViewModel(
             initialValue = ThemeColor.SYSTEM,
         )
 
+    val useStandardFont: StateFlow<Boolean> =
+        preferencesRepository.useStandardFont.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false,
+        )
+
     // todo: decide if we should have a factory method for temp clients
     private val tempClient =
         TorboxClient.create(

@@ -15,7 +15,6 @@ class TorrentsPagingSource(
         params: LoadParams<Int>
     ): LoadResult<Int, TorrentDto> {
         try {
-            // Start refresh at page 0 if undefined.
             val nextPageNumber = params.key ?: 0
             val nextOffset = nextPageNumber * pageSize
             val response = client.torrent.list(offset = nextOffset, limit = pageSize)

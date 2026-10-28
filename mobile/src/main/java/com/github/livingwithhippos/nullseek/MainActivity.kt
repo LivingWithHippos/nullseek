@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
 import com.github.livingwithhippos.nullseek.intent.IncomingDownload
 import com.github.livingwithhippos.nullseek.intent.parseIncomingDownload
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
@@ -51,6 +52,7 @@ class MainActivity : ComponentActivity() {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
+            val useStandardFont by viewModel.useStandardFont.collectAsStateWithLifecycle()
             val darkTheme = shouldUseDarkTheme(themeMode)
 
             LaunchedEffect(uiState.user) {
@@ -80,6 +82,8 @@ class MainActivity : ComponentActivity() {
             NullSeekTheme(
                 darkTheme = darkTheme,
                 themeColor = themeColor,
+                pureBlack = themeMode == ThemeMode.AMOLED,
+                standardFont = useStandardFont,
             ) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     Box(Modifier.safeDrawingPadding()) {
@@ -140,10 +144,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private companion object {
-        val INCOMING_ACTIONS = setOf(
-            Intent.ACTION_VIEW,
-            Intent.ACTION_SEND,
-            Intent.ACTION_SEND_MULTIPLE,
-        )
+        val INCOMING_ACTIONS =
+            setOf(
+                Intent.ACTION_VIEW,
+                Intent.ACTION_SEND,
+                Intent.ACTION_SEND_MULTIPLE,
+            )
     }
 }

@@ -35,10 +35,15 @@ android {
         create("foss") {
             dimension = "distribution"
             buildConfigField("boolean", "IS_FOSS", "true")
+            // donation links only ship in the FOSS build
+            buildConfigField("String", "DONATE_KOFI_URL", "\"https://ko-fi.com/E1E412NFX7\"")
+            buildConfigField("String", "DONATE_GITHUB_URL", "\"https://github.com/LivingWithHippos/nullseek#donate-coffee\"")
         }
         create("playstore") {
             dimension = "distribution"
             buildConfigField("boolean", "IS_FOSS", "false")
+            buildConfigField("String", "DONATE_KOFI_URL", "\"\"")
+            buildConfigField("String", "DONATE_GITHUB_URL", "\"\"")
         }
     }
 

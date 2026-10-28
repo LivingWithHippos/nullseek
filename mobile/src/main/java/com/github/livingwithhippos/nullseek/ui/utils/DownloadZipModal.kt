@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,6 +37,8 @@ fun DownloadZipModal(
     itemName: String?,
     onDismiss: () -> Unit,
     onConfirm: (mode: DownloadZipMode, rememberChoice: Boolean) -> Unit,
+    // true for a whole download with several files: the server zips it whatever is picked
+    alwaysZipped: Boolean = false,
 ) {
     var selectedMode by remember { mutableStateOf(DownloadZipMode.ZIP_NON_MEDIA) }
     var rememberChoice by remember { mutableStateOf(false) }
@@ -63,6 +67,24 @@ fun DownloadZipModal(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+                }
+
+                if (alwaysZipped) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text =
+                                stringResource(
+                                    id = R.string.download_zip_notice_multi,
+                                ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.padding(10.dp),
+                        )
+                    }
                 }
 
                 ModeRadioRow(
