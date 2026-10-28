@@ -152,7 +152,7 @@
     <string name="download_options_title">Download Options</string>
     <string name="download_option_zip">Zip archive (.zip)</string>
     <string name="download_option_uncompressed">Direct / Uncompressed</string>
-    <string name="download_remember_choice">Remember choice and don\'t ask again</string>
+    <string name="download_remember_choice">Remember choice</string>
     <string name="download_zip_preference_title">Download format</string>
     <string name="download_zip_preference_summary">Choose whether files should be zipped or uncompressed when creating a download link</string>
     <string name="download_zip_preference_ask">Always ask</string>
@@ -393,12 +393,12 @@
     <string name="donate_kofi_button">Ko-fi</string>
     <string name="donate_github_button">GitHub</string>
     <string name="download_zip_notice_multi">This item has several files, so it will always be zipped. To get a direct video link, download a single file from the file list.</string>
-    <string name="download_zip_notice_single">Media files kept uncompressed get a direct link you can open in VLC or other players.</string>
     <string name="download_link_zipped">ZIP archive</string>
     <string name="download_link_direct">Direct link</string>
     <string name="download_link_zipped_hint">Zipped links can\'t be streamed. Download a single media file for a direct link.</string>
-    <string name="download_mixed_notice">Downloading everything creates a zip. To stream, use the button above or select the video from the file list below.</string>
+    <string name="download_mixed_notice">Downloading everything creates a zip. To stream, use the button above or select a video from the file list below.</string>
     <string name="download_largest_video">Generate Video Download</string>
+    <string name="selected_video">Selected video:</string>
 
     <!-- External Content Disclaimer -->
     <string name="external_content_disclaimer_title">Disclaimer</string>

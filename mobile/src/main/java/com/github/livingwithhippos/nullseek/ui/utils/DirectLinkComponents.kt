@@ -77,7 +77,7 @@ fun DownloadLinkTypeRow(
     }
 }
 
-/** Offered when downloading a whole item would zip it but it contains a video that could be streamed. */
+/** Offered when downloading a whole item would zip it, but it contains a video that could be streamed. */
 @Composable
 fun LargestVideoShortcut(
     fileName: String,
@@ -104,10 +104,10 @@ fun LargestVideoShortcut(
             Text(text = stringResource(id = R.string.download_largest_video))
         }
         Text(
-            text = "${fileName.substringAfterLast('/')} · $sizeText",
+            text = "${stringResource(id = R.string.selected_video)} ${fileName.substringAfterLast('/')} · $sizeText",
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Bold,
-            maxLines = 3,
+            maxLines = 4,
             overflow = TextOverflow.Ellipsis,
         )
         Text(

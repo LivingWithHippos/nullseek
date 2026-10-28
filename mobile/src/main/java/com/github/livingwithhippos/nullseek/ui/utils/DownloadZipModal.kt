@@ -69,30 +69,22 @@ fun DownloadZipModal(
                     Spacer(modifier = Modifier.height(4.dp))
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color =
-                        if (alwaysZipped) {
-                            MaterialTheme.colorScheme.tertiaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.secondaryContainer
-                        },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text =
-                            stringResource(
-                                id = if (alwaysZipped) R.string.download_zip_notice_multi else R.string.download_zip_notice_single,
-                            ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color =
-                            if (alwaysZipped) {
-                                MaterialTheme.colorScheme.onTertiaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSecondaryContainer
-                            },
-                        modifier = Modifier.padding(10.dp),
-                    )
+                if (alwaysZipped) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text =
+                                stringResource(
+                                    id = R.string.download_zip_notice_multi,
+                                ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.padding(10.dp),
+                        )
+                    }
                 }
 
                 ModeRadioRow(

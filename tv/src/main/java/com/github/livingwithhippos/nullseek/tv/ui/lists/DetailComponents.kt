@@ -527,11 +527,13 @@ fun DownloadZipDialog(
         dismissText = stringResource(R.string.cancel),
     ) {
         Text(itemName, maxLines = 2, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold)
-        Text(
-            text = stringResource(if (alwaysZipped) R.string.download_zip_notice_multi else R.string.download_zip_notice_single),
-            style = MaterialTheme.typography.bodySmall,
-            color = if (alwaysZipped) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (alwaysZipped) {
+            Text(
+                text = stringResource(R.string.download_zip_notice_multi),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
+        }
         options.forEach { (option, label) ->
             ListItem(
                 selected = mode == option,
