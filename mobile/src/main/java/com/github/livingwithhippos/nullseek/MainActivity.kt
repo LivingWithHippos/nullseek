@@ -144,10 +144,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private companion object {
-        val INCOMING_ACTIONS = setOf(
-            Intent.ACTION_VIEW,
-            Intent.ACTION_SEND,
-            Intent.ACTION_SEND_MULTIPLE,
-        )
+        val INCOMING_ACTIONS =
+            setOf(
+                Intent.ACTION_VIEW,
+                Intent.ACTION_SEND,
+                Intent.ACTION_SEND_MULTIPLE,
+            )
     }
 }
