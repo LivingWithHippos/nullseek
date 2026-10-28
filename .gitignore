@@ -111,3 +111,4 @@ extra/manifest.example.json
 mise.local.toml
 *.jks
 !debug.jks
+.idea/mise.xml

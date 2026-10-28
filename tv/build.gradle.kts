@@ -50,8 +50,13 @@ android {
     buildTypes {
         release {
             optimization {
-                enable = false
+                enable = true
             }
+
+            proguardFiles(
+                // Default file with automatically generated optimization rules.
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+            )
         }
     }
     compileOptions {
