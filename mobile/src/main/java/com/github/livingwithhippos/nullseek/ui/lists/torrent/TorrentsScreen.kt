@@ -41,6 +41,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
+import com.github.livingwithhippos.nullseek.core.utils.formatSpeed
 import com.github.livingwithhippos.nullseek.core.utils.mockTorrents
 import com.github.livingwithhippos.nullseek.ui.lists.utils.FindBar
 import com.github.livingwithhippos.nullseek.ui.lists.utils.MatchHighlight
@@ -261,7 +262,7 @@ private fun TorrentRow(
 
                 if (isDownloading && item.downloadSpeed > 0) {
                     Text(
-                        text = stringResource(R.string.speed_kbps, item.downloadSpeed),
+                        text = formatSpeed(item.downloadSpeed),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,

@@ -35,6 +35,7 @@ import androidx.tv.material3.RadioButton
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
+import com.github.livingwithhippos.nullseek.core.utils.formatSpeed
 import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
@@ -290,8 +291,8 @@ private fun OverviewSection(overview: DetailOverview) {
                 progress = { overview.progress.toFloat().coerceIn(0f, 1f) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            InfoRow(stringResource(R.string.download_speed), convertToSize(overview.downloadSpeed) + "/s")
-            overview.uploadSpeed?.let { InfoRow(stringResource(R.string.upload_speed), convertToSize(it) + "/s") }
+            InfoRow(stringResource(R.string.download_speed), formatSpeed(overview.downloadSpeed))
+            overview.uploadSpeed?.let { InfoRow(stringResource(R.string.upload_speed), formatSpeed(it)) }
             if (overview.eta > 0) InfoRow(stringResource(R.string.eta), formatEta(overview.eta))
         }
         if (overview.seeds != null && overview.peers != null) {

@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
+import com.github.livingwithhippos.nullseek.core.utils.formatSpeed
 import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.core.utils.mockUsenetDownload
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
@@ -564,7 +565,7 @@ private fun UsenetTransferProgressCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = stringResource(R.string.speed_kbps, item.downloadSpeed),
+                    text = formatSpeed(item.downloadSpeed),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )

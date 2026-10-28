@@ -62,6 +62,18 @@ fun convertToSize(bytes: Long): String =
         else -> "${(bytes / MathConst.BYTES_IN_GB).toInt()} GB"
     }
 
+/** Formats a speed in bytes/s as KB/s below 1 MB/s, MB/s otherwise. */
+fun formatSpeed(bytesPerSecond: Long): String {
+    val speed = bytesPerSecond.coerceAtLeast(0)
+    return if (speed < MathConst.BYTES_IN_MB) {
+        val kb = speed.toDouble() / MathConst.BYTES_IN_KB
+        // one decimal for slow speeds so they don't show as 0
+        if (kb < 10) String.format(Locale.getDefault(), "%.1f KB/s", kb) else "${kb.toInt()} KB/s"
+    } else {
+        String.format(Locale.getDefault(), "%.1f MB/s", speed.toDouble() / MathConst.BYTES_IN_MB)
+    }
+}
+
 fun formatToLocalDate(datetime: String?): String {
     if (datetime.isNullOrBlank()) return ""
     return try {

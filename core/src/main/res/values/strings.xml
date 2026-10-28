@@ -456,7 +456,6 @@
     <string name="status_error">Error</string>
     <string name="expires">Expires</string>
     <string name="finished">Finished</string>
-    <string name="speed_kbps">%1$d kB/s</string>
     <string name="seeds_count">%1$d seeds</string>
     <string name="seeds_peers_count">%1$d seeds • %2$d peers</string>
     <string name="eta_seconds">%1$ds</string>

@@ -43,6 +43,7 @@ import com.github.livingwithhippos.nullseek.MainActivity
 import com.github.livingwithhippos.nullseek.billing.EntitlementCache
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
+import com.github.livingwithhippos.nullseek.core.utils.formatSpeed
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -364,7 +365,7 @@ private fun DownloadWidgetRow(
 
             if (!item.isFinished && item.downloadSpeedBytes > 0) {
                 Text(
-                    text = "${convertToSize(item.downloadSpeedBytes)}/s",
+                    text = formatSpeed(item.downloadSpeedBytes),
                     style =
                         TextStyle(
                             color = GlanceTheme.colors.primary,
