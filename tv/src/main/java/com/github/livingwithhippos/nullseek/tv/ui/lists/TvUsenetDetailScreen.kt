@@ -10,7 +10,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
-import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.tv.ui.components.ConfirmDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.LocalMessenger
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvActionButton
@@ -48,8 +47,6 @@ fun TvUsenetDetailScreen(
         }
     }
 
-    val largestVideo = if (current.cached) current.files.map { it.toDetailFile() }.largestVideoForDirectLink() else null
-
     TvDetailPane(
         modifier = modifier,
         overview =
@@ -80,6 +77,8 @@ fun TvUsenetDetailScreen(
         files = current.files.map { it.toDetailFile() },
         filterFilesFullPath = filterFilesFullPath,
         onDownloadFile = if (current.cached && !uiState.isDeleting) { file -> viewModel.startDownload(file.id, file.name) } else null,
+        onDownloadDirect = if (current.cached && !uiState.isDeleting) { file -> viewModel.downloadDirect(file.id, file.name) } else null,
+        isDownloading = uiState.isDownloading,
         actions = {
             TvActionButton(
                 text = stringResource(R.string.action_download),
@@ -89,15 +88,6 @@ fun TvUsenetDetailScreen(
                 loading = uiState.isDownloading,
                 onClick = { viewModel.startDownload() },
             )
-            if (largestVideo != null) {
-                TvActionButton(
-                    text = stringResource(R.string.download_largest_video),
-                    icon = R.drawable.ic_play_arrow,
-                    enabled = !uiState.isDeleting,
-                    loading = uiState.isDownloading,
-                    onClick = { viewModel.downloadDirect(largestVideo.id, largestVideo.name) },
-                )
-            }
             // nothing to refresh once the item is cached or fully downloaded
             if (!(current.cached || current.downloadFinished || current.progress >= 1.0)) {
                 TvActionButton(
@@ -116,15 +106,6 @@ fun TvUsenetDetailScreen(
             )
         },
         extraSections = {
-            if (largestVideo != null) {
-                item {
-                    Text(
-                        text = stringResource(R.string.download_mixed_notice) + "\n" + largestVideo.displayName + " · " + convertToSize(largestVideo.size),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
             if (!current.cached) {
                 item { Text(stringResource(R.string.usenet_not_cached_warning), color = MaterialTheme.colorScheme.error) }
             }

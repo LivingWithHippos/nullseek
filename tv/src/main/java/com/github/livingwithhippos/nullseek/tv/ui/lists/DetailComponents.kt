@@ -157,6 +157,9 @@ fun TvDetailPane(
     files: List<DetailFile>,
     filterFilesFullPath: Boolean,
     onDownloadFile: ((DetailFile) -> Unit)?,
+    // null hides the largest-video shortcut, as onDownloadFile does for file rows
+    onDownloadDirect: ((DetailFile) -> Unit)? = null,
+    isDownloading: Boolean = false,
     modifier: Modifier = Modifier,
     actions: @Composable () -> Unit,
     extraSections: LazyListScope.() -> Unit = {},
@@ -182,6 +185,9 @@ fun TvDetailPane(
                 matchesQuery && matchesType
             }
         }
+
+    // downloading everything would zip it: offer a direct link to the main video
+    val largestVideo = remember(files) { files.largestVideoForDirectLink() }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -230,6 +236,14 @@ fun TvDetailPane(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     actions()
+                }
+                if (onDownloadDirect != null && largestVideo != null) {
+                    LargestVideoShortcut(
+                        video = largestVideo,
+                        enabled = true,
+                        loading = isDownloading,
+                        onClick = { onDownloadDirect(largestVideo) },
+                    )
                 }
             }
         }
@@ -364,6 +378,38 @@ private fun FileRow(
             },
         headlineContent = { Text(file.displayName, maxLines = 2, overflow = TextOverflow.Ellipsis) },
     )
+}
+
+/** Offered when downloading a whole item would zip it, but it contains a video that could be streamed. */
+@Composable
+fun LargestVideoShortcut(
+    video: DetailFile,
+    enabled: Boolean,
+    loading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        TvActionButton(
+            text = stringResource(R.string.download_largest_video),
+            icon = R.drawable.ic_play_arrow,
+            enabled = enabled,
+            loading = loading,
+            onClick = onClick,
+        )
+        Text(
+            text = "${stringResource(R.string.selected_video)} ${video.displayName} · ${convertToSize(video.size)}",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            maxLines = 4,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = stringResource(R.string.download_mixed_notice),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 /** Generated link with the actions: play on a media player, open, copy and share. */
