@@ -5,6 +5,8 @@ import androidx.paging.PagingState
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
 import com.github.livingwithhippos.torbox.network.ApiResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import logcat.logcat
 
 class UsenetPagingSource(
@@ -13,10 +15,9 @@ class UsenetPagingSource(
 ) : PagingSource<Int, UsenetDownloadDto>() {
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, UsenetDownloadDto> {
         try {
-            // Start refresh at page 0 if undefined.
             val nextPageNumber = params.key ?: 0
             val nextOffset = nextPageNumber * pageSize
-            val response = client.usenet.list(offset = nextOffset, limit = pageSize)
+            val response = withContext(Dispatchers.IO) { client.usenet.list(offset = nextOffset, limit = pageSize) }
             if (response is ApiResult.Success) {
                 val items = response.value.data ?: emptyList()
                 val isEndOfList = items.size < pageSize
