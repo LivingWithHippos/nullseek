@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 
-val PAGING_LOAD_SIZE_PRESETS = listOf(20, 50, 100, 500, 1000)
+val PAGING_LOAD_SIZE_PRESETS = listOf(50, 100, 500, 1000, 5000)
 const val DEFAULT_PAGING_LOAD_SIZE = 100
 const val MAX_SEARCH_HISTORY = 20
 
