@@ -142,8 +142,8 @@ private fun UserOverview(
                         )
                         TvActionButton(
                             enabled = enabled,
-                            text = stringResource(R.string.open_torbox_settings),
-                            icon = R.drawable.ic_settings,
+                            text = stringResource(R.string.open_torbox_web),
+                            icon = R.drawable.ic_link,
                             onClick = { safeOpenUrl(context, viewModel.getTorboxSettingsUrl()) },
                         )
                     }

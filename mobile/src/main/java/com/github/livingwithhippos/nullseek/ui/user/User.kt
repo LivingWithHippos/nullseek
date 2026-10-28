@@ -318,12 +318,12 @@ private fun AccountOverviewAndActionsCard(
                 ),
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_settings),
+                    painter = painterResource(id = R.drawable.ic_link),
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.open_torbox_settings))
+                Text(text = stringResource(id = R.string.open_torbox_web))
             }
 
             OutlinedButton(
