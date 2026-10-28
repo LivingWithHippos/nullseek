@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.tv.ui.components.ConfirmDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.LocalMessenger
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvActionButton
@@ -47,6 +48,8 @@ fun TvWebDownloadDetailScreen(
         }
     }
 
+    val largestVideo = if (current.cached) current.files.map { it.toDetailFile() }.largestVideoForDirectLink() else null
+
     TvDetailPane(
         modifier = modifier,
         overview =
@@ -69,7 +72,7 @@ fun TvWebDownloadDetailScreen(
         onClose = onClose,
         isFullScreen = isFullScreen,
         onToggleFullScreen = onToggleFullScreen,
-        linkResult = uiState.downloadLinkResult?.let { LinkResult(it.title, it.url) },
+        linkResult = uiState.downloadLinkResult?.let { LinkResult(it.title, it.url, it.isZipped, it.fileType) },
         onDismissLink = viewModel::dismissDownloadLink,
         defaultPlayer = defaultPlayer,
         mediaPlayers = mediaPlayers,
@@ -86,6 +89,15 @@ fun TvWebDownloadDetailScreen(
                 loading = uiState.isDownloading,
                 onClick = { viewModel.startDownload() },
             )
+            if (largestVideo != null) {
+                TvActionButton(
+                    text = stringResource(R.string.download_largest_video),
+                    icon = R.drawable.ic_play_arrow,
+                    enabled = !uiState.isDeleting,
+                    loading = uiState.isDownloading,
+                    onClick = { viewModel.downloadDirect(largestVideo.id, largestVideo.name) },
+                )
+            }
             TvActionButton(
                 text = stringResource(R.string.action_refresh),
                 icon = R.drawable.ic_refresh,
@@ -101,6 +113,15 @@ fun TvWebDownloadDetailScreen(
             )
         },
         extraSections = {
+            if (largestVideo != null) {
+                item {
+                    Text(
+                        text = stringResource(R.string.download_mixed_notice) + "\n" + largestVideo.displayName + " · " + convertToSize(largestVideo.size),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             if (!current.cached) {
                 item { Text(stringResource(R.string.web_download_not_cached_warning), color = MaterialTheme.colorScheme.error) }
             }
@@ -110,6 +131,7 @@ fun TvWebDownloadDetailScreen(
     uiState.pendingDownload?.let { pending ->
         DownloadZipDialog(
             itemName = pending.fileName ?: current.name,
+            alwaysZipped = pending.fileId == null && current.files.size > 1,
             onConfirm = viewModel::confirmDownloadModal,
             onDismiss = viewModel::dismissDownloadModal,
         )

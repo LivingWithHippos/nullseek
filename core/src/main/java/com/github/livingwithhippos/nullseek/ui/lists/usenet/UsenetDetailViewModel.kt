@@ -8,6 +8,8 @@ import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
+import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
+import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
@@ -25,6 +27,10 @@ import org.koin.core.annotation.KoinViewModel
 data class DownloadLinkResult(
     val url: String,
     val title: String,
+    // multi-file downloads are always zipped by the server, whatever was requested
+    val isZipped: Boolean = false,
+    // set only for direct (non-zipped) links
+    val fileType: FileTypeCategory? = null,
 )
 
 data class PendingDownload(
@@ -229,6 +235,14 @@ class UsenetDetailViewModel(
             }
         }
 
+    /** Asks for an uncompressed link to one file, ignoring the zip setting, so it can be streamed. */
+    fun downloadDirect(
+        fileId: Int,
+        fileName: String,
+    ) {
+        requestDownloadLink(fileId = fileId, fileName = fileName, zipLink = false)
+    }
+
     fun requestDownloadLink(
         fileId: Int? = null,
         fileName: String? = null,
@@ -264,8 +278,18 @@ class UsenetDetailViewModel(
             if (response is ApiResult.Success && response.value.data != null) {
                 val url = response.value.data!!
                 val baseName = fileName ?: item.name
+                val files = item.files.orEmpty()
+                val isZipped = zipLink || (fileId == null && files.size > 1)
+                val target =
+                    when {
+                        fileId != null -> files.firstOrNull { it.id == fileId }
+                        files.size == 1 -> files.first()
+                        else -> null
+                    }
+                val fileType =
+                    if (isZipped) null else detectFileTypeCategory(target?.name ?: baseName, target?.mimetype)
                 val rawTitle =
-                    if (zipLink) {
+                    if (isZipped) {
                         if (baseName.endsWith(
                                 ".zip",
                                 ignoreCase = true,
@@ -281,7 +305,8 @@ class UsenetDetailViewModel(
                 val title = rawTitle.substringAfterLast('/').substringAfterLast('\\')
                 _uiState.value =
                     _uiState.value.copy(
-                        downloadLinkResult = DownloadLinkResult(url = url, title = title),
+                        downloadLinkResult =
+                            DownloadLinkResult(url = url, title = title, isZipped = isZipped, fileType = fileType),
                     )
             } else {
                 _events.emit(UsenetDetailEvent.ShowMessage("Failed to generate download link"))

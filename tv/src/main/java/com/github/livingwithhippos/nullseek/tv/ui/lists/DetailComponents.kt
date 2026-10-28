@@ -47,10 +47,12 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.TvActionButton
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvTextField
 import com.github.livingwithhippos.nullseek.tv.ui.components.safeOpenUrl
+import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.isAudioFile
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.nullseek.utils.isSubtitleFile
 import com.github.livingwithhippos.nullseek.utils.isVideoFile
+import com.github.livingwithhippos.nullseek.utils.largestVideoFile
 import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
@@ -117,7 +119,24 @@ data class DetailOverview(
 data class LinkResult(
     val title: String,
     val url: String,
+    val isZipped: Boolean = false,
+    val fileType: FileTypeCategory? = null,
 )
+
+private fun FileTypeCategory.labelRes(): Int =
+    when (this) {
+        FileTypeCategory.VIDEO -> R.string.file_type_video
+        FileTypeCategory.AUDIO -> R.string.file_type_audio
+        FileTypeCategory.DOCUMENT -> R.string.file_type_document
+        FileTypeCategory.BOOK -> R.string.file_type_book
+        FileTypeCategory.ARCHIVE -> R.string.file_type_archive
+        FileTypeCategory.SUBTITLE -> R.string.file_type_subtitle
+        FileTypeCategory.EXECUTABLE -> R.string.file_type_executable
+    }
+
+/** The biggest video, offered as a direct link when downloading everything would create a zip. */
+fun List<DetailFile>.largestVideoForDirectLink(): DetailFile? =
+    if (size > 1) largestVideoFile(this, { it.name }, { it.mimetype }, { it.size }) else null
 
 /**
  * Detail pane skeleton. Everything lives in one lazy list, so long file lists stay fast
@@ -365,6 +384,20 @@ fun DownloadLinkSection(
 
     SectionCard(modifier = modifier, title = stringResource(R.string.download_link_title), icon = R.drawable.ic_download) {
         Text(result.title, fontWeight = FontWeight.SemiBold, maxLines = 4, overflow = TextOverflow.Ellipsis)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Badge(
+                text = stringResource(if (result.isZipped) R.string.download_link_zipped else R.string.download_link_direct),
+                color = if (result.isZipped) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
+            )
+            result.fileType?.let { Badge(text = stringResource(it.labelRes()), color = MaterialTheme.colorScheme.secondary) }
+        }
+        if (result.isZipped) {
+            Text(
+                text = stringResource(R.string.download_link_zipped_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Text(
             text = stringResource(R.string.download_link_api_key_warning),
             style = MaterialTheme.typography.bodySmall,
@@ -474,6 +507,8 @@ fun DownloadZipDialog(
     itemName: String,
     onConfirm: (DownloadZipMode, Boolean) -> Unit,
     onDismiss: () -> Unit,
+    // true for a whole download with several files: the server zips it whatever is picked
+    alwaysZipped: Boolean = false,
 ) {
     var mode by remember { mutableStateOf(DownloadZipMode.ZIP_NON_MEDIA) }
     var rememberChoice by remember { mutableStateOf(false) }
@@ -491,6 +526,11 @@ fun DownloadZipDialog(
         dismissText = stringResource(R.string.cancel),
     ) {
         Text(itemName, maxLines = 2, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold)
+        Text(
+            text = stringResource(if (alwaysZipped) R.string.download_zip_notice_multi else R.string.download_zip_notice_single),
+            style = MaterialTheme.typography.bodySmall,
+            color = if (alwaysZipped) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         options.forEach { (option, label) ->
             ListItem(
                 selected = mode == option,

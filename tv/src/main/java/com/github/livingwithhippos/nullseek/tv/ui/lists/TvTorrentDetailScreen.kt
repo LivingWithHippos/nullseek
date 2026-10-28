@@ -12,6 +12,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.tv.ui.components.ConfirmDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.InfoRow
 import com.github.livingwithhippos.nullseek.tv.ui.components.LocalMessenger
@@ -53,6 +54,8 @@ fun TvTorrentDetailScreen(
         }
     }
 
+    val largestVideo = if (torrent.cached) torrent.files.map { it.toDetailFile() }.largestVideoForDirectLink() else null
+
     TvDetailPane(
         modifier = modifier,
         overview =
@@ -78,7 +81,7 @@ fun TvTorrentDetailScreen(
         onClose = onClose,
         isFullScreen = isFullScreen,
         onToggleFullScreen = onToggleFullScreen,
-        linkResult = uiState.downloadLinkResult?.let { LinkResult(it.title, it.url) },
+        linkResult = uiState.downloadLinkResult?.let { LinkResult(it.title, it.url, it.isZipped, it.fileType) },
         onDismissLink = viewModel::dismissDownloadLink,
         defaultPlayer = defaultPlayer,
         mediaPlayers = mediaPlayers,
@@ -95,6 +98,15 @@ fun TvTorrentDetailScreen(
                 loading = uiState.isDownloading,
                 onClick = { viewModel.startDownload() },
             )
+            if (largestVideo != null) {
+                TvActionButton(
+                    text = stringResource(R.string.download_largest_video),
+                    icon = R.drawable.ic_play_arrow,
+                    enabled = !uiState.isDeleting,
+                    loading = uiState.isDownloading,
+                    onClick = { viewModel.downloadDirect(largestVideo.id, largestVideo.name) },
+                )
+            }
             TvActionButton(
                 text = stringResource(R.string.action_refresh),
                 icon = R.drawable.ic_refresh,
@@ -124,6 +136,15 @@ fun TvTorrentDetailScreen(
             )
         },
         extraSections = {
+            if (largestVideo != null) {
+                item {
+                    Text(
+                        text = stringResource(R.string.download_mixed_notice) + "\n" + largestVideo.displayName + " · " + convertToSize(largestVideo.size),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             if (!torrent.cached) {
                 item {
                     Text(
@@ -151,6 +172,7 @@ fun TvTorrentDetailScreen(
     uiState.pendingDownload?.let { pending ->
         DownloadZipDialog(
             itemName = pending.fileName ?: torrent.name,
+            alwaysZipped = pending.fileId == null && torrent.files.size > 1,
             onConfirm = viewModel::confirmDownloadModal,
             onDismiss = viewModel::dismissDownloadModal,
         )
