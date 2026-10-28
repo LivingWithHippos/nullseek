@@ -5,8 +5,6 @@ import androidx.paging.PagingState
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import com.github.livingwithhippos.torbox.network.ApiResult
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import logcat.logcat
 
 class WebPagingSource(
@@ -17,10 +15,7 @@ class WebPagingSource(
         try {
             val nextPageNumber = params.key ?: 0
             val nextOffset = nextPageNumber * pageSize
-            // todo: manually set the context until it's fixed in the TorBox KMP library
-            //  this needs to be done on all big calls and probably all the others
-            //  but it's easier to fix the library
-            val response = withContext(Dispatchers.IO) { client.web.list(offset = nextOffset, limit = pageSize) }
+            val response = client.web.list(offset = nextOffset, limit = pageSize)
             if (response is ApiResult.Success) {
                 val items = response.value.data ?: emptyList()
                 val isEndOfList = items.size < pageSize

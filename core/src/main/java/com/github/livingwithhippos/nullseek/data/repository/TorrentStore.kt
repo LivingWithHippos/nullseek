@@ -5,8 +5,6 @@ import androidx.paging.PagingState
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import com.github.livingwithhippos.torbox.network.ApiResult
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import logcat.logcat
 
 class TorrentsPagingSource(
@@ -19,7 +17,7 @@ class TorrentsPagingSource(
         try {
             val nextPageNumber = params.key ?: 0
             val nextOffset = nextPageNumber * pageSize
-            val response = withContext(Dispatchers.IO) { client.torrent.list(offset = nextOffset, limit = pageSize) }
+            val response = client.torrent.list(offset = nextOffset, limit = pageSize)
             if (response is ApiResult.Success) {
                 val items = response.value.data ?: emptyList()
                 val isEndOfList = items.size < pageSize
