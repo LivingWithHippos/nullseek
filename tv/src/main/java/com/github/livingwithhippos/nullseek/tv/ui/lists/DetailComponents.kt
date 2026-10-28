@@ -157,10 +157,10 @@ fun TvDetailPane(
     files: List<DetailFile>,
     filterFilesFullPath: Boolean,
     onDownloadFile: ((DetailFile) -> Unit)?,
+    modifier: Modifier = Modifier,
     // null hides the largest-video shortcut, as onDownloadFile does for file rows
     onDownloadDirect: ((DetailFile) -> Unit)? = null,
     isDownloading: Boolean = false,
-    modifier: Modifier = Modifier,
     actions: @Composable () -> Unit,
     extraSections: LazyListScope.() -> Unit = {},
 ) {
@@ -294,9 +294,6 @@ private fun OverviewSection(overview: DetailOverview) {
             if (overview.active) Badge(stringResource(R.string.active), color = MaterialTheme.colorScheme.secondary)
         }
         InfoRow(stringResource(R.string.size), convertToSize(overview.sizeBytes))
-        overview.createdAt?.let { InfoRow(stringResource(R.string.added_on), formatToLocalDate(it)) }
-        overview.expiresAt?.let { InfoRow(stringResource(R.string.expires), formatToLocalDate(it)) }
-        overview.hash?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.hash), it, maxLines = 1) }
 
         val complete = overview.progress >= 1.0
         if (!(overview.cached && complete)) {
@@ -316,6 +313,17 @@ private fun OverviewSection(overview: DetailOverview) {
         overview.error?.takeIf { it.isNotBlank() }?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
         }
+        // secondary rows start collapsed
+        var expanded by rememberSaveable(overview.name) { mutableStateOf(false) }
+        TvActionButton(
+            text = stringResource(if (expanded) R.string.overview_less_details else R.string.overview_more_details),
+            icon = if (expanded) R.drawable.ic_arrow_drop_up else R.drawable.ic_arrow_drop_down,
+            onClick = { expanded = !expanded },
+        )
+        if (!expanded) return@SectionCard
+        overview.createdAt?.let { InfoRow(stringResource(R.string.added_on), formatToLocalDate(it)) }
+        overview.expiresAt?.let { InfoRow(stringResource(R.string.expires), formatToLocalDate(it)) }
+        overview.hash?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.hash), it, maxLines = 1) }
         val link = overview.sourceLink
         if (!link.isNullOrBlank() && overview.sourceLabel != null) {
             Text(overview.sourceLabel, style = MaterialTheme.typography.titleSmall)

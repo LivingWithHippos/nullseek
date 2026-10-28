@@ -399,6 +399,8 @@
     <string name="download_mixed_notice">Downloading everything creates a zip. To stream, use the button above or select a video from the file list below.</string>
     <string name="download_largest_video">Generate Video Download</string>
     <string name="selected_video">Selected video:</string>
+    <string name="overview_more_details">More details</string>
+    <string name="overview_less_details">Less details</string>
 
     <!-- External Content Disclaimer -->
     <string name="external_content_disclaimer_title">Disclaimer</string>

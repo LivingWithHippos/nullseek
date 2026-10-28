@@ -60,7 +60,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.core.utils.formatSpeed
-import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.core.utils.mockTorrents
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
@@ -72,12 +71,14 @@ import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.DeletingOverlay
+import com.github.livingwithhippos.nullseek.ui.utils.DetailOverviewCard
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadLinkTypeRow
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.FileTypeBadge
 import com.github.livingwithhippos.nullseek.ui.utils.LargestVideoShortcut
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.ui.utils.OverviewInfo
 import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.isAudioFile
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
@@ -224,7 +225,7 @@ private fun TorrentDetailScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Card 1: Torrent Overview (includes Magnet link)
-            TorrentOverviewCard(item = item, context = context)
+            DetailOverviewCard(info = item.toOverviewInfo())
 
             // Card 2: Transfer & Progress (hidden if cached at 100% progress)
             val isCachedAndComplete = item.cached && (item.progress >= 1.0 || item.downloadFinished)
@@ -340,175 +341,21 @@ private fun TorrentDetailScreen(
     }
 }
 
-@Composable
-private fun TorrentOverviewCard(
-    item: TorrentDto,
-    context: Context,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedCard(
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(id = R.string.torrent_overview),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-            )
-
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = convertToSize(item.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.status),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = item.downloadState.replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.state),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = buildString {
-                        append(if (item.active) stringResource(R.string.active) else stringResource(R.string.inactive))
-                        if (item.cached) append(" • " + stringResource(R.string.cached))
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.added_on),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = formatToLocalDate(item.createdAt),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            if (item.expiresAt != null) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.expires),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Text(
-                        text = formatToLocalDate(item.expiresAt),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            val effectiveMagnet =
-                item.magnet?.takeIf { it.isNotBlank() } ?: "magnet:?xt=urn:btih:${item.hash}"
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.magnet_link),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Row {
-                        IconButton(
-                            onClick = { setClipboardText(context, effectiveMagnet) },
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_copy),
-                                contentDescription = stringResource(id = R.string.copy_magnet),
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(4.dp))
-                        IconButton(
-                            onClick = { shareText(context, effectiveMagnet, item.name) },
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_share),
-                                contentDescription = stringResource(id = R.string.action_share),
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+private fun TorrentDto.toOverviewInfo() =
+    OverviewInfo(
+        titleRes = R.string.torrent_overview,
+        name = name,
+        sizeBytes = size,
+        downloadState = downloadState,
+        active = active,
+        cached = cached,
+        createdAt = createdAt,
+        expiresAt = expiresAt,
+        link = magnet?.takeIf { it.isNotBlank() } ?: "magnet:?xt=urn:btih:$hash",
+        linkLabelRes = R.string.magnet_link,
+        copyLinkDescriptionRes = R.string.copy_magnet,
+        showLinkText = false,
+    )
 
 @Composable
 private fun TorrentTransferProgressCard(

@@ -24,7 +24,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -61,7 +60,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.core.utils.formatSpeed
-import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.core.utils.mockWebDownload
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
@@ -73,12 +71,14 @@ import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.DeletingOverlay
+import com.github.livingwithhippos.nullseek.ui.utils.DetailOverviewCard
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadLinkTypeRow
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.FileTypeBadge
 import com.github.livingwithhippos.nullseek.ui.utils.LargestVideoShortcut
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
+import com.github.livingwithhippos.nullseek.ui.utils.OverviewInfo
 import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.isAudioFile
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
@@ -213,7 +213,7 @@ private fun WebDownloadDetailScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Card 1: Overview (with integrated Source Link)
-            WebOverviewCard(item = item, context = context)
+            DetailOverviewCard(info = item.toOverviewInfo())
 
             // Card 2: Transfer & Progress (hide if cached and completed)
             val isCompleted = item.progress >= 1.0 || item.downloadFinished
@@ -309,204 +309,19 @@ private fun WebDownloadDetailScreen(
     }
 }
 
-@Composable
-private fun WebOverviewCard(
-    item: WebDownloadDto,
-    context: Context,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedCard(
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(id = R.string.web_overview),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-            )
-
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            if (item.error != null) {
-                OutlinedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors =
-                        CardDefaults.outlinedCardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
-                        ),
-                ) {
-                    Text(
-                        text = item.error!!,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(12.dp),
-                    )
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = convertToSize(item.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.status),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = item.downloadState.replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.state),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text =
-                        buildString {
-                            append(if (item.active) stringResource(R.string.active) else stringResource(R.string.inactive))
-                            if (item.cached) append(" • " + stringResource(R.string.cached))
-                        },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.added_on),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = formatToLocalDate(item.createdAt),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            if (item.expiresAt != null) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.expires),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Text(
-                        text = formatToLocalDate(item.expiresAt),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
-
-            if (item.originalUrl.isNotBlank()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.source_link_title),
-                            modifier = Modifier.padding(end = 8.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Text(
-                            text = item.originalUrl,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        IconButton(
-                            onClick = { setClipboardText(context, item.originalUrl) },
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_copy),
-                                contentDescription = stringResource(id = R.string.copy_source_link),
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(4.dp))
-                        IconButton(
-                            onClick = { shareText(context, item.originalUrl, item.name) },
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_share),
-                                contentDescription = stringResource(id = R.string.action_share),
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+private fun WebDownloadDto.toOverviewInfo() =
+    OverviewInfo(
+        titleRes = R.string.web_overview,
+        name = name,
+        sizeBytes = size,
+        downloadState = downloadState,
+        active = active,
+        cached = cached,
+        createdAt = createdAt,
+        expiresAt = expiresAt,
+        error = error,
+        link = originalUrl.takeIf { it.isNotBlank() },
+    )
 
 @Composable
 private fun WebTransferProgressCard(
