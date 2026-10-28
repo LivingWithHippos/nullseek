@@ -122,6 +122,7 @@ fun SettingsScreen(
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
+    val useStandardFont by viewModel.useStandardFont.collectAsStateWithLifecycle()
     val externalDisclaimerAccepted by viewModel.externalDisclaimerAccepted.collectAsStateWithLifecycle()
     val isBackupBusy by viewModel.isBackupBusy.collectAsStateWithLifecycle()
     val entitlementState by billingManager.entitlementState.collectAsStateWithLifecycle()
@@ -209,6 +210,8 @@ fun SettingsScreen(
             onThemeModeSelected = { viewModel.setThemeMode(it) },
             themeColor = themeColor,
             onThemeColorSelected = { viewModel.setThemeColor(it) },
+            useStandardFont = useStandardFont,
+            onUseStandardFontChanged = { viewModel.setUseStandardFont(it) },
             externalDisclaimerAccepted = externalDisclaimerAccepted,
             onAcceptExternalDisclaimer = { viewModel.acceptExternalDisclaimer() },
             isBackupBusy = isBackupBusy,
@@ -261,6 +264,8 @@ fun SettingsScreen(
     onThemeModeSelected: (ThemeMode) -> Unit = {},
     themeColor: ThemeColor = ThemeColor.SYSTEM,
     onThemeColorSelected: (ThemeColor) -> Unit = {},
+    useStandardFont: Boolean = false,
+    onUseStandardFontChanged: (Boolean) -> Unit = {},
     externalDisclaimerAccepted: Boolean = false,
     onAcceptExternalDisclaimer: () -> Unit = {},
     isBackupBusy: Boolean = false,
@@ -512,6 +517,34 @@ fun SettingsScreen(
                                 label = { Text(text = stringResource(id = colorOption.labelRes())) },
                             )
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.theme_standard_font_title),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = stringResource(id = R.string.theme_standard_font_summary),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = useStandardFont,
+                            onCheckedChange = onUseStandardFontChanged,
+                        )
                     }
                 }
             }
@@ -904,6 +937,7 @@ private fun ThemeMode.labelRes(): Int =
         ThemeMode.SYSTEM -> R.string.theme_mode_system
         ThemeMode.LIGHT -> R.string.theme_mode_light
         ThemeMode.DARK -> R.string.theme_mode_dark
+        ThemeMode.AMOLED -> R.string.theme_mode_amoled
     }
 
 private fun ThemeColor.labelRes(): Int =
@@ -915,6 +949,7 @@ private fun ThemeColor.labelRes(): Int =
         ThemeColor.GREEN -> R.string.theme_color_green
         ThemeColor.ORANGE -> R.string.theme_color_orange
         ThemeColor.RED -> R.string.theme_color_red
+        ThemeColor.TORBOX -> R.string.theme_color_torbox
     }
 
 @Preview

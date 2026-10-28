@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.NullRootViewModel
+import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
 import com.github.livingwithhippos.nullseek.tv.ui.navigation.TvNullSeekApp
 import com.github.livingwithhippos.nullseek.tv.ui.theme.TvNullSeekTheme
 import com.github.livingwithhippos.nullseek.tv.ui.theme.shouldUseDarkTheme
@@ -24,6 +25,7 @@ class MainActivity : ComponentActivity() {
             TvNullSeekTheme(
                 darkTheme = shouldUseDarkTheme(themeMode),
                 themeColor = themeColor,
+                pureBlack = themeMode == ThemeMode.AMOLED,
             ) {
                 TvNullSeekApp(
                     rootUiState = uiState,

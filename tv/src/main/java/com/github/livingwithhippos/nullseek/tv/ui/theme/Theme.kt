@@ -7,6 +7,7 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ColorScheme
@@ -23,8 +24,21 @@ fun shouldUseDarkTheme(themeMode: ThemeMode): Boolean =
     when (themeMode) {
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
         ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
+        ThemeMode.DARK, ThemeMode.AMOLED -> true
     }
+
+// Pure black surfaces for AMOLED screens; containers stay slightly lighter so cards remain visible.
+private fun M3ColorScheme.toPureBlack(): M3ColorScheme =
+    copy(
+        background = Color.Black,
+        surface = Color.Black,
+        surfaceDim = Color.Black,
+        surfaceContainerLowest = Color.Black,
+        surfaceContainerLow = Color(0xFF0A0A0A),
+        surfaceContainer = Color(0xFF121212),
+        surfaceContainerHigh = Color(0xFF1C1C1C),
+        surfaceContainerHighest = Color(0xFF262626),
+    )
 
 private val M3Shapes =
     Shapes(
@@ -115,15 +129,17 @@ private fun lightTv(c: M3ColorScheme): ColorScheme =
 fun TvNullSeekTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     themeColor: ThemeColor = ThemeColor.SYSTEM,
+    pureBlack: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val m3Scheme =
+    val baseScheme =
         if (themeColor == ThemeColor.SYSTEM && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         } else {
             themeColor.colorScheme(darkTheme)
         }
+    val m3Scheme = if (darkTheme && pureBlack) baseScheme.toPureBlack() else baseScheme
 
     M3MaterialTheme(
         colorScheme = m3Scheme,

@@ -383,6 +383,10 @@
     <string name="theme_color_green">Green</string>
     <string name="theme_color_orange">Orange</string>
     <string name="theme_color_red">Red</string>
+    <string name="theme_mode_amoled">AMOLED</string>
+    <string name="theme_color_torbox">TorBox</string>
+    <string name="theme_standard_font_title">Standard font</string>
+    <string name="theme_standard_font_summary">Use the system font instead of monospace</string>
 
     <!-- External Content Disclaimer -->
     <string name="external_content_disclaimer_title">Disclaimer</string>

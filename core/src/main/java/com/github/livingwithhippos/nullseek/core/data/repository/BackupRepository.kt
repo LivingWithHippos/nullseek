@@ -61,6 +61,7 @@ data class PreferencesBackup(
     val searchHistory: List<String> = emptyList(),
     val themeMode: String? = null,
     val themeColor: String? = null,
+    val useStandardFont: Boolean? = null,
     val externalDisclaimerAccepted: Boolean? = null,
 )
 
@@ -250,6 +251,7 @@ class BackupRepositoryImpl(
     private val searchHistoryKey = stringPreferencesKey("search_history")
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val themeColorKey = stringPreferencesKey("theme_color")
+    private val useStandardFontKey = booleanPreferencesKey("use_standard_font")
     private val externalDisclaimerAcceptedKey = booleanPreferencesKey("external_disclaimer_accepted")
 
     override suspend fun createBackupJson(): Result<String> =
@@ -342,6 +344,7 @@ class BackupRepositoryImpl(
             searchHistory = history,
             themeMode = preferences[themeModeKey],
             themeColor = preferences[themeColorKey],
+            useStandardFont = preferences[useStandardFontKey],
             externalDisclaimerAccepted = preferences[externalDisclaimerAcceptedKey],
         )
     }
@@ -365,6 +368,7 @@ class BackupRepositoryImpl(
             }
             backup.themeMode?.let { preferences[themeModeKey] = it }
             backup.themeColor?.let { preferences[themeColorKey] = it }
+            backup.useStandardFont?.let { preferences[useStandardFontKey] = it }
             backup.externalDisclaimerAccepted?.let { preferences[externalDisclaimerAcceptedKey] = it }
         }
     }

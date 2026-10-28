@@ -256,6 +256,7 @@ private fun AppearanceSettings(viewModel: SettingsViewModel) {
                 ThemeMode.SYSTEM to R.string.theme_mode_system,
                 ThemeMode.LIGHT to R.string.theme_mode_light,
                 ThemeMode.DARK to R.string.theme_mode_dark,
+                ThemeMode.AMOLED to R.string.theme_mode_amoled,
             ).forEach { (mode, label) ->
                 FilterChip(selected = themeMode == mode, onClick = { viewModel.setThemeMode(mode) }) { Text(stringResource(label)) }
             }
@@ -270,6 +271,7 @@ private fun AppearanceSettings(viewModel: SettingsViewModel) {
                 ThemeColor.GREEN to R.string.theme_color_green,
                 ThemeColor.ORANGE to R.string.theme_color_orange,
                 ThemeColor.RED to R.string.theme_color_red,
+                ThemeColor.TORBOX to R.string.theme_color_torbox,
             ).forEach { (color, label) ->
                 FilterChip(
                     selected = themeColor == color,

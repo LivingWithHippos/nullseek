@@ -86,6 +86,13 @@ class SettingsViewModel(
             initialValue = ThemeColor.SYSTEM,
         )
 
+    val useStandardFont: StateFlow<Boolean> =
+        preferencesRepository.useStandardFont.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false,
+        )
+
     val externalDisclaimerAccepted: StateFlow<Boolean> =
         preferencesRepository.externalDisclaimerAccepted.stateIn(
             scope = viewModelScope,
@@ -129,6 +136,10 @@ class SettingsViewModel(
         viewModelScope.launch {
             preferencesRepository.setThemeColor(color)
         }
+    }
+
+    fun setUseStandardFont(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setUseStandardFont(enabled) }
     }
 
     fun exportBackup() {
