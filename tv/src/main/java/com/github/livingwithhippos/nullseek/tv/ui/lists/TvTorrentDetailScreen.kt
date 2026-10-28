@@ -85,13 +85,13 @@ fun TvTorrentDetailScreen(
         onPlayMedia = viewModel::playOnMedia,
         files = torrent.files.map { it.toDetailFile() },
         filterFilesFullPath = filterFilesFullPath,
-        onDownloadFile = if (torrent.cached) { file -> viewModel.startDownload(file.id, file.name) } else null,
+        onDownloadFile = if (torrent.cached && !uiState.isDeleting) { file -> viewModel.startDownload(file.id, file.name) } else null,
         actions = {
             TvActionButton(
                 text = stringResource(R.string.action_download),
                 icon = R.drawable.ic_download,
                 primary = true,
-                enabled = torrent.cached,
+                enabled = torrent.cached && !uiState.isDeleting,
                 loading = uiState.isDownloading,
                 onClick = { viewModel.startDownload() },
             )
@@ -99,18 +99,21 @@ fun TvTorrentDetailScreen(
                 text = stringResource(R.string.action_refresh),
                 icon = R.drawable.ic_refresh,
                 loading = uiState.isRefreshing,
+                enabled = !uiState.isDeleting,
                 onClick = viewModel::refreshTorrent,
             )
             TvActionButton(
                 text = stringResource(R.string.action_export),
                 icon = R.drawable.ic_magnet,
                 loading = uiState.isExporting,
+                enabled = !uiState.isDeleting,
                 onClick = { viewModel.showExportDialog(true) },
             )
             TvActionButton(
                 text = stringResource(R.string.action_full_info),
                 icon = R.drawable.ic_info,
                 loading = uiState.isLoadingFullInfo,
+                enabled = !uiState.isDeleting,
                 onClick = viewModel::loadFullInfo,
             )
             TvActionButton(

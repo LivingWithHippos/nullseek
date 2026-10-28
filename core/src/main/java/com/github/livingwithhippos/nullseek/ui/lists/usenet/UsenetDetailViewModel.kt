@@ -302,11 +302,11 @@ class UsenetDetailViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isDeleting = true, showDeleteConfirmDialog = false)
             val response = client.usenet.control(usenetId = item.id, operation = "Delete")
-            _uiState.value = _uiState.value.copy(isDeleting = false)
             if (response is ApiResult.Success) {
                 _events.emit(UsenetDetailEvent.ShowMessage("Usenet download deleted"))
                 _events.emit(UsenetDetailEvent.Deleted)
             } else {
+                _uiState.value = _uiState.value.copy(isDeleting = false)
                 _events.emit(UsenetDetailEvent.ShowMessage("Failed to delete usenet download"))
             }
         }

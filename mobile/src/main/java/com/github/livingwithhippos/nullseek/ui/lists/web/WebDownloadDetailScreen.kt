@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -70,6 +71,7 @@ import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
+import com.github.livingwithhippos.nullseek.ui.utils.DeletingOverlay
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.FileTypeBadge
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -85,6 +87,7 @@ import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
 import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import com.github.livingwithhippos.torbox.model.WebDownloadFileDto
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -115,7 +118,8 @@ fun WebDownloadDetailScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is WebDownloadDetailEvent.ShowMessage -> {
-                    snackbarHostState.showSnackbar(event.message)
+                    // don't wait for the snackbar, or Deleted would be handled only after it hides
+                    launch { snackbarHostState.showSnackbar(event.message) }
                 }
 
                 is WebDownloadDetailEvent.Deleted -> {
@@ -129,28 +133,31 @@ fun WebDownloadDetailScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         modifier = modifier,
     ) { innerPadding ->
-        WebDownloadDetailScreen(
-            modifier = Modifier.padding(innerPadding),
-            context = LocalContext.current,
-            item = currentItem,
-            uiState = uiState,
-            defaultPlayer = defaultPlayer,
-            mediaPlayers = mediaPlayers,
-            filterFilesFullPath = filterFilesFullPath,
-            onPlayMedia = { service, url, setAsDefault ->
-                viewModel.playOnMedia(service, url, setAsDefault)
-            },
-            onRefresh = { viewModel.refreshWebDownload() },
-            onDownloadZip = { viewModel.startDownload() },
-            onDownloadFile = { fileId, fileName -> viewModel.startDownload(fileId, fileName) },
-            onDismissDownloadLink = { viewModel.dismissDownloadLink() },
-            onConfirmDownloadModal = { mode, rememberChoice ->
-                viewModel.confirmDownloadModal(mode, rememberChoice)
-            },
-            onDismissDownloadModal = { viewModel.dismissDownloadModal() },
-            onShowDeleteDialog = { viewModel.showDeleteConfirmDialog(it) },
-            onConfirmDelete = { viewModel.deleteWebDownload() },
-        )
+        Box(modifier = Modifier.padding(innerPadding)) {
+            WebDownloadDetailScreen(
+                modifier = Modifier.fillMaxSize(),
+                context = LocalContext.current,
+                item = currentItem,
+                uiState = uiState,
+                defaultPlayer = defaultPlayer,
+                mediaPlayers = mediaPlayers,
+                filterFilesFullPath = filterFilesFullPath,
+                onPlayMedia = { service, url, setAsDefault ->
+                    viewModel.playOnMedia(service, url, setAsDefault)
+                },
+                onRefresh = { viewModel.refreshWebDownload() },
+                onDownloadZip = { viewModel.startDownload() },
+                onDownloadFile = { fileId, fileName -> viewModel.startDownload(fileId, fileName) },
+                onDismissDownloadLink = { viewModel.dismissDownloadLink() },
+                onConfirmDownloadModal = { mode, rememberChoice ->
+                    viewModel.confirmDownloadModal(mode, rememberChoice)
+                },
+                onDismissDownloadModal = { viewModel.dismissDownloadModal() },
+                onShowDeleteDialog = { viewModel.showDeleteConfirmDialog(it) },
+                onConfirmDelete = { viewModel.deleteWebDownload() },
+            )
+            DeletingOverlay(visible = uiState.isDeleting)
+        }
     }
 }
 
@@ -820,7 +827,7 @@ private fun WebActionsCard(
             OutlinedButton(
                 onClick = onRefresh,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isRefreshing,
+                enabled = !uiState.isRefreshing && !uiState.isDeleting,
             ) {
                 if (uiState.isRefreshing) {
                     CircularProgressIndicator(
@@ -842,7 +849,7 @@ private fun WebActionsCard(
             FilledTonalButton(
                 onClick = onDownloadZip,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = item.cached && !uiState.isDownloading,
+                enabled = item.cached && !uiState.isDownloading && !uiState.isDeleting,
             ) {
                 if (uiState.isDownloading) {
                     CircularProgressIndicator(

@@ -76,13 +76,13 @@ fun TvUsenetDetailScreen(
         onPlayMedia = viewModel::playOnMedia,
         files = current.files.map { it.toDetailFile() },
         filterFilesFullPath = filterFilesFullPath,
-        onDownloadFile = if (current.cached) { file -> viewModel.startDownload(file.id, file.name) } else null,
+        onDownloadFile = if (current.cached && !uiState.isDeleting) { file -> viewModel.startDownload(file.id, file.name) } else null,
         actions = {
             TvActionButton(
                 text = stringResource(R.string.action_download),
                 icon = R.drawable.ic_download,
                 primary = true,
-                enabled = current.cached,
+                enabled = current.cached && !uiState.isDeleting,
                 loading = uiState.isDownloading,
                 onClick = { viewModel.startDownload() },
             )
@@ -90,6 +90,7 @@ fun TvUsenetDetailScreen(
                 text = stringResource(R.string.action_refresh),
                 icon = R.drawable.ic_refresh,
                 loading = uiState.isRefreshing,
+                enabled = !uiState.isDeleting,
                 onClick = viewModel::refreshUsenet,
             )
             TvActionButton(

@@ -302,11 +302,11 @@ class WebDownloadDetailViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isDeleting = true, showDeleteConfirmDialog = false)
             val response = client.web.control(webId = item.id, operation = "Delete")
-            _uiState.value = _uiState.value.copy(isDeleting = false)
             if (response is ApiResult.Success) {
                 _events.emit(WebDownloadDetailEvent.ShowMessage("Web download deleted"))
                 _events.emit(WebDownloadDetailEvent.Deleted)
             } else {
+                _uiState.value = _uiState.value.copy(isDeleting = false)
                 _events.emit(WebDownloadDetailEvent.ShowMessage("Failed to delete web download"))
             }
         }

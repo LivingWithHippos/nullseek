@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -69,6 +70,7 @@ import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
+import com.github.livingwithhippos.nullseek.ui.utils.DeletingOverlay
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.FileTypeBadge
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -85,6 +87,7 @@ import com.github.livingwithhippos.nullseek.utils.shareText
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import com.github.livingwithhippos.torbox.model.TorrentFileDto
 import com.github.livingwithhippos.torbox.model.TorrentInfoDto
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
@@ -116,7 +119,8 @@ fun TorrentDetailScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is TorrentDetailEvent.ShowMessage -> {
-                    snackbarHostState.showSnackbar(event.message)
+                    // don't wait for the snackbar, or Deleted would be handled only after it hides
+                    launch { snackbarHostState.showSnackbar(event.message) }
                 }
 
                 TorrentDetailEvent.Deleted -> {
@@ -130,36 +134,39 @@ fun TorrentDetailScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         modifier = modifier,
     ) { innerPadding ->
-        TorrentDetailScreen(
-            modifier = Modifier.padding(innerPadding),
-            context = LocalContext.current,
-            item = currentItem,
-            uiState = uiState,
-            defaultPlayer = defaultPlayer,
-            mediaPlayers = mediaPlayers,
-            filterFilesFullPath = filterFilesFullPath,
-            onPlayMedia = { service, url, setAsDefault ->
-                viewModel.playOnMedia(service, url, setAsDefault)
-            },
-            onRefresh = { viewModel.refreshTorrent() },
-            onDownloadZip = { viewModel.startDownload() },
-            onDownloadFile = { fileId, fileName ->
-                viewModel.startDownload(
-                    fileId, fileName
-                )
-            },
-            onDismissDownloadLink = { viewModel.dismissDownloadLink() },
-            onConfirmDownloadModal = { mode, rememberChoice ->
-                viewModel.confirmDownloadModal(mode, rememberChoice)
-            },
-            onDismissDownloadModal = { viewModel.dismissDownloadModal() },
-            onShowExportDialog = { viewModel.showExportDialog(it) },
-            onExportMagnet = { context -> viewModel.exportMagnet(context) },
-            onExportTorrentFile = { context -> viewModel.exportTorrentFile(context) },
-            onToggleFullInfo = { viewModel.loadFullInfo() },
-            onShowDeleteDialog = { viewModel.showDeleteConfirmDialog(it) },
-            onConfirmDelete = { viewModel.deleteTorrent() },
-        )
+        Box(modifier = Modifier.padding(innerPadding)) {
+            TorrentDetailScreen(
+                modifier = Modifier.fillMaxSize(),
+                context = LocalContext.current,
+                item = currentItem,
+                uiState = uiState,
+                defaultPlayer = defaultPlayer,
+                mediaPlayers = mediaPlayers,
+                filterFilesFullPath = filterFilesFullPath,
+                onPlayMedia = { service, url, setAsDefault ->
+                    viewModel.playOnMedia(service, url, setAsDefault)
+                },
+                onRefresh = { viewModel.refreshTorrent() },
+                onDownloadZip = { viewModel.startDownload() },
+                onDownloadFile = { fileId, fileName ->
+                    viewModel.startDownload(
+                        fileId, fileName
+                    )
+                },
+                onDismissDownloadLink = { viewModel.dismissDownloadLink() },
+                onConfirmDownloadModal = { mode, rememberChoice ->
+                    viewModel.confirmDownloadModal(mode, rememberChoice)
+                },
+                onDismissDownloadModal = { viewModel.dismissDownloadModal() },
+                onShowExportDialog = { viewModel.showExportDialog(it) },
+                onExportMagnet = { context -> viewModel.exportMagnet(context) },
+                onExportTorrentFile = { context -> viewModel.exportTorrentFile(context) },
+                onToggleFullInfo = { viewModel.loadFullInfo() },
+                onShowDeleteDialog = { viewModel.showDeleteConfirmDialog(it) },
+                onConfirmDelete = { viewModel.deleteTorrent() },
+            )
+            DeletingOverlay(visible = uiState.isDeleting)
+        }
     }
 }
 
@@ -878,7 +885,7 @@ private fun TorrentActionsCard(
             OutlinedButton(
                 onClick = onRefresh,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isRefreshing,
+                enabled = !uiState.isRefreshing && !uiState.isDeleting,
             ) {
                 if (uiState.isRefreshing) {
                     CircularProgressIndicator(
@@ -900,7 +907,7 @@ private fun TorrentActionsCard(
             FilledTonalButton(
                 onClick = onDownloadZip,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = item.cached && !uiState.isDownloading,
+                enabled = item.cached && !uiState.isDownloading && !uiState.isDeleting,
             ) {
                 if (uiState.isDownloading) {
                     CircularProgressIndicator(
@@ -931,7 +938,7 @@ private fun TorrentActionsCard(
                 OutlinedButton(
                     onClick = onShowExportDialog,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isExporting,
+                    enabled = !uiState.isExporting && !uiState.isDeleting,
                 ) {
                     if (uiState.isExporting) {
                         CircularProgressIndicator(
@@ -955,7 +962,7 @@ private fun TorrentActionsCard(
                 OutlinedButton(
                     onClick = onToggleFullInfo,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isLoadingFullInfo,
+                    enabled = !uiState.isLoadingFullInfo && !uiState.isDeleting,
                 ) {
                     if (uiState.isLoadingFullInfo) {
                         CircularProgressIndicator(

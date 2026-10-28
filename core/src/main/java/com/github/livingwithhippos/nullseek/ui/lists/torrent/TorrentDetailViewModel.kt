@@ -424,11 +424,11 @@ class TorrentDetailViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isDeleting = true, showDeleteConfirmDialog = false)
             val response = client.torrent.control(torrentId = torrent.id, operation = "Delete")
-            _uiState.value = _uiState.value.copy(isDeleting = false)
             if (response is ApiResult.Success) {
                 _events.emit(TorrentDetailEvent.ShowMessage("Torrent deleted"))
                 _events.emit(TorrentDetailEvent.Deleted)
             } else {
+                _uiState.value = _uiState.value.copy(isDeleting = false)
                 _events.emit(TorrentDetailEvent.ShowMessage("Failed to delete torrent"))
             }
         }
