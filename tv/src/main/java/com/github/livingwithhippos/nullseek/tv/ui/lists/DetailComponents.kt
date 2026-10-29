@@ -12,15 +12,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -49,11 +55,12 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.TvDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvTextField
 import com.github.livingwithhippos.nullseek.tv.ui.components.safeOpenUrl
 import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
+import com.github.livingwithhippos.nullseek.utils.MultiFileVideos
 import com.github.livingwithhippos.nullseek.utils.isAudioFile
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.nullseek.utils.isSubtitleFile
 import com.github.livingwithhippos.nullseek.utils.isVideoFile
-import com.github.livingwithhippos.nullseek.utils.largestVideoFile
+import com.github.livingwithhippos.nullseek.utils.multiFileVideos
 import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
@@ -135,9 +142,8 @@ private fun FileTypeCategory.labelRes(): Int =
         FileTypeCategory.EXECUTABLE -> R.string.file_type_executable
     }
 
-/** The biggest video, offered as a direct link when downloading everything would create a zip. */
-fun List<DetailFile>.largestVideoForDirectLink(): DetailFile? =
-    if (size > 1) largestVideoFile(this, { it.name }, { it.mimetype }, { it.size }) else null
+/** The only video gets a direct link, several videos point to the file list; null when neither applies. */
+fun List<DetailFile>.multiFileVideos(): MultiFileVideos<DetailFile>? = multiFileVideos(this, { it.name }, { it.mimetype })
 
 /**
  * Detail pane skeleton. Everything lives in one lazy list, so long file lists stay fast
@@ -186,10 +192,23 @@ fun TvDetailPane(
             }
         }
 
-    // downloading everything would zip it: offer a direct link to the main video
-    val largestVideo = remember(files) { files.largestVideoForDirectLink() }
+    // downloading everything would zip it: offer the only video directly, or point to the file list
+    val videos = remember(files) { files.multiFileVideos() }
+    val listState = rememberLazyListState()
+    val videoFilterFocus = remember { FocusRequester() }
+    var scrollToFiles by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(scrollToFiles) {
+        if (scrollToFiles == 0) return@LaunchedEffect
+        // wait for the filtered list to be laid out, the files header sits right before the file rows
+        withFrameNanos { }
+        val headerIndex = listState.layoutInfo.totalItemsCount - maxOf(filteredFiles.size, 1) - 1
+        listState.animateScrollToItem(headerIndex.coerceAtLeast(0))
+        runCatching { videoFilterFocus.requestFocus() }
+    }
 
     LazyColumn(
+        state = listState,
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -237,13 +256,29 @@ fun TvDetailPane(
                 ) {
                     actions()
                 }
-                if (onDownloadDirect != null && largestVideo != null) {
-                    LargestVideoShortcut(
-                        video = largestVideo,
-                        enabled = true,
-                        loading = isDownloading,
-                        onClick = { onDownloadDirect(largestVideo) },
-                    )
+                if (onDownloadDirect != null) {
+                    when (videos) {
+                        is MultiFileVideos.Single -> {
+                            SingleVideoShortcut(
+                                video = videos.file,
+                                enabled = true,
+                                loading = isDownloading,
+                                onClick = { onDownloadDirect(videos.file) },
+                            )
+                        }
+
+                        is MultiFileVideos.Many -> {
+                            TvMultipleVideosNotice(
+                                count = videos.count,
+                                onShowVideos = {
+                                    filterVideo = true
+                                    scrollToFiles++
+                                },
+                            )
+                        }
+
+                        null -> {}
+                    }
                 }
             }
         }
@@ -261,7 +296,11 @@ fun TvDetailPane(
                         label = stringResource(R.string.search_files_hint),
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        FilterChip(selected = filterVideo, onClick = { filterVideo = !filterVideo }) {
+                        FilterChip(
+                            selected = filterVideo,
+                            onClick = { filterVideo = !filterVideo },
+                            modifier = Modifier.focusRequester(videoFilterFocus),
+                        ) {
                             Text(stringResource(R.string.filter_video))
                         }
                         FilterChip(selected = filterAudio, onClick = { filterAudio = !filterAudio }) {
@@ -388,9 +427,9 @@ private fun FileRow(
     )
 }
 
-/** Offered when downloading a whole item would zip it, but it contains a video that could be streamed. */
+/** Offered when downloading a whole item would zip it, but it contains a single video that could be streamed. */
 @Composable
-fun LargestVideoShortcut(
+fun SingleVideoShortcut(
     video: DetailFile,
     enabled: Boolean,
     loading: Boolean,
@@ -416,6 +455,32 @@ fun LargestVideoShortcut(
             text = stringResource(R.string.download_mixed_notice),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** Shown instead of [SingleVideoShortcut] when an item holds several videos: points to the file list. */
+@Composable
+fun TvMultipleVideosNotice(
+    count: Int,
+    onShowVideos: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.download_multiple_videos_title, count),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = stringResource(R.string.download_multiple_videos_notice),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        TvActionButton(
+            text = stringResource(R.string.download_show_videos),
+            icon = R.drawable.ic_manage_search,
+            onClick = onShowVideos,
         )
     }
 }

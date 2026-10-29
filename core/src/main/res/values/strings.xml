@@ -93,6 +93,7 @@
     <string name="actions">Actions</string>
     <string name="download">Download</string>
     <string name="action_download">Generate Download</string>
+    <string name="action_generate_zip">Generate Zip</string>
     <string name="action_download_zip">Download as Zip</string>
     <string name="action_share">Share</string>
     <string name="action_delete">Delete</string>
@@ -400,7 +401,10 @@
     <string name="download_link_direct">Direct link</string>
     <string name="download_link_zipped_hint">Zipped links can\'t be streamed. Download a single media file for a direct link.</string>
     <string name="download_mixed_notice">Downloading everything creates a zip. To stream, use the button above or select a video from the file list below.</string>
-    <string name="download_largest_video">Generate Video Download</string>
+    <string name="download_largest_video">Download only the video</string>
+    <string name="download_multiple_videos_title">%1$d videos found</string>
+    <string name="download_multiple_videos_notice">Pick a video from the file list to get its streamable link.</string>
+    <string name="download_show_videos">Show videos</string>
     <string name="selected_video">Selected video:</string>
     <string name="overview_more_details">More details</string>
     <string name="overview_less_details">Less details</string>

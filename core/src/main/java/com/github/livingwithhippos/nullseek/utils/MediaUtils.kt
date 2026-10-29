@@ -1,5 +1,7 @@
 package com.github.livingwithhippos.nullseek.utils
 
+import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
+
 private val VIDEO_EXTENSIONS =
     setOf(
         "mkv",
@@ -199,13 +201,51 @@ fun detectFileTypeCategory(
         else -> null
     }
 
-/** The biggest video among [files], used to offer a direct link when a full download would be zipped. */
-fun <T> largestVideoFile(
+/** What to offer instead of a zip for an item with several files. */
+sealed interface MultiFileVideos<out T> {
+    /** The only video among other files: it can get its own direct link. */
+    data class Single<T>(
+        val file: T,
+    ) : MultiFileVideos<T>
+
+    /** Several videos: the user has to pick one from the file list. */
+    data class Many(
+        val count: Int,
+    ) : MultiFileVideos<Nothing>
+}
+
+/** Null for single-file items or items without videos. */
+fun <T> multiFileVideos(
     files: List<T>,
     name: (T) -> String,
     mimetype: (T) -> String?,
-    size: (T) -> Long,
-): T? = files.filter { isVideoFile(name(it), mimetype(it)) }.maxByOrNull(size)
+): MultiFileVideos<T>? {
+    if (files.size <= 1) return null
+    val videos = files.filter { isVideoFile(name(it), mimetype(it)) }
+    return when (videos.size) {
+        0 -> null
+        1 -> MultiFileVideos.Single(videos.first())
+        else -> MultiFileVideos.Many(videos.size)
+    }
+}
+
+/**
+ * True when downloading the whole item gives a zip, matching the detail view models' zip rules:
+ * several files are always zipped, a single file follows the zip setting. ASK is false, the dialog decides.
+ */
+fun <T> wholeDownloadIsZipped(
+    mode: DownloadZipMode,
+    files: List<T>,
+    name: (T) -> String,
+    mimetype: (T) -> String?,
+): Boolean {
+    if (files.size > 1) return true
+    return when (mode) {
+        DownloadZipMode.ZIP -> true
+        DownloadZipMode.ASK, DownloadZipMode.UNCOMPRESSED -> false
+        DownloadZipMode.ZIP_NON_MEDIA -> files.firstOrNull()?.let { !isStreamableOrSubtitle(name(it), mimetype(it)) } ?: true
+    }
+}
 
 /** Media and subtitles are kept uncompressed so they can be streamed or sent to external players. */
 fun isStreamableOrSubtitle(
