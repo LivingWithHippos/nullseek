@@ -1246,37 +1246,36 @@ private fun StremioTitleDetailsCard(
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (canNavigateBack) {
-                        TextButton(onClick = onBack) {
-                            Text(text = backButtonLabel)
-                        }
-                    } else {
-                        Spacer(modifier = Modifier.width(1.dp))
+                // Open IMDb gets its own row, so the back and trailing actions don't get squeezed
+                if (baseImdbId.startsWith("tt")) {
+                    OutlinedButton(
+                        onClick = {
+                            openWebPage(context, "https://www.imdb.com/title/$baseImdbId/")
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_open_in_new),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = stringResource(R.string.search_stremio_open_imdb))
                     }
+                }
 
+                if (canNavigateBack || trailingAction != null) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (baseImdbId.startsWith("tt")) {
-                            OutlinedButton(
-                                onClick = {
-                                    openWebPage(context, "https://www.imdb.com/title/$baseImdbId/")
-                                },
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_open_in_new),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = stringResource(R.string.search_stremio_open_imdb))
+                        if (canNavigateBack) {
+                            TextButton(onClick = onBack) {
+                                Text(text = backButtonLabel)
                             }
+                        } else {
+                            Spacer(modifier = Modifier.width(1.dp))
                         }
                         trailingAction?.invoke()
                     }
