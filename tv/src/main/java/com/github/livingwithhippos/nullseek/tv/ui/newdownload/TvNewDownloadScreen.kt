@@ -49,6 +49,7 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.TvTextField
 import com.github.livingwithhippos.nullseek.tv.ui.components.launchSafely
 import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadViewModel
 import com.github.livingwithhippos.nullseek.ui.newdownload.UploadState
+import com.github.livingwithhippos.nullseek.ui.newdownload.appendLinkLine
 import com.github.livingwithhippos.nullseek.ui.newdownload.getFileName
 import com.github.livingwithhippos.nullseek.ui.newdownload.parseDownloadLinks
 import com.github.livingwithhippos.nullseek.ui.newdownload.readPickedFiles
@@ -172,12 +173,15 @@ fun TvNewDownloadScreen(
                         TvActionButton(
                             text = stringResource(R.string.paste_from_clipboard),
                             icon = R.drawable.ic_paste,
-                            onClick = {
-                                getClipboardText(context)?.let { clip ->
-                                    linkText = if (linkText.isBlank()) clip else "$linkText\n$clip"
-                                }
-                            },
+                            onClick = { linkText = appendLinkLine(linkText, getClipboardText(context)) },
                         )
+                        if (linkText.isNotBlank()) {
+                            TvActionButton(
+                                text = stringResource(R.string.clear_links),
+                                icon = R.drawable.ic_close,
+                                onClick = { linkText = "" },
+                            )
+                        }
                         Text(
                             stringResource(R.string.valid_links_count, links.size),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

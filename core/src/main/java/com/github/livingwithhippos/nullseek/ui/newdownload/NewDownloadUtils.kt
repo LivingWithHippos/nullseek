@@ -36,3 +36,14 @@ fun Context.readPickedFiles(uris: List<Uri>): List<Pair<String, ByteArray>> =
         val bytes = runCatching { contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull()
         if (bytes != null) getFileName(uri) to bytes else null
     }
+
+/** Appends [addition] on its own line; blank additions leave [current] unchanged. */
+fun appendLinkLine(
+    current: String,
+    addition: String?,
+): String {
+    val clean = addition?.trim().orEmpty()
+    if (clean.isEmpty()) return current
+    val base = current.trimEnd()
+    return if (base.isEmpty()) clean else "$base\n$clean"
+}

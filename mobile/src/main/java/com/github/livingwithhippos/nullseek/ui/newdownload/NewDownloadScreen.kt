@@ -26,6 +26,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
@@ -62,6 +63,7 @@ import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.ui.theme.Button
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
+import com.github.livingwithhippos.nullseek.utils.getClipboardText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -401,13 +403,43 @@ fun LinkInputSection(
     onLinkChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     Column(modifier = modifier) {
-        Text(
-            text = stringResource(id = R.string.link_label),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = stringResource(id = R.string.link_label),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(
+                onClick = { onLinkChange(appendLinkLine(linkText, getClipboardText(context))) },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_paste),
+                    contentDescription = stringResource(id = R.string.paste_from_clipboard),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            IconButton(
+                onClick = { onLinkChange("") },
+                enabled = linkText.isNotEmpty(),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_close),
+                    contentDescription = stringResource(id = R.string.clear_links),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
         OutlinedTextField(
             value = linkText,
             onValueChange = onLinkChange,
