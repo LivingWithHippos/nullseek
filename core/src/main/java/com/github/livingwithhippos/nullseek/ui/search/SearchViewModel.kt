@@ -330,6 +330,10 @@ class SearchViewModel(
     private val checkCache: StateFlow<Boolean> =
         preferencesRepository.searchCheckCache.stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
+    /** Whether the IMDb details card starts expanded. */
+    val imdbDetailsExpanded: StateFlow<Boolean> =
+        preferencesRepository.imdbDetailsExpanded.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     // Torrent hashes TorBox reported as cached; empty while the check is turned off.
     private val cachedHashes = MutableStateFlow<Set<String>>(emptySet())
     private val visibleCachedHashes =

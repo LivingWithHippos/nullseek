@@ -27,6 +27,7 @@ class BackupRepositoryTest {
                         includeReferral = true,
                         searchAutoAddDownload = true,
                         searchCheckCache = false,
+                        imdbDetailsExpanded = true,
                         searchSortOption = "SEEDERS",
                         searchSortAscending = false,
                         searchMode = "STREMIO_ADDONS",

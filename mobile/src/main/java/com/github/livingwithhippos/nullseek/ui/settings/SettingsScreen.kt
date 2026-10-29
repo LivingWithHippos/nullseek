@@ -120,6 +120,7 @@ fun SettingsScreen(
     val pagingLoadSize by viewModel.pagingLoadSize.collectAsStateWithLifecycle()
     val searchAutoAddDownload by viewModel.searchAutoAddDownload.collectAsStateWithLifecycle()
     val searchCheckCache by viewModel.searchCheckCache.collectAsStateWithLifecycle()
+    val imdbDetailsExpanded by viewModel.imdbDetailsExpanded.collectAsStateWithLifecycle()
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
@@ -207,6 +208,8 @@ fun SettingsScreen(
             onSearchAutoAddDownloadChanged = { viewModel.setSearchAutoAddDownload(it) },
             searchCheckCache = searchCheckCache,
             onSearchCheckCacheChanged = { viewModel.setSearchCheckCache(it) },
+            imdbDetailsExpanded = imdbDetailsExpanded,
+            onImdbDetailsExpandedChanged = { viewModel.setImdbDetailsExpanded(it) },
             filterFilesFullPath = filterFilesFullPath,
             onFilterFilesFullPathChanged = { viewModel.setFilterFilesFullPath(it) },
             themeMode = themeMode,
@@ -263,6 +266,8 @@ fun SettingsScreen(
     onSearchAutoAddDownloadChanged: (Boolean) -> Unit = {},
     searchCheckCache: Boolean = true,
     onSearchCheckCacheChanged: (Boolean) -> Unit = {},
+    imdbDetailsExpanded: Boolean = false,
+    onImdbDetailsExpandedChanged: (Boolean) -> Unit = {},
     filterFilesFullPath: Boolean = false,
     onFilterFilesFullPathChanged: (Boolean) -> Unit = {},
     themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -644,6 +649,39 @@ fun SettingsScreen(
                     Switch(
                         checked = searchCheckCache,
                         onCheckedChange = onSearchCheckCacheChanged,
+                    )
+                }
+            }
+
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.imdb_details_expanded_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = stringResource(id = R.string.imdb_details_expanded_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = imdbDetailsExpanded,
+                        onCheckedChange = onImdbDetailsExpandedChanged,
                     )
                 }
             }

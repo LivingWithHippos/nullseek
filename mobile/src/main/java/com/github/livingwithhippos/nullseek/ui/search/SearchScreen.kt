@@ -113,6 +113,7 @@ fun SearchScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val selected by viewModel.selectedResult.collectAsStateWithLifecycle()
     val autoAdd by viewModel.autoAddDownload.collectAsStateWithLifecycle()
+    val imdbDetailsExpanded by viewModel.imdbDetailsExpanded.collectAsStateWithLifecycle()
     val adding by viewModel.addingDownload.collectAsStateWithLifecycle()
     val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
@@ -155,6 +156,7 @@ fun SearchScreen(
         onSelectEpisode = viewModel::selectSeriesEpisode,
         onSearchManualEpisode = viewModel::searchManualSeriesEpisode,
         onSearchWholeSeries = viewModel::searchWholeSeries,
+        imdbDetailsExpanded = imdbDetailsExpanded,
         onStremioBack = viewModel::navigateBackInStremio,
         onRemoveHistoryItem = viewModel::removeSearchHistoryItem,
         onClearHistory = viewModel::clearSearchHistory,
@@ -184,6 +186,7 @@ fun SearchContent(
     onSelectEpisode: (SeriesEpisodeItem) -> Unit = {},
     onSearchManualEpisode: (Int, Int) -> Unit = { _, _ -> },
     onSearchWholeSeries: () -> Unit = {},
+    imdbDetailsExpanded: Boolean = false,
     onStremioBack: () -> Unit = {},
     onRemoveHistoryItem: (String) -> Unit = {},
     onClearHistory: () -> Unit = {},
@@ -444,6 +447,7 @@ fun SearchContent(
                             onSelectEpisode = onSelectEpisode,
                             onSearchManualEpisode = onSearchManualEpisode,
                             onSearchWholeSeries = onSearchWholeSeries,
+                            imdbDetailsExpanded = imdbDetailsExpanded,
                             onStremioFilterQuery = onStremioFilterQuery,
                             onStremioBack = onStremioBack,
                             onResultClick = onResultClick,
@@ -532,6 +536,7 @@ private fun StremioSearchContentSection(
     onSelectEpisode: (SeriesEpisodeItem) -> Unit,
     onSearchManualEpisode: (Int, Int) -> Unit,
     onSearchWholeSeries: () -> Unit,
+    imdbDetailsExpanded: Boolean,
     onStremioFilterQuery: (String) -> Unit,
     onStremioBack: () -> Unit,
     onResultClick: (SearchResult) -> Unit,
@@ -553,6 +558,7 @@ private fun StremioSearchContentSection(
                 onSearchManualEpisode = onSearchManualEpisode,
                 onSearchWholeSeries = onSearchWholeSeries,
                 onBackToTitles = onStremioBack,
+                imdbDetailsExpanded = imdbDetailsExpanded,
             )
         }
 
@@ -562,6 +568,7 @@ private fun StremioSearchContentSection(
                 onFilterQueryChange = onStremioFilterQuery,
                 onBack = onStremioBack,
                 onResultClick = onResultClick,
+                imdbDetailsExpanded = imdbDetailsExpanded,
             )
         }
     }
@@ -742,6 +749,7 @@ private fun StremioEpisodesSection(
     onSearchManualEpisode: (Int, Int) -> Unit,
     onSearchWholeSeries: () -> Unit,
     onBackToTitles: () -> Unit,
+    imdbDetailsExpanded: Boolean = false,
 ) {
     val selectedTitle = stremioState.selectedTitle ?: return
     var manualSeasonText by rememberSaveable(selectedTitle.imdbId) { mutableStateOf("1") }
@@ -756,7 +764,7 @@ private fun StremioEpisodesSection(
             canNavigateBack = stremioState.canNavigateBack,
             backButtonLabel = stringResource(R.string.search_stremio_back_titles),
             onBack = onBackToTitles,
-            initialExpanded = false,
+            initialExpanded = imdbDetailsExpanded,
             trailingAction = {
                 FilledTonalButton(onClick = onSearchWholeSeries) {
                     Text(stringResource(R.string.search_stremio_whole_series))
@@ -958,7 +966,8 @@ private fun StremioTitleDetailsCard(
         (selectedTitle?.imdbId ?: activeStreamImdbId)
             .substringBefore(":")
             .trim()
-    var isExpanded by rememberSaveable(baseImdbId, activeStreamImdbId) {
+    // keyed on initialExpanded too, so changing the setting applies right away
+    var isExpanded by rememberSaveable(baseImdbId, activeStreamImdbId, initialExpanded) {
         mutableStateOf(
             initialExpanded
         )
@@ -1283,6 +1292,7 @@ private fun StremioStreamsSection(
     onFilterQueryChange: (String) -> Unit,
     onBack: () -> Unit,
     onResultClick: (SearchResult) -> Unit,
+    imdbDetailsExpanded: Boolean = false,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         val selectedTitle = stremioState.selectedTitle
@@ -1300,7 +1310,7 @@ private fun StremioStreamsSection(
                         stringResource(R.string.search_stremio_back_titles)
                     },
                 onBack = onBack,
-                initialExpanded = true,
+                initialExpanded = imdbDetailsExpanded,
             )
         }
 

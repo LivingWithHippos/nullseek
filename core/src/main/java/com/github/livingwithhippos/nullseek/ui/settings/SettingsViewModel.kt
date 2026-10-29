@@ -65,6 +65,13 @@ class SettingsViewModel(
             initialValue = false,
         )
 
+    val imdbDetailsExpanded: StateFlow<Boolean> =
+        preferencesRepository.imdbDetailsExpanded.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false,
+        )
+
     val searchCheckCache: StateFlow<Boolean> =
         preferencesRepository.searchCheckCache.stateIn(
             scope = viewModelScope,
@@ -115,6 +122,10 @@ class SettingsViewModel(
 
     fun setSearchAutoAddDownload(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setSearchAutoAddDownload(enabled) }
+    }
+
+    fun setImdbDetailsExpanded(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setImdbDetailsExpanded(enabled) }
     }
 
     fun setSearchCheckCache(enabled: Boolean) {

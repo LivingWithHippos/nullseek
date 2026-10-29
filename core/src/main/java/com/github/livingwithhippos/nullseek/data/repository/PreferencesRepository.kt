@@ -71,6 +71,7 @@ class PreferencesRepository(
     private val referralKey = booleanPreferencesKey("include_referral_in_browser")
     private val searchAutoAddDownloadKey = booleanPreferencesKey("search_auto_add_download")
     private val searchCheckCacheKey = booleanPreferencesKey("search_check_cache")
+    private val imdbDetailsExpandedKey = booleanPreferencesKey("imdb_details_expanded")
     private val filterFilesFullPathKey = booleanPreferencesKey("filter_files_full_path")
 
     private val searchSortOptionKey = stringPreferencesKey("search_sort_option")
@@ -122,6 +123,10 @@ class PreferencesRepository(
     // on by default
     val searchCheckCache: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[searchCheckCacheKey] ?: true }
+
+    // the IMDb details card in the Stremio search starts collapsed unless enabled
+    val imdbDetailsExpanded: Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[imdbDetailsExpandedKey] ?: false }
 
     val filterFilesFullPath: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[filterFilesFullPathKey] ?: false }
@@ -238,6 +243,10 @@ class PreferencesRepository(
 
     suspend fun setSearchCheckCache(enabled: Boolean) {
         dataStore.edit { preferences -> preferences[searchCheckCacheKey] = enabled }
+    }
+
+    suspend fun setImdbDetailsExpanded(enabled: Boolean) {
+        dataStore.edit { preferences -> preferences[imdbDetailsExpandedKey] = enabled }
     }
 
     suspend fun setSearchAutoAddDownload(enabled: Boolean) {
