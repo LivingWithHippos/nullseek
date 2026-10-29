@@ -119,6 +119,7 @@ fun SettingsScreen(
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
     val pagingLoadSize by viewModel.pagingLoadSize.collectAsStateWithLifecycle()
     val searchAutoAddDownload by viewModel.searchAutoAddDownload.collectAsStateWithLifecycle()
+    val searchCheckCache by viewModel.searchCheckCache.collectAsStateWithLifecycle()
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
@@ -204,6 +205,8 @@ fun SettingsScreen(
             onPagingLoadSizeSelected = { viewModel.setPagingLoadSize(it) },
             searchAutoAddDownload = searchAutoAddDownload,
             onSearchAutoAddDownloadChanged = { viewModel.setSearchAutoAddDownload(it) },
+            searchCheckCache = searchCheckCache,
+            onSearchCheckCacheChanged = { viewModel.setSearchCheckCache(it) },
             filterFilesFullPath = filterFilesFullPath,
             onFilterFilesFullPathChanged = { viewModel.setFilterFilesFullPath(it) },
             themeMode = themeMode,
@@ -258,6 +261,8 @@ fun SettingsScreen(
     onPagingLoadSizeSelected: (Int) -> Unit = {},
     searchAutoAddDownload: Boolean = false,
     onSearchAutoAddDownloadChanged: (Boolean) -> Unit = {},
+    searchCheckCache: Boolean = true,
+    onSearchCheckCacheChanged: (Boolean) -> Unit = {},
     filterFilesFullPath: Boolean = false,
     onFilterFilesFullPathChanged: (Boolean) -> Unit = {},
     themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -606,6 +611,39 @@ fun SettingsScreen(
                     Switch(
                         checked = searchAutoAddDownload,
                         onCheckedChange = onSearchAutoAddDownloadChanged,
+                    )
+                }
+            }
+
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.search_check_cache_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = stringResource(id = R.string.search_check_cache_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = searchCheckCache,
+                        onCheckedChange = onSearchCheckCacheChanged,
                     )
                 }
             }

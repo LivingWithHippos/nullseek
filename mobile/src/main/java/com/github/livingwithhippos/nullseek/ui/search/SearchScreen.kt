@@ -90,6 +90,7 @@ import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.SuggestionChip
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
+import com.github.livingwithhippos.nullseek.ui.utils.CachedTag
 import com.github.livingwithhippos.nullseek.ui.utils.ExtendableFabMenu
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
@@ -330,12 +331,20 @@ fun SearchContent(
                                             Modifier
                                                 .fillMaxWidth()
                                                 .clickable {
-                                                    textFieldState.setTextAndPlaceCursorAtEnd(historyQuery)
+                                                    textFieldState.setTextAndPlaceCursorAtEnd(
+                                                        historyQuery
+                                                    )
                                                     scope.launch {
                                                         searchBarState.animateToCollapsed()
                                                         onSearch(historyQuery)
                                                     }
-                                                }.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                                                }
+                                                .padding(
+                                                    start = 16.dp,
+                                                    end = 8.dp,
+                                                    top = 4.dp,
+                                                    bottom = 4.dp
+                                                ),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Icon(
@@ -535,6 +544,7 @@ private fun StremioSearchContentSection(
                 onSelectImdbTitle = onSelectImdbTitle,
             )
         }
+
         StremioStage.EPISODES -> {
             StremioEpisodesSection(
                 stremioState = stremioState,
@@ -545,6 +555,7 @@ private fun StremioSearchContentSection(
                 onBackToTitles = onStremioBack,
             )
         }
+
         StremioStage.STREAMS -> {
             StremioStreamsSection(
                 stremioState = stremioState,
@@ -947,7 +958,11 @@ private fun StremioTitleDetailsCard(
         (selectedTitle?.imdbId ?: activeStreamImdbId)
             .substringBefore(":")
             .trim()
-    var isExpanded by rememberSaveable(baseImdbId, activeStreamImdbId) { mutableStateOf(initialExpanded) }
+    var isExpanded by rememberSaveable(baseImdbId, activeStreamImdbId) {
+        mutableStateOf(
+            initialExpanded
+        )
+    }
 
     val displayTitle = selectedTitle?.title ?: activeStreamLabel
     val compactSubtitle =
@@ -956,7 +971,13 @@ private fun StremioTitleDetailsCard(
                 add(stringResource(R.string.search_stremio_imdb_rating, it))
             }
             if (selectedEpisode != null) {
-                add("S%02dE%02d · %s".format(selectedEpisode.season, selectedEpisode.episode, selectedEpisode.title))
+                add(
+                    "S%02dE%02d · %s".format(
+                        selectedEpisode.season,
+                        selectedEpisode.episode,
+                        selectedEpisode.title
+                    )
+                )
             } else {
                 selectedTitle?.year?.takeIf { it.isNotBlank() }?.let { add(it) }
                 selectedTitle?.runtime?.takeIf { it.isNotBlank() }?.let { add(it) }
@@ -1103,11 +1124,17 @@ private fun StremioTitleDetailsCard(
                                     color = MaterialTheme.colorScheme.primaryContainer,
                                 ) {
                                     Text(
-                                        text = stringResource(R.string.search_stremio_imdb_rating, rating),
+                                        text = stringResource(
+                                            R.string.search_stremio_imdb_rating,
+                                            rating
+                                        ),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        modifier = Modifier.padding(
+                                            horizontal = 6.dp,
+                                            vertical = 2.dp
+                                        ),
                                     )
                                 }
                             }
@@ -1115,7 +1142,8 @@ private fun StremioTitleDetailsCard(
                                 listOfNotNull(
                                     selectedTitle?.year?.takeIf { it.isNotBlank() },
                                     selectedTitle?.runtime?.takeIf { it.isNotBlank() },
-                                    activeStreamImdbId.ifBlank { baseImdbId }.takeIf { it.isNotBlank() },
+                                    activeStreamImdbId.ifBlank { baseImdbId }
+                                        .takeIf { it.isNotBlank() },
                                 ).joinToString(" · ")
                             if (metaLine.isNotEmpty()) {
                                 Text(
@@ -1144,7 +1172,10 @@ private fun StremioTitleDetailsCard(
 
                         if (!selectedTitle?.director.isNullOrEmpty()) {
                             Text(
-                                text = stringResource(R.string.search_stremio_director, selectedTitle.director.joinToString(", ")),
+                                text = stringResource(
+                                    R.string.search_stremio_director,
+                                    selectedTitle.director.joinToString(", ")
+                                ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -1160,7 +1191,11 @@ private fun StremioTitleDetailsCard(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "S%02dE%02d · %s".format(selectedEpisode.season, selectedEpisode.episode, selectedEpisode.title),
+                            text = "S%02dE%02d · %s".format(
+                                selectedEpisode.season,
+                                selectedEpisode.episode,
+                                selectedEpisode.title
+                            ),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.weight(1f),
@@ -1180,6 +1215,7 @@ private fun StremioTitleDetailsCard(
                     when {
                         !selectedEpisode?.overview.isNullOrBlank() && !selectedTitle?.description.isNullOrBlank() ->
                             "${selectedEpisode.overview}\n\n${selectedTitle.description}"
+
                         !selectedEpisode?.overview.isNullOrBlank() -> selectedEpisode.overview
                         !selectedTitle?.description.isNullOrBlank() -> selectedTitle.description
                         else -> null
@@ -1444,6 +1480,7 @@ fun SearchResultCard(
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 AssistChip(onClick = {}, label = { Text(result.indexerName) })
+                if (result.isCached) CachedTag()
                 result.categories.forEach { category ->
                     Surface(
                         shape = RoundedCornerShape(0.dp),
@@ -1457,24 +1494,39 @@ fun SearchResultCard(
                         )
                     }
                 }
-                if (result.sizeBytes > 0L) {
-                    Text(convertToSize(result.sizeBytes), style = MaterialTheme.typography.labelMedium)
-                }
                 ageText(result.publishedAt)?.let {
                     Text(it, style = MaterialTheme.typography.labelMedium)
                 }
             }
-            if ((!result.isFromStremioAddon && !result.isDirectStream) || result.seeders > 0 || result.peers > 0) {
-                Text(
-                    text =
-                        if (result.isFromStremioAddon && result.seeders > 0 && result.peers == 0) {
-                            stringResource(R.string.search_result_seeders_only, result.seeders)
-                        } else {
-                            stringResource(R.string.search_result_seeders_peers, result.seeders, result.peers)
-                        },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 4.dp)
+            ) {
+
+                if ((!result.isFromStremioAddon && !result.isDirectStream) || result.seeders > 0 || result.peers > 0) {
+                    Text(
+                        text =
+                            if (result.isFromStremioAddon && result.seeders > 0 && result.peers == 0) {
+                                stringResource(R.string.search_result_seeders_only, result.seeders)
+                            } else {
+                                stringResource(
+                                    R.string.search_result_seeders_peers,
+                                    result.seeders,
+                                    result.peers
+                                )
+                            },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+
+                if (result.sizeBytes > 0L) {
+                    Text(
+                        convertToSize(result.sizeBytes),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
     }
@@ -1706,7 +1758,15 @@ fun SearchSortSheetPreview() {
 
 private val previewResults =
     listOf(
-        SearchResult("Ubuntu 24.04 Desktop amd64", "Jackett", 6_200_000_000, 120, 15, System.currentTimeMillis() - 3 * 86_400_000L),
+        SearchResult(
+            "Ubuntu 24.04 Desktop amd64",
+            "Jackett",
+            6_200_000_000,
+            120,
+            15,
+            System.currentTimeMillis() - 3 * 86_400_000L,
+            isCached = true
+        ),
         SearchResult("Debian 12 netinst", "Prowlarr", 650_000_000, 80, 4, null),
     )
 
@@ -1737,7 +1797,7 @@ fun SearchScreenLoadingPreview() {
                 SearchUiState(
                     activeIndexers = previewIndexers,
                     status = SearchStatus.Loading(1, 2),
-                    results = previewResults.take(1),
+                    results = previewResults.take(2),
                 ),
                 NullNavigationType.BOTTOM_NAVIGATION,
             )

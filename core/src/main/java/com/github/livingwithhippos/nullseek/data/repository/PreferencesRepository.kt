@@ -70,6 +70,7 @@ class PreferencesRepository(
 
     private val referralKey = booleanPreferencesKey("include_referral_in_browser")
     private val searchAutoAddDownloadKey = booleanPreferencesKey("search_auto_add_download")
+    private val searchCheckCacheKey = booleanPreferencesKey("search_check_cache")
     private val filterFilesFullPathKey = booleanPreferencesKey("filter_files_full_path")
 
     private val searchSortOptionKey = stringPreferencesKey("search_sort_option")
@@ -117,6 +118,10 @@ class PreferencesRepository(
 
     val searchAutoAddDownload: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[searchAutoAddDownloadKey] ?: false }
+
+    // on by default
+    val searchCheckCache: Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[searchCheckCacheKey] ?: true }
 
     val filterFilesFullPath: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[filterFilesFullPathKey] ?: false }
@@ -229,6 +234,10 @@ class PreferencesRepository(
 
     suspend fun resetIncludeReferral() {
         dataStore.edit { preferences -> preferences.remove(referralKey) }
+    }
+
+    suspend fun setSearchCheckCache(enabled: Boolean) {
+        dataStore.edit { preferences -> preferences[searchCheckCacheKey] = enabled }
     }
 
     suspend fun setSearchAutoAddDownload(enabled: Boolean) {

@@ -1,5 +1,8 @@
 package com.github.livingwithhippos.nullseek.data.model
 
+import com.github.livingwithhippos.nullseek.core.utils.extractInfoHash
+import com.github.livingwithhippos.nullseek.core.utils.normalizeInfoHash
+
 data class SearchResult(
     val title: String,
     val indexerName: String,
@@ -14,6 +17,10 @@ data class SearchResult(
     val categories: List<String> = emptyList(),
     val isDirectStream: Boolean = false,
     val isFromStremioAddon: Boolean = false,
+    /** Torrent info hash reported by the indexer, when there is one. */
+    val infoHash: String? = null,
+    /** True when TorBox reports this torrent as cached. */
+    val isCached: Boolean = false,
 )
 
 fun SearchResult.hasDownloadLink(): Boolean = !magnetLink.isNullOrBlank() || !downloadLink.isNullOrBlank()
@@ -23,6 +30,16 @@ fun SearchResult.isDirectStreamResult(): Boolean = isDirectStream && !downloadLi
 
 /** The magnet link if present, otherwise the torrent download link. */
 fun SearchResult.preferredLink(): String? = magnetLink?.takeIf { it.isNotBlank() } ?: downloadLink?.takeIf { it.isNotBlank() }
+
+/** The torrent info hash as lowercase hex, from the indexer or the magnet link. */
+fun SearchResult.torrentHash(): String? = normalizeInfoHash(infoHash) ?: extractInfoHash(magnetLink)
+
+/** Marks the result as cached when its torrent hash is in [cached]. */
+fun SearchResult.markCached(cached: Set<String>): SearchResult {
+    if (cached.isEmpty()) return this
+    val isCached = torrentHash()?.let { it in cached } == true
+    return if (isCached == this.isCached) this else copy(isCached = isCached)
+}
 
 /** Progress of a single indexer during a search. */
 sealed interface IndexerSearchOutcome {

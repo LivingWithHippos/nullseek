@@ -26,6 +26,7 @@ class BackupRepositoryTest {
                         pagingLoadSize = 500,
                         includeReferral = true,
                         searchAutoAddDownload = true,
+                        searchCheckCache = false,
                         searchSortOption = "SEEDERS",
                         searchSortAscending = false,
                         searchMode = "STREMIO_ADDONS",

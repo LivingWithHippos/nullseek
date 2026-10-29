@@ -150,6 +150,7 @@ fun TvSearchResultDetail(
             TvActionButton(stringResource(R.string.search_detail_back), onClose, icon = R.drawable.ic_close)
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (result.isCached) Badge(stringResource(R.string.cached), color = MaterialTheme.colorScheme.tertiary)
             Badge(result.indexerName)
             if (result.sizeBytes > 0) Badge(convertToSize(result.sizeBytes), color = MaterialTheme.colorScheme.secondary)
             if (!result.isFromStremioAddon) {

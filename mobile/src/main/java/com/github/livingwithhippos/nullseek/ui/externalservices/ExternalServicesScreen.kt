@@ -577,7 +577,7 @@ private fun ServiceCard(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                     }
-                    Text(text = stringResource(id = R.string.external_services_test_connection))
+                    Text(text = stringResource(id = R.string.test))
                 }
 
                 if (!service.isDefault) {
@@ -764,7 +764,6 @@ private fun ServiceEditDialog(
                     )
                 }
 
-                // Test Connection button inside dialog
                 OutlinedButton(
                     onClick = { onTest(currentService()) },
                     enabled = !isTesting && address.isNotBlank(),
@@ -778,7 +777,7 @@ private fun ServiceEditDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = stringResource(id = R.string.testing_connection))
                     } else {
-                        Text(text = stringResource(id = R.string.external_services_test_connection))
+                        Text(text = stringResource(id = R.string.test))
                     }
                 }
 

@@ -2,6 +2,7 @@ package com.github.livingwithhippos.nullseek.ui.utils
 
 import android.content.Context
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.ui.theme.CustomTypography
+import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedIconButton
 import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
@@ -48,16 +51,6 @@ fun CardStat(
             style = CustomTypography.cardBoldValue,
             modifier = Modifier.padding(top = 4.dp)
         )
-    }
-}
-
-@Composable
-@Preview
-fun CardStatPreview() {
-    NullSeekTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            CardStat(titles = listOf("Seeds", "Total"), description = "123")
-        }
     }
 }
 
@@ -91,16 +84,6 @@ fun CopyButton(
 }
 
 @Composable
-@Preview
-fun CopyButtonPreview() {
-    NullSeekTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            CopyButton(text = "Sample Text", description = "Copy Sample Text")
-        }
-    }
-}
-
-@Composable
 fun IconText(
     text: String,
     @DrawableRes
@@ -127,11 +110,29 @@ fun IconText(
 }
 
 @Composable
-@Preview
-fun IconTextPreview() {
-    NullSeekTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            IconText(text = "Sample Text", icon = R.drawable.ic_magnet)
+fun CachedTag(modifier: Modifier = Modifier) {
+
+    Surface(
+        shape = RoundedCornerShape(0.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = modifier,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_check),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(12.dp),
+            )
+            Text(
+                text = stringResource(id = R.string.cached),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
         }
     }
 }
@@ -168,10 +169,22 @@ fun FileTypeBadge(
 
 @Composable
 @Preview
-fun FileTypeBadgePreview() {
+fun SharedComponentsPreview() {
     NullSeekTheme {
-        Surface(modifier = Modifier.padding(8.dp)) {
-            FileTypeBadge(category = FileTypeCategory.VIDEO)
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp)
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                CardStat(titles = listOf("Seeds", "Total"), description = "123")
+                CopyButton(text = "Sample Text", description = "Copy Sample Text")
+                IconText(text = "Sample Text", icon = R.drawable.ic_magnet)
+                CachedTag()
+                FileTypeBadge(category = FileTypeCategory.VIDEO)
+            }
         }
     }
 }

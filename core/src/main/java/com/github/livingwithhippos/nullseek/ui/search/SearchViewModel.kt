@@ -14,6 +14,9 @@ import com.github.livingwithhippos.nullseek.data.model.Indexer
 import com.github.livingwithhippos.nullseek.data.model.IndexerSearchOutcome
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
 import com.github.livingwithhippos.nullseek.data.model.hasDownloadLink
+import com.github.livingwithhippos.nullseek.data.model.markCached
+import com.github.livingwithhippos.nullseek.data.model.torrentHash
+import com.github.livingwithhippos.nullseek.data.repository.CacheChecker
 import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
@@ -30,11 +33,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -207,14 +212,18 @@ fun buildSearchState(
     searchMode: SearchMode = SearchMode.INDEXERS,
     activeAddons: List<StremioAddonEntity> = emptyList(),
     stremioState: StremioSearchState = StremioSearchState(),
+    cached: Set<String> = emptySet(),
 ): SearchUiState {
     val order = progress.outcomes.sortedBy { o -> active.indexOfFirst { it.id == o.indexer.id }.let { if (it < 0) Int.MAX_VALUE else it } }
     val results =
         order
+            .asSequence()
             .filterIsInstance<IndexerSearchOutcome.Success>()
             .flatMap { it.results }
             .filter { it.hasDownloadLink() }
             .plus(progress.addonResults)
+            .map { it.markCached(cached) }
+            .toList()
             .applySort(sort)
     val failed = order.filterIsInstance<IndexerSearchOutcome.Failure>().map { it.indexer.name }
     val status =
@@ -247,6 +256,7 @@ class SearchViewModel(
     private val downloadCreator: DownloadCreator,
     private val addonSearchHelper: AddonSearchHelper,
     private val externalServicesRepository: ExternalServicesRepository,
+    private val cacheChecker: CacheChecker,
 ) : ViewModel() {
     val autoAddDownload: StateFlow<Boolean> =
         preferencesRepository.searchAutoAddDownload.stateIn(
@@ -316,6 +326,14 @@ class SearchViewModel(
             }.stateIn(viewModelScope, SharingStarted.Eagerly, SearchMode.INDEXERS)
 
     private val progress = MutableStateFlow(SearchProgress())
+
+    private val checkCache: StateFlow<Boolean> =
+        preferencesRepository.searchCheckCache.stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    // Torrent hashes TorBox reported as cached; empty while the check is turned off.
+    private val cachedHashes = MutableStateFlow<Set<String>>(emptySet())
+    private val visibleCachedHashes =
+        combine(cachedHashes, checkCache) { cached, enabled -> if (enabled) cached else emptySet() }
     private val stremioState = MutableStateFlow(StremioSearchState())
     private var stremioJob: Job? = null
 
@@ -332,17 +350,18 @@ class SearchViewModel(
                 indexersRepository.indexers.map { it.activeOnly() },
                 progress,
                 errorsDismissed,
-            ) { s, active, p, dismissed ->
-                val base = buildSearchState(p, s, active)
+                visibleCachedHashes,
+            ) { s, active, p, dismissed, cached ->
+                val base = buildSearchState(p, s, active, cached = cached)
                 if (dismissed) base.copy(failedIndexers = emptyList()) else base
             },
             searchMode,
             addonSearchHelper.getEnabledAddons(),
-            combine(stremioState, stremioSort, stremioShowFilterBar) { stremio, sSort, showFilter ->
+            combine(stremioState, stremioSort, stremioShowFilterBar, visibleCachedHashes) { stremio, sSort, showFilter, cached ->
                 stremio.copy(
                     sort = sSort,
                     showFilterBar = showFilter,
-                    streamResults = stremio.streamResults.applySort(sSort),
+                    streamResults = stremio.streamResults.map { it.markCached(cached) }.applySort(sSort),
                 )
             },
             preferencesRepository.searchHistory,
@@ -363,7 +382,28 @@ class SearchViewModel(
             .flatMapLatest { query -> indexerSearchFlow(query) }
             .onEach { progress.value = it }
             .launchIn(viewModelScope)
+
+        // Indexer, addon and Stremio stream results, checked in batches as they arrive.
+        combine(
+            progress,
+            stremioState.map { it.streamResults }.distinctUntilChanged(),
+            checkCache,
+        ) { p, streams, enabled ->
+            if (enabled) {
+                p.outcomes.filterIsInstance<IndexerSearchOutcome.Success>().flatMap { it.results } + p.addonResults + streams
+            } else {
+                emptyList()
+            }
+        }.debounce(CACHE_CHECK_DEBOUNCE_MS.milliseconds)
+            .distinctUntilChanged()
+            .filter { it.isNotEmpty() }
+            .mapLatest { results -> checkCached(results) }
+            .onEach { found -> cachedHashes.update { it + found } }
+            .launchIn(viewModelScope)
     }
+
+    private suspend fun checkCached(results: List<SearchResult>): Set<String> =
+        cacheChecker.cachedTorrents(results.mapNotNull { it.torrentHash() }.toSet())
 
     private fun indexerSearchFlow(query: String) =
         flow {
@@ -730,5 +770,6 @@ class SearchViewModel(
 
     private companion object {
         const val SEARCH_DEBOUNCE_MS = 300L
+        const val CACHE_CHECK_DEBOUNCE_MS = 300L
     }
 }

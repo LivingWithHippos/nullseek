@@ -65,6 +65,13 @@ class SettingsViewModel(
             initialValue = false,
         )
 
+    val searchCheckCache: StateFlow<Boolean> =
+        preferencesRepository.searchCheckCache.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true,
+        )
+
     val filterFilesFullPath: StateFlow<Boolean> =
         preferencesRepository.filterFilesFullPath.stateIn(
             scope = viewModelScope,
@@ -108,6 +115,10 @@ class SettingsViewModel(
 
     fun setSearchAutoAddDownload(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setSearchAutoAddDownload(enabled) }
+    }
+
+    fun setSearchCheckCache(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setSearchCheckCache(enabled) }
     }
 
     fun setFilterFilesFullPath(enabled: Boolean) {

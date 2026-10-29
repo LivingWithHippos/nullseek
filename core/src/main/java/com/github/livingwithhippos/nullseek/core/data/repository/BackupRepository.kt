@@ -52,6 +52,7 @@ data class PreferencesBackup(
     val pagingLoadSize: Int? = null,
     val includeReferral: Boolean? = null,
     val searchAutoAddDownload: Boolean? = null,
+    val searchCheckCache: Boolean? = null,
     val searchSortOption: String? = null,
     val searchSortAscending: Boolean? = null,
     val searchMode: String? = null,
@@ -242,6 +243,7 @@ class BackupRepositoryImpl(
     private val pagingLoadSizeKey = intPreferencesKey("paging_load_size")
     private val referralKey = booleanPreferencesKey("include_referral_in_browser")
     private val searchAutoAddDownloadKey = booleanPreferencesKey("search_auto_add_download")
+    private val searchCheckCacheKey = booleanPreferencesKey("search_check_cache")
     private val searchSortOptionKey = stringPreferencesKey("search_sort_option")
     private val searchSortAscendingKey = booleanPreferencesKey("search_sort_ascending")
     private val searchModeKey = stringPreferencesKey("search_mode")
@@ -335,6 +337,7 @@ class BackupRepositoryImpl(
             pagingLoadSize = preferences[pagingLoadSizeKey],
             includeReferral = preferences[referralKey],
             searchAutoAddDownload = preferences[searchAutoAddDownloadKey],
+            searchCheckCache = preferences[searchCheckCacheKey],
             searchSortOption = preferences[searchSortOptionKey],
             searchSortAscending = preferences[searchSortAscendingKey],
             searchMode = preferences[searchModeKey],
@@ -356,6 +359,7 @@ class BackupRepositoryImpl(
             backup.pagingLoadSize?.takeIf { it > 0 }?.let { preferences[pagingLoadSizeKey] = it }
             backup.includeReferral?.let { preferences[referralKey] = it }
             backup.searchAutoAddDownload?.let { preferences[searchAutoAddDownloadKey] = it }
+            backup.searchCheckCache?.let { preferences[searchCheckCacheKey] = it }
             backup.searchSortOption?.let { preferences[searchSortOptionKey] = it }
             backup.searchSortAscending?.let { preferences[searchSortAscendingKey] = it }
             backup.searchMode?.let { preferences[searchModeKey] = it }

@@ -40,6 +40,7 @@ data class JackettResultDto(
     @SerialName("Details") val details: String? = null,
     @SerialName("Tracker") val tracker: String? = null,
     @SerialName("CategoryDesc") val categoryDesc: String? = null,
+    @SerialName("InfoHash") val infoHash: String? = null,
 ) {
     fun toSearchResult(fallbackIndexer: String): SearchResult =
         SearchResult(
@@ -58,6 +59,7 @@ data class JackettResultDto(
                     ?.map { it.trim() }
                     ?.filter { it.isNotEmpty() }
                     .orEmpty(),
+            infoHash = infoHash?.takeIf { it.isNotBlank() },
         )
 }
 
@@ -78,6 +80,7 @@ data class ProwlarrResultDto(
     val infoUrl: String? = null,
     val indexer: String? = null,
     val categories: List<ProwlarrCategoryDto> = emptyList(),
+    val infoHash: String? = null,
 ) {
     fun toSearchResult(fallbackIndexer: String): SearchResult =
         SearchResult(
@@ -91,6 +94,7 @@ data class ProwlarrResultDto(
             downloadLink = downloadUrl?.takeIf { it.isNotBlank() },
             infoUrl = infoUrl?.takeIf { it.isNotBlank() },
             categories = categories.mapNotNull { it.name?.takeIf { n -> n.isNotBlank() } },
+            infoHash = infoHash?.takeIf { it.isNotBlank() },
         )
 }
 

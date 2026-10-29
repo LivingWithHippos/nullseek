@@ -40,6 +40,7 @@ import com.github.livingwithhippos.nullseek.core.data.stremio.ImdbTitleResult
 import com.github.livingwithhippos.nullseek.core.data.stremio.SeriesEpisodeItem
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
+import com.github.livingwithhippos.nullseek.tv.ui.components.Badge
 import com.github.livingwithhippos.nullseek.tv.ui.components.EmptyState
 import com.github.livingwithhippos.nullseek.tv.ui.components.ErrorBanner
 import com.github.livingwithhippos.nullseek.tv.ui.components.LoadingBox
@@ -274,6 +275,12 @@ private fun LazyListScope.resultItems(
                 )
             },
             headlineContent = { Text(result.title, maxLines = 3, overflow = TextOverflow.Ellipsis) },
+            trailingContent =
+                if (result.isCached) {
+                    { Badge(stringResource(R.string.cached), color = MaterialTheme.colorScheme.tertiary) }
+                } else {
+                    null
+                },
         )
     }
 }

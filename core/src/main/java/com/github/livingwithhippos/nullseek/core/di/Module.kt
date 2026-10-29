@@ -28,6 +28,7 @@ import com.github.livingwithhippos.nullseek.core.data.stremio.AddonSearchHelper
 import com.github.livingwithhippos.nullseek.data.remote.IndexerRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.KodiRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.VlcRemoteClient
+import com.github.livingwithhippos.nullseek.data.repository.CacheChecker
 import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
@@ -162,6 +163,7 @@ private val repositoryModule =
         single { IndexersRepository(get(), get()) }
         single { PreferencesRepository(get()) }
         single { DownloadCreator(get()) }
+        single { CacheChecker(get()) }
         single { AddonSearchHelper(get()) }
     }
 

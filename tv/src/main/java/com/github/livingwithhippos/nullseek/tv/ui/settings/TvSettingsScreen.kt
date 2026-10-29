@@ -319,6 +319,7 @@ private fun DownloadSettings(viewModel: SettingsViewModel) {
     val zipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
     val pagingSize by viewModel.pagingLoadSize.collectAsStateWithLifecycle()
     val autoAdd by viewModel.searchAutoAddDownload.collectAsStateWithLifecycle()
+    val checkCache by viewModel.searchCheckCache.collectAsStateWithLifecycle()
     val fullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
 
     SectionCard(title = stringResource(R.string.download_zip_preference_title), icon = R.drawable.ic_download) {
@@ -348,6 +349,12 @@ private fun DownloadSettings(viewModel: SettingsViewModel) {
             summary = stringResource(R.string.search_auto_add_download_summary),
             checked = autoAdd,
             onCheckedChange = viewModel::setSearchAutoAddDownload,
+        )
+        SwitchRow(
+            title = stringResource(R.string.search_check_cache_title),
+            summary = stringResource(R.string.search_check_cache_summary),
+            checked = checkCache,
+            onCheckedChange = viewModel::setSearchCheckCache,
         )
         SwitchRow(
             title = stringResource(R.string.filter_files_full_path_title),
