@@ -127,7 +127,7 @@
     <string name="load_full_info_failed">Failed to load full info</string>
     <string name="torrent_refreshed">Torrent info refreshed</string>
     <string name="refresh_failed">Failed to refresh torrent info</string>
-    <string name="download_link_api_key_warning">Warning: This download link includes your TorBox API key. Do not share it publicly!</string>
+    <string name="download_link_api_key_warning">Warning: This link includes your TorBox API key, do not share it!</string>
     <string name="search_files_hint">Filter files…</string>
     <string name="no_files_found">No files matching filter</string>
     <string name="clear_search">Clear search</string>

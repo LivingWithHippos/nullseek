@@ -48,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -231,6 +232,14 @@ private fun UsenetDetailScreen(
             }
 
             // Card 3: Download Link Card
+            // a new link appears near the top: scroll to it, the user may be at the bottom of the file list
+            val linkRequester = remember { BringIntoViewRequester() }
+            LaunchedEffect(uiState.downloadLinkResult) {
+                if (uiState.downloadLinkResult != null) {
+                    withFrameNanos { }
+                    linkRequester.bringIntoView()
+                }
+            }
             uiState.downloadLinkResult?.let { linkResult ->
                 UsenetDownloadLinkCard(
                     result = linkResult,
@@ -244,6 +253,7 @@ private fun UsenetDetailScreen(
                         }
                     },
                     onDismiss = onDismissDownloadLink,
+                    modifier = Modifier.bringIntoViewRequester(linkRequester),
                 )
             }
 

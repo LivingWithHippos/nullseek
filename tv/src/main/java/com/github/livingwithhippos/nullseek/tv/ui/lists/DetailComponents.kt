@@ -207,6 +207,11 @@ fun TvDetailPane(
         runCatching { videoFilterFocus.requestFocus() }
     }
 
+    // the link section is item 2, after the header and the overview: show it when a new link arrives
+    LaunchedEffect(linkResult) {
+        if (linkResult != null) listState.animateScrollToItem(2)
+    }
+
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxSize(),
