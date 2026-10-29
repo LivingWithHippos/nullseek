@@ -6,28 +6,6 @@
 
 An Android application to interact with [Torbox.](https://torbox.app)
 
-```
-!!!!!!!!!!!!!!!!!!
-UNDER CONSTRUCTION
-!!!!!!!!!!!!!!!!!!
-
-
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⡟⢻⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⠟⠀⠀⢻⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⠋⠀⠀⠀⠀⠻⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⠋⠀⠀⠀⢰⣿⣶⠙⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⢃⣴⣶⣶⣶⣾⡛⠋⠀⠘⢿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⣴⣿⡿⢁⣼⡏⣰⣿⣿⣿⡇⠀⠀⠀⠘⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⢀⣼⣿⡿⠁⠀⠉⢹⣿⣿⣏⢸⡇⠀⠀⠀⠀⠈⢿⣿⣧⡀⠀⠀⠀⠀⠀
-⠀⠀⠀⢀⣾⣿⡿⠁⠀⠀⢰⣿⠛⣿⡍⠻⢧⣀⣾⣿⣿⣷⣄⢿⣿⣷⡀⠀⠀⠀⠀
-⠀⠀⢀⣾⣿⡟⠀⠀⠀⣰⣿⠋⠀⣿⡇⠀⣴⣿⣿⣿⣿⣿⣿⣦⣻⣿⣷⡀⠀⠀⠀
-⠀⢀⣿⣿⡟⠀⠀⠀⠀⠿⠃⠀⠀⠿⠧⠾⠿⠿⠿⠿⠿⠿⠿⠿⠷⠽⣿⣿⡄⠀⠀
-⢠⣿⣿⣿⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣶⣿⣿⣿⡄⠀
-⠈⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠁⠀
-```
-
 ## Features
 
 - view your Torbox account status
@@ -44,6 +22,10 @@ UNDER CONSTRUCTION
 | Settings                                                                                                              | Details                                                                                                       | Services                                                                                                       |
 |-------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
 | <img width="150" src="https://raw.githubusercontent.com/LivingWithHippos/nullseek/refs/heads/master/fastlane/metadata/android/en-US/images/phoneScreenshots/4.jpg" alt="User Screen"> | <img width="150" src="https://raw.githubusercontent.com/LivingWithHippos/nullseek/refs/heads/master/fastlane/metadata/android/en-US/images/phoneScreenshots/5.jpg" alt="New Download"> | <img width="150" src="https://raw.githubusercontent.com/LivingWithHippos/nullseek/refs/heads/master/fastlane/metadata/android/en-US/images/phoneScreenshots/6.jpg" alt="IMDB"> |
+
+## Installing
+
+F-Droid and the Play Store have not been set up yet, right now the only install option is using an APK from the [release section](https://github.com/LivingWithHippos/nullseek/releases/latest) (press `Assets` to show them)
 
 ## Donate :coffee:
 
