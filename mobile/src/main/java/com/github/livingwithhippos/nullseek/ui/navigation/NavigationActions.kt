@@ -2,6 +2,7 @@ package com.github.livingwithhippos.nullseek.ui.navigation
 
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import com.github.livingwithhippos.nullseek.core.R
@@ -17,6 +18,14 @@ class NavigationActions(
     private val navController: NavHostController,
 ) {
     fun navigateTo(destination: TopLevelDestination) {
+        if (destination.route is Route.NewDownload) {
+            openNewDownload()
+            return
+        }
+        // leaving New Download through a tab: drop it, or it would be saved with the previous tab's state
+        if (navController.currentDestination?.hasRoute<Route.NewDownload>() == true) {
+            navController.popBackStack()
+        }
         navController.navigate(destination.route) {
             // Pop up to the start destination of the graph to
             // avoid building up a large stack of destinations
@@ -30,6 +39,11 @@ class NavigationActions(
             // Restore state when reselecting a previously selected item
             restoreState = true
         }
+    }
+
+    /** Opens New Download over the current screen, so closing it returns there. */
+    fun openNewDownload() {
+        navController.navigate(Route.NewDownload()) { launchSingleTop = true }
     }
 }
 

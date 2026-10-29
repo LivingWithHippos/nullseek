@@ -74,6 +74,8 @@ fun NewDownloadScreen(
     onNavigateBack: () -> Unit = {},
     initialLinks: String = "",
     initialFiles: List<Uri> = emptyList(),
+    // called with the number of queued items when everything was added
+    onQueued: (count: Int) -> Unit = {},
     viewModel: NewDownloadViewModel = koinViewModel()
 ) {
     var linkText by rememberSaveable(initialLinks) { mutableStateOf(initialLinks) }
@@ -123,11 +125,8 @@ fun NewDownloadScreen(
         if (uploadState is UploadState.Finished) {
             val state = uploadState as UploadState.Finished
             if (state.failed == 0) {
-                snackbarHostState.showSnackbar(context.getString(R.string.queued_success, state.successful))
-                linkText = ""
-                selectedFiles = emptyList()
-                password = ""
                 viewModel.resetState()
+                onQueued(state.successful)
             } else if (state.successful == 0) {
                 snackbarHostState.showSnackbar(context.getString(R.string.queued_failed, state.errors.firstOrNull().orEmpty()))
             } else {

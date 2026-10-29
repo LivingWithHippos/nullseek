@@ -97,6 +97,8 @@ internal fun normalizeTorrentInput(text: String): String =
 fun TvNewDownloadScreen(
     initialLinks: String,
     modifier: Modifier = Modifier,
+    // called when everything was added
+    onQueued: () -> Unit = {},
     viewModel: NewDownloadViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
@@ -132,11 +134,10 @@ fun TvNewDownloadScreen(
     LaunchedEffect(uploadState) {
         val state = uploadState
         if (state is UploadState.Finished && state.failed == 0) {
+            // the messenger lives at the app root, so the message outlives this screen
             messenger.show(context.getString(R.string.queued_success, state.successful))
-            linkText = ""
-            password = ""
-            selectedFiles = emptyList()
             viewModel.resetState()
+            onQueued()
         }
     }
 
