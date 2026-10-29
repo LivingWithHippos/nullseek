@@ -44,6 +44,15 @@ enum class DownloadZipMode {
     ZIP_NON_MEDIA,
 }
 
+/** TorBox's `seed` values when creating a torrent. */
+enum class SeedingOption(
+    val apiValue: Int,
+) {
+    AUTO(1),
+    SEED(2),
+    DONT_SEED(3),
+}
+
 enum class ThemeMode {
     SYSTEM,
     LIGHT,
@@ -66,6 +75,7 @@ class PreferencesRepository(
     private val dataStore: DataStore<Preferences>,
 ) {
     private val zipModeKey = stringPreferencesKey("download_zip_mode")
+    private val defaultSeedingKey = stringPreferencesKey("default_seeding_option")
     private val pagingLoadSizeKey = intPreferencesKey("paging_load_size")
 
     private val referralKey = booleanPreferencesKey("include_referral_in_browser")
@@ -216,6 +226,24 @@ class PreferencesRepository(
                 preferences.remove(zipModeKey)
             } else {
                 preferences[zipModeKey] = mode.name
+            }
+        }
+    }
+
+    // Auto is TorBox's own default
+    val defaultSeedingOption: Flow<SeedingOption> =
+        dataStore.data.map { preferences ->
+            SeedingOption.entries.firstOrNull { it.name == preferences[defaultSeedingKey] } ?: SeedingOption.AUTO
+        }
+
+    suspend fun getDefaultSeedingOption(): SeedingOption = defaultSeedingOption.first()
+
+    suspend fun setDefaultSeedingOption(option: SeedingOption) {
+        dataStore.edit { preferences ->
+            if (option == SeedingOption.AUTO) {
+                preferences.remove(defaultSeedingKey)
+            } else {
+                preferences[defaultSeedingKey] = option.name
             }
         }
     }

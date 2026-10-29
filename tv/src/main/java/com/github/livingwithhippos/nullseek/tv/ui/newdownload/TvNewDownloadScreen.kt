@@ -39,6 +39,7 @@ import androidx.tv.material3.Tab
 import androidx.tv.material3.TabRow
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
 import com.github.livingwithhippos.nullseek.tv.ui.components.LocalMessenger
 import com.github.livingwithhippos.nullseek.tv.ui.components.ScreenHeader
 import com.github.livingwithhippos.nullseek.tv.ui.components.SectionCard
@@ -51,6 +52,7 @@ import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadViewModel
 import com.github.livingwithhippos.nullseek.ui.newdownload.UploadState
 import com.github.livingwithhippos.nullseek.ui.newdownload.appendLinkLine
 import com.github.livingwithhippos.nullseek.ui.newdownload.getFileName
+import com.github.livingwithhippos.nullseek.ui.newdownload.labelRes
 import com.github.livingwithhippos.nullseek.ui.newdownload.parseDownloadLinks
 import com.github.livingwithhippos.nullseek.ui.newdownload.readPickedFiles
 import com.github.livingwithhippos.nullseek.utils.getClipboardText
@@ -69,12 +71,7 @@ private enum class NewDownloadTab(
 }
 
 // api values used by the torbox client
-private val SEEDING_OPTIONS =
-    listOf(
-        R.string.seeding_auto to 1,
-        R.string.seeding_seed to 2,
-        R.string.seeding_dont_seed to 3,
-    )
+private val SEEDING_OPTIONS = SeedingOption.entries.map { it.labelRes() to it.apiValue }
 
 private val USENET_OPTIONS =
     listOf(
@@ -110,7 +107,9 @@ fun TvNewDownloadScreen(
     var selectedTab by rememberSaveable { mutableIntStateOf(if (initialLinks.startsWith("http")) 1 else 0) }
     var linkText by rememberSaveable(initialLinks) { mutableStateOf(initialLinks) }
     var password by rememberSaveable { mutableStateOf("") }
-    var seedingOption by rememberSaveable { mutableIntStateOf(1) }
+    // starts from the "Default seeding" setting, keyed so it applies once the setting has loaded
+    val defaultSeeding by viewModel.defaultSeedingOption.collectAsStateWithLifecycle()
+    var seedingOption by rememberSaveable(defaultSeeding) { mutableIntStateOf(defaultSeeding.apiValue) }
     var usenetOption by rememberSaveable { mutableIntStateOf(-1) }
     var allowZipped by rememberSaveable { mutableStateOf(true) }
     var selectedFiles by remember { mutableStateOf<List<Uri>>(emptyList()) }

@@ -49,6 +49,7 @@ data class AppBackup(
 @Serializable
 data class PreferencesBackup(
     val downloadZipMode: String? = null,
+    val defaultSeedingOption: String? = null,
     val pagingLoadSize: Int? = null,
     val includeReferral: Boolean? = null,
     val searchAutoAddDownload: Boolean? = null,
@@ -241,6 +242,7 @@ class BackupRepositoryImpl(
     private val torboxClient: TorboxClient,
 ) : BackupRepository {
     private val zipModeKey = stringPreferencesKey("download_zip_mode")
+    private val defaultSeedingKey = stringPreferencesKey("default_seeding_option")
     private val pagingLoadSizeKey = intPreferencesKey("paging_load_size")
     private val referralKey = booleanPreferencesKey("include_referral_in_browser")
     private val searchAutoAddDownloadKey = booleanPreferencesKey("search_auto_add_download")
@@ -336,6 +338,7 @@ class BackupRepositoryImpl(
             } ?: emptyList()
         return PreferencesBackup(
             downloadZipMode = preferences[zipModeKey],
+            defaultSeedingOption = preferences[defaultSeedingKey],
             pagingLoadSize = preferences[pagingLoadSizeKey],
             includeReferral = preferences[referralKey],
             searchAutoAddDownload = preferences[searchAutoAddDownloadKey],
@@ -359,6 +362,7 @@ class BackupRepositoryImpl(
         dataStore.edit { preferences ->
             preferences.clear()
             backup.downloadZipMode?.let { preferences[zipModeKey] = it }
+            backup.defaultSeedingOption?.let { preferences[defaultSeedingKey] = it }
             backup.pagingLoadSize?.takeIf { it > 0 }?.let { preferences[pagingLoadSizeKey] = it }
             backup.includeReferral?.let { preferences[referralKey] = it }
             backup.searchAutoAddDownload?.let { preferences[searchAutoAddDownloadKey] = it }

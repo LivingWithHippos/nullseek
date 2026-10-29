@@ -38,11 +38,12 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
-import com.github.livingwithhippos.nullseek.tv.BuildConfig
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.PAGING_LOAD_SIZE_PRESETS
+import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
 import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
 import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
+import com.github.livingwithhippos.nullseek.tv.BuildConfig
 import com.github.livingwithhippos.nullseek.tv.ui.components.ConfirmDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.LocalMessenger
 import com.github.livingwithhippos.nullseek.tv.ui.components.ScreenHeader
@@ -57,13 +58,14 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.safeOpenUrl
 import com.github.livingwithhippos.nullseek.tv.ui.components.writeTextToUri
 import com.github.livingwithhippos.nullseek.tv.ui.theme.shouldUseDarkTheme
 import com.github.livingwithhippos.nullseek.tv.ui.theme.swatchColor
+import com.github.livingwithhippos.nullseek.ui.newdownload.labelRes
 import com.github.livingwithhippos.nullseek.ui.settings.SettingsEvent
 import com.github.livingwithhippos.nullseek.ui.settings.SettingsViewModel
-import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 private enum class SettingsSection(
     @StringRes val title: Int,
@@ -317,6 +319,7 @@ private fun AppearanceSettings(viewModel: SettingsViewModel) {
 @Composable
 private fun DownloadSettings(viewModel: SettingsViewModel) {
     val zipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
+    val defaultSeeding by viewModel.defaultSeedingOption.collectAsStateWithLifecycle()
     val pagingSize by viewModel.pagingLoadSize.collectAsStateWithLifecycle()
     val autoAdd by viewModel.searchAutoAddDownload.collectAsStateWithLifecycle()
     val checkCache by viewModel.searchCheckCache.collectAsStateWithLifecycle()
@@ -332,6 +335,16 @@ private fun DownloadSettings(viewModel: SettingsViewModel) {
                 DownloadZipMode.UNCOMPRESSED to R.string.download_zip_preference_uncompressed,
             ).forEach { (mode, label) ->
                 FilterChip(selected = zipMode == mode, onClick = { viewModel.setDownloadZipMode(mode) }) { Text(stringResource(label)) }
+            }
+        }
+    }
+    SectionCard(title = stringResource(R.string.default_seeding_title), icon = R.drawable.ic_magnet) {
+        Text(stringResource(R.string.default_seeding_summary), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        ChipRow {
+            SeedingOption.entries.forEach { option ->
+                FilterChip(selected = defaultSeeding == option, onClick = { viewModel.setDefaultSeedingOption(option) }) {
+                    Text(stringResource(option.labelRes()))
+                }
             }
         }
     }

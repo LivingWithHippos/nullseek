@@ -3,6 +3,9 @@ package com.github.livingwithhippos.nullseek.ui.newdownload
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.annotation.StringRes
+import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
 
 fun Context.getFileName(uri: Uri): String {
     var name = "Unknown file"
@@ -47,3 +50,12 @@ fun appendLinkLine(
     val base = current.trimEnd()
     return if (base.isEmpty()) clean else "$base\n$clean"
 }
+
+/** Label of a seeding choice, shared by the New Download forms and the settings screens. */
+@StringRes
+fun SeedingOption.labelRes(): Int =
+    when (this) {
+        SeedingOption.AUTO -> R.string.seeding_auto
+        SeedingOption.SEED -> R.string.seeding_seed
+        SeedingOption.DONT_SEED -> R.string.seeding_dont_seed
+    }

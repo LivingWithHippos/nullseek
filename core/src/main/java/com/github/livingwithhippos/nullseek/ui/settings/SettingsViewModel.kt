@@ -8,6 +8,7 @@ import com.github.livingwithhippos.nullseek.core.data.repository.BackupRepositor
 import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
+import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
 import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
 import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -49,6 +50,13 @@ class SettingsViewModel(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = DownloadZipMode.ASK,
+        )
+
+    val defaultSeedingOption: StateFlow<SeedingOption> =
+        preferencesRepository.defaultSeedingOption.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = SeedingOption.AUTO,
         )
 
     val pagingLoadSize: StateFlow<Int> =
@@ -140,6 +148,10 @@ class SettingsViewModel(
         viewModelScope.launch {
             preferencesRepository.setDownloadZipMode(mode)
         }
+    }
+
+    fun setDefaultSeedingOption(option: SeedingOption) {
+        viewModelScope.launch { preferencesRepository.setDefaultSeedingOption(option) }
     }
 
     fun setPagingLoadSize(size: Int) {

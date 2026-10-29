@@ -55,8 +55,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -72,8 +72,10 @@ import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.PAGING_LOAD_SIZE_PRESETS
+import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
 import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
 import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
+import com.github.livingwithhippos.nullseek.ui.newdownload.labelRes
 import com.github.livingwithhippos.nullseek.ui.theme.Button
 import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
@@ -85,14 +87,14 @@ import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.widget.TorboxDownloadsWidgetReceiver
 import com.github.livingwithhippos.nullseek.widget.TorboxQuickActionsWidgetReceiver
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 private fun defaultBackupFileName(): String {
     val formatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
@@ -117,6 +119,7 @@ fun SettingsScreen(
     val currentOnProvidersChanged by rememberUpdatedState(onProvidersChanged)
 
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
+    val defaultSeedingOption by viewModel.defaultSeedingOption.collectAsStateWithLifecycle()
     val pagingLoadSize by viewModel.pagingLoadSize.collectAsStateWithLifecycle()
     val searchAutoAddDownload by viewModel.searchAutoAddDownload.collectAsStateWithLifecycle()
     val searchCheckCache by viewModel.searchCheckCache.collectAsStateWithLifecycle()
@@ -202,6 +205,8 @@ fun SettingsScreen(
         SettingsScreen(
             downloadZipMode = downloadZipMode,
             onDownloadZipModeSelected = { viewModel.setDownloadZipMode(it) },
+            defaultSeedingOption = defaultSeedingOption,
+            onDefaultSeedingOptionSelected = { viewModel.setDefaultSeedingOption(it) },
             pagingLoadSize = pagingLoadSize,
             onPagingLoadSizeSelected = { viewModel.setPagingLoadSize(it) },
             searchAutoAddDownload = searchAutoAddDownload,
@@ -259,6 +264,8 @@ fun SettingsScreen(
 fun SettingsScreen(
     downloadZipMode: DownloadZipMode,
     onDownloadZipModeSelected: (DownloadZipMode) -> Unit,
+    defaultSeedingOption: SeedingOption = SeedingOption.AUTO,
+    onDefaultSeedingOptionSelected: (SeedingOption) -> Unit = {},
     modifier: Modifier = Modifier,
     pagingLoadSize: Int = DEFAULT_PAGING_LOAD_SIZE,
     onPagingLoadSizeSelected: (Int) -> Unit = {},
@@ -583,6 +590,33 @@ fun SettingsScreen(
                     DownloadZipModeDropdown(
                         selected = downloadZipMode,
                         onSelected = onDownloadZipModeSelected,
+                    )
+                }
+            }
+
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.default_seeding_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = stringResource(id = R.string.default_seeding_summary),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    SeedingOptionDropdown(
+                        selected = defaultSeedingOption,
+                        onSelected = onDefaultSeedingOptionSelected,
                     )
                 }
             }
@@ -1065,6 +1099,47 @@ private fun DownloadZipModeDropdown(
                     onClick = {
                         expanded = false
                         onSelected(mode)
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SeedingOptionDropdown(
+    selected: SeedingOption,
+    onSelected: (SeedingOption) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        OutlinedTextField(
+            value = stringResource(id = selected.labelRes()),
+            onValueChange = {},
+            readOnly = true,
+            singleLine = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            SeedingOption.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(id = option.labelRes())) },
+                    onClick = {
+                        expanded = false
+                        onSelected(option)
                     },
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
                 )

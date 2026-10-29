@@ -60,6 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
 import com.github.livingwithhippos.nullseek.ui.theme.Button
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
@@ -100,12 +101,9 @@ fun NewDownloadScreen(
     }
     val totalDownloads = validLinksCount + selectedFiles.size
 
-    val seedingOptions = listOf(
-        R.string.seeding_auto,
-        R.string.seeding_seed,
-        R.string.seeding_dont_seed
-    )
-    var selectedSeedingOption by rememberSaveable { mutableIntStateOf(seedingOptions[0]) }
+    // starts from the "Default seeding" setting, keyed so it applies once the setting has loaded
+    val defaultSeeding by viewModel.defaultSeedingOption.collectAsState()
+    var selectedSeedingOption by rememberSaveable(defaultSeeding) { mutableStateOf(defaultSeeding) }
 
     val usenetOptions = listOf(
         R.string.usenet_default,
@@ -188,11 +186,7 @@ fun NewDownloadScreen(
                             val validLinks =
                                 linkText.split("\\s+".toRegex()).filter { isValidDownloadLink(it) }
                             val passwordValue = password.takeIf { it.isNotBlank() }
-                            val seedingInt = when (selectedSeedingOption) {
-                                R.string.seeding_seed -> 2
-                                R.string.seeding_dont_seed -> 3
-                                else -> 1
-                            }
+                            val seedingInt = selectedSeedingOption.apiValue
                             val usenetInt = when (selectedUsenetOption) {
                                 R.string.usenet_none -> 0
                                 R.string.usenet_repair -> 1
@@ -340,11 +334,11 @@ fun NewDownloadScreen(
                                     .horizontalScroll(rememberScrollState()),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                seedingOptions.forEach { optionRes ->
+                                SeedingOption.entries.forEach { option ->
                                     SelectableOptionCard(
-                                        text = stringResource(id = optionRes),
-                                        selected = selectedSeedingOption == optionRes,
-                                        onClick = { selectedSeedingOption = optionRes }
+                                        text = stringResource(id = option.labelRes()),
+                                        selected = selectedSeedingOption == option,
+                                        onClick = { selectedSeedingOption = option }
                                     )
                                 }
                             }

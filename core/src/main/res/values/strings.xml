@@ -21,6 +21,8 @@
     <string name="seeding_auto">Auto</string>
     <string name="seeding_seed">Seed torrent</string>
     <string name="seeding_dont_seed">Don\'t seed torrent</string>
+    <string name="default_seeding_title">Default seeding</string>
+    <string name="default_seeding_summary">Preselected seeding choice when adding torrents</string>
     <string name="usenet_post_processing">Usenet Post-Processing</string>
     <string name="usenet_default">Default</string>
     <string name="usenet_none">None</string>

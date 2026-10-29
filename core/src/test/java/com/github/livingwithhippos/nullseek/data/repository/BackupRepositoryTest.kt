@@ -23,6 +23,7 @@ class BackupRepositoryTest {
                 preferences =
                     PreferencesBackup(
                         downloadZipMode = DownloadZipMode.ZIP_NON_MEDIA.name,
+                        defaultSeedingOption = SeedingOption.DONT_SEED.name,
                         pagingLoadSize = 500,
                         includeReferral = true,
                         searchAutoAddDownload = true,

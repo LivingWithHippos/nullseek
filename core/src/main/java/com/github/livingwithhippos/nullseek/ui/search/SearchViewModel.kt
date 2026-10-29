@@ -744,7 +744,8 @@ class SearchViewModel(
     fun addDownload(link: String) {
         if (!_addingDownload.compareAndSet(expect = false, update = true)) return
         viewModelScope.launch {
-            val result = runCatching { downloadCreator.createFromLink(link) }.getOrNull()
+            val seeding = preferencesRepository.getDefaultSeedingOption().apiValue
+            val result = runCatching { downloadCreator.createFromLink(link, seedingOption = seeding) }.getOrNull()
             _addingDownload.value = false
             _downloadEvents.tryEmit(result != null && result !is ApiResult.Failure)
         }

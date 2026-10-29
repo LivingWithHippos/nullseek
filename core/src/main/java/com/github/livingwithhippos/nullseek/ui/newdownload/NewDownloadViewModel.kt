@@ -3,11 +3,16 @@ package com.github.livingwithhippos.nullseek.ui.newdownload
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
+import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
+import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
 import com.github.livingwithhippos.nullseek.data.repository.describe
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.network.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 
@@ -27,7 +32,12 @@ sealed interface UploadState {
 class NewDownloadViewModel(
     private val client: TorboxClient,
     private val downloadCreator: DownloadCreator,
+    preferencesRepository: PreferencesRepository,
 ) : ViewModel() {
+    /** The seeding choice preselected in the form. */
+    val defaultSeedingOption: StateFlow<SeedingOption> =
+        preferencesRepository.defaultSeedingOption.stateIn(viewModelScope, SharingStarted.Eagerly, SeedingOption.AUTO)
+
     private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
     val uploadState = _uploadState.asStateFlow()
 
