@@ -113,6 +113,8 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    // per-app language on Android 12 and older
+    implementation(libs.androidx.appcompat)
 
     implementation(libs.datastore)
 

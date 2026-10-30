@@ -69,6 +69,7 @@ import com.github.livingwithhippos.nullseek.BuildConfig
 import com.github.livingwithhippos.nullseek.billing.BillingManager
 import com.github.livingwithhippos.nullseek.billing.EntitlementState
 import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.core.utils.AppLanguage
 import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.PAGING_LOAD_SIZE_PRESETS
@@ -455,6 +456,8 @@ fun SettingsScreen(
                 onPinDownloadsWidgetClick = onPinDownloadsWidgetClick,
                 onPinQuickActionsWidgetClick = onPinQuickActionsWidgetClick,
             )
+
+            LanguageSettingsCard()
 
             OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -1102,6 +1105,66 @@ private fun DownloadZipModeDropdown(
                     },
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
                 )
+            }
+        }
+    }
+}
+
+/** Follow system, English or Italian; choosing one recreates the screen in that language. */
+@Composable
+private fun LanguageSettingsCard() {
+    var language by remember { mutableStateOf(AppLanguage.current()) }
+    var expanded by remember { mutableStateOf(false) }
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = stringResource(id = R.string.language_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = stringResource(id = R.string.language_summary),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                OutlinedTextField(
+                    value = stringResource(id = language.labelRes),
+                    onValueChange = {},
+                    readOnly = true,
+                    singleLine = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                ) {
+                    AppLanguage.entries.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(id = option.labelRes)) },
+                            onClick = {
+                                expanded = false
+                                if (option != language) {
+                                    language = option
+                                    option.apply()
+                                }
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                        )
+                    }
+                }
             }
         }
     }

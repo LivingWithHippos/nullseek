@@ -38,6 +38,7 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.core.utils.AppLanguage
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.PAGING_LOAD_SIZE_PRESETS
 import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
@@ -279,6 +280,23 @@ private fun AppearanceSettings(viewModel: SettingsViewModel) {
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
     val dark = shouldUseDarkTheme(themeMode)
 
+    var language by remember { mutableStateOf(AppLanguage.current()) }
+    SectionCard(title = stringResource(R.string.language_title), icon = R.drawable.ic_tune) {
+        Text(stringResource(R.string.language_summary), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        ChipRow {
+            AppLanguage.entries.forEach { option ->
+                FilterChip(
+                    selected = language == option,
+                    onClick = {
+                        if (option != language) {
+                            language = option
+                            option.apply()
+                        }
+                    },
+                ) { Text(stringResource(option.labelRes)) }
+            }
+        }
+    }
     SectionCard(title = stringResource(R.string.theme_preference_title), icon = R.drawable.ic_tune) {
         Text(stringResource(R.string.theme_dark_mode_label), style = MaterialTheme.typography.titleSmall)
         ChipRow {

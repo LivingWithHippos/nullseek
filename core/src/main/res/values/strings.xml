@@ -383,6 +383,13 @@
     <string name="stremio_addon_delete_message">Are you sure you want to delete addon \"%s\"?</string>
     <string name="delete">Delete</string>
 
+    <!-- Language -->
+    <string name="language_title">Language</string>
+    <string name="language_summary">Language used by the app</string>
+    <string name="language_system">Follow system</string>
+    <string name="language_english" translatable="false">English</string>
+    <string name="language_italian" translatable="false">Italiano</string>
+
     <!-- Theme & Appearance -->
     <string name="theme_preference_title">Theme &amp; Appearance</string>
     <string name="theme_preference_summary">Customize dark mode behavior and color palette</string>
