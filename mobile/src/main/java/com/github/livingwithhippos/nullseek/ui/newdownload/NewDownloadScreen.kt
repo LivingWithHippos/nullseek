@@ -26,6 +26,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
@@ -59,9 +60,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
 import com.github.livingwithhippos.nullseek.ui.theme.Button
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
+import com.github.livingwithhippos.nullseek.utils.getClipboardText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -74,6 +77,8 @@ fun NewDownloadScreen(
     onNavigateBack: () -> Unit = {},
     initialLinks: String = "",
     initialFiles: List<Uri> = emptyList(),
+    // called with the number of queued items when everything was added
+    onQueued: (count: Int) -> Unit = {},
     viewModel: NewDownloadViewModel = koinViewModel()
 ) {
     var linkText by rememberSaveable(initialLinks) { mutableStateOf(initialLinks) }
@@ -96,12 +101,9 @@ fun NewDownloadScreen(
     }
     val totalDownloads = validLinksCount + selectedFiles.size
 
-    val seedingOptions = listOf(
-        R.string.seeding_auto,
-        R.string.seeding_seed,
-        R.string.seeding_dont_seed
-    )
-    var selectedSeedingOption by rememberSaveable { mutableIntStateOf(seedingOptions[0]) }
+    // starts from the "Default seeding" setting, keyed so it applies once the setting has loaded
+    val defaultSeeding by viewModel.defaultSeedingOption.collectAsState()
+    var selectedSeedingOption by rememberSaveable(defaultSeeding) { mutableStateOf(defaultSeeding) }
 
     val usenetOptions = listOf(
         R.string.usenet_default,
@@ -123,11 +125,8 @@ fun NewDownloadScreen(
         if (uploadState is UploadState.Finished) {
             val state = uploadState as UploadState.Finished
             if (state.failed == 0) {
-                snackbarHostState.showSnackbar(context.getString(R.string.queued_success, state.successful))
-                linkText = ""
-                selectedFiles = emptyList()
-                password = ""
                 viewModel.resetState()
+                onQueued(state.successful)
             } else if (state.successful == 0) {
                 snackbarHostState.showSnackbar(context.getString(R.string.queued_failed, state.errors.firstOrNull().orEmpty()))
             } else {
@@ -187,11 +186,7 @@ fun NewDownloadScreen(
                             val validLinks =
                                 linkText.split("\\s+".toRegex()).filter { isValidDownloadLink(it) }
                             val passwordValue = password.takeIf { it.isNotBlank() }
-                            val seedingInt = when (selectedSeedingOption) {
-                                R.string.seeding_seed -> 2
-                                R.string.seeding_dont_seed -> 3
-                                else -> 1
-                            }
+                            val seedingInt = selectedSeedingOption.apiValue
                             val usenetInt = when (selectedUsenetOption) {
                                 R.string.usenet_none -> 0
                                 R.string.usenet_repair -> 1
@@ -339,11 +334,11 @@ fun NewDownloadScreen(
                                     .horizontalScroll(rememberScrollState()),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                seedingOptions.forEach { optionRes ->
+                                SeedingOption.entries.forEach { option ->
                                     SelectableOptionCard(
-                                        text = stringResource(id = optionRes),
-                                        selected = selectedSeedingOption == optionRes,
-                                        onClick = { selectedSeedingOption = optionRes }
+                                        text = stringResource(id = option.labelRes()),
+                                        selected = selectedSeedingOption == option,
+                                        onClick = { selectedSeedingOption = option }
                                     )
                                 }
                             }
@@ -402,13 +397,43 @@ fun LinkInputSection(
     onLinkChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     Column(modifier = modifier) {
-        Text(
-            text = stringResource(id = R.string.link_label),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = stringResource(id = R.string.link_label),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(
+                onClick = { onLinkChange(appendLinkLine(linkText, getClipboardText(context))) },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_paste),
+                    contentDescription = stringResource(id = R.string.paste_from_clipboard),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            IconButton(
+                onClick = { onLinkChange("") },
+                enabled = linkText.isNotEmpty(),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_close),
+                    contentDescription = stringResource(id = R.string.clear_links),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
         OutlinedTextField(
             value = linkText,
             onValueChange = onLinkChange,

@@ -48,6 +48,19 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Countly analytics, values from the environment (mise.local.toml); empty means disabled
+            buildConfigField(
+                "String",
+                "COUNTLY_SERVER_URL",
+                "\"${providers.environmentVariable("COUNTLY_SERVER_URL").orNull.orEmpty()}\"",
+            )
+            buildConfigField(
+                "String",
+                "COUNTLY_APP_KEY",
+                "\"${providers.environmentVariable("COUNTLY_APP_KEY").orNull.orEmpty()}\"",
+            )
+        }
         release {
             optimization {
                 enable = true
@@ -79,6 +92,9 @@ kotlin {
 }
 
 dependencies {
+    // analytics for debug builds only, release builds never see the library
+    debugImplementation(libs.countly.sdk)
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.appcompat)

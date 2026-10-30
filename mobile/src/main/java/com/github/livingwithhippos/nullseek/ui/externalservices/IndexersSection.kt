@@ -212,7 +212,7 @@ fun IndexerCard(
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.width(6.dp))
                     }
-                    Text(text = stringResource(id = R.string.external_services_test_connection))
+                    Text(text = stringResource(id = R.string.test))
                 }
                 Switch(checked = indexer.active, onCheckedChange = onToggleActive)
             }
@@ -334,7 +334,7 @@ fun IndexerEditDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = stringResource(id = R.string.testing_connection))
                     } else {
-                        Text(text = stringResource(id = R.string.external_services_test_connection))
+                        Text(text = stringResource(id = R.string.test))
                     }
                 }
 

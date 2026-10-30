@@ -21,6 +21,8 @@
     <string name="seeding_auto">Auto</string>
     <string name="seeding_seed">Seed torrent</string>
     <string name="seeding_dont_seed">Don\'t seed torrent</string>
+    <string name="default_seeding_title">Default seeding</string>
+    <string name="default_seeding_summary">Preselected seeding choice when adding torrents</string>
     <string name="usenet_post_processing">Usenet Post-Processing</string>
     <string name="usenet_default">Default</string>
     <string name="usenet_none">None</string>
@@ -72,6 +74,7 @@
     <string name="paste_api_key_placeholder">Paste your API Key here</string>
     <string name="setup_connect_button">Connect Account</string>
     <string name="paste_from_clipboard">Paste from Clipboard</string>
+    <string name="clear_links">Clear links</string>
     <string name="setup_dialog_message">Would you like to include our referral code when signing up on TorBox? Your choice will be saved for future runs.</string>
     <string name="copy_referral">Copy Referral Code</string>
     <string name="torrent_overview">Torrent Overview</string>
@@ -92,6 +95,7 @@
     <string name="actions">Actions</string>
     <string name="download">Download</string>
     <string name="action_download">Generate Download</string>
+    <string name="action_generate_zip">Generate Zip</string>
     <string name="action_download_zip">Download as Zip</string>
     <string name="action_share">Share</string>
     <string name="action_delete">Delete</string>
@@ -125,7 +129,7 @@
     <string name="load_full_info_failed">Failed to load full info</string>
     <string name="torrent_refreshed">Torrent info refreshed</string>
     <string name="refresh_failed">Failed to refresh torrent info</string>
-    <string name="download_link_api_key_warning">Warning: This download link includes your TorBox API key. Do not share it publicly!</string>
+    <string name="download_link_api_key_warning">Warning: This link includes your TorBox API key, do not share it!</string>
     <string name="search_files_hint">Filter files…</string>
     <string name="no_files_found">No files matching filter</string>
     <string name="clear_search">Clear search</string>
@@ -185,7 +189,7 @@
     <string name="external_services_empty_hint">Tap \"Add\" to configure Kodi or VLC remote playback.</string>
     <string name="external_services_default_badge">Default</string>
     <string name="external_services_set_default">Set as default</string>
-    <string name="external_services_test_connection">Test connection</string>
+    <string name="test">Test</string>
     <string name="external_services_dialog_add_title">Add Media Player</string>
     <string name="external_services_dialog_edit_title">Edit Media Player</string>
     <string name="external_services_name_label">Name</string>
@@ -223,6 +227,10 @@
     <string name="edit">Edit</string>
     <string name="search_auto_add_download_title">Add download from search results</string>
     <string name="search_auto_add_download_summary">Tapping a search result link adds the download immediately instead of opening the new download page</string>
+    <string name="search_check_cache_title">Show cached status</string>
+    <string name="search_check_cache_summary">Check if search result are cached</string>
+    <string name="imdb_details_expanded_title">Expand IMDb details</string>
+    <string name="imdb_details_expanded_summary">Show the title description open by default in the IMDb search</string>
     <string name="search_download_added">Download added</string>
     <string name="search_download_failed">Unable to add the download</string>
     <string name="duplicate">Duplicate</string>
@@ -397,7 +405,10 @@
     <string name="download_link_direct">Direct link</string>
     <string name="download_link_zipped_hint">Zipped links can\'t be streamed. Download a single media file for a direct link.</string>
     <string name="download_mixed_notice">Downloading everything creates a zip. To stream, use the button above or select a video from the file list below.</string>
-    <string name="download_largest_video">Generate Video Download</string>
+    <string name="download_largest_video">Download only the video</string>
+    <string name="download_multiple_videos_title">%1$d videos found</string>
+    <string name="download_multiple_videos_notice">Pick a video from the file list to get its streamable link.</string>
+    <string name="download_show_videos">Show videos</string>
     <string name="selected_video">Selected video:</string>
     <string name="overview_more_details">More details</string>
     <string name="overview_less_details">Less details</string>

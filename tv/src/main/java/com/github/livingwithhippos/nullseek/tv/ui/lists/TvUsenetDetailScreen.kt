@@ -15,6 +15,7 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.LocalMessenger
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvActionButton
 import com.github.livingwithhippos.nullseek.ui.lists.usenet.UsenetDetailEvent
 import com.github.livingwithhippos.nullseek.ui.lists.usenet.UsenetDetailViewModel
+import com.github.livingwithhippos.nullseek.utils.wholeDownloadIsZipped
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
 import org.koin.androidx.compose.koinViewModel
 
@@ -36,6 +37,7 @@ fun TvUsenetDetailScreen(
     val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
+    val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
     val current = uiState.usenet?.takeIf { it.id == item.id } ?: item
 
     LaunchedEffect(viewModel) {
@@ -80,8 +82,9 @@ fun TvUsenetDetailScreen(
         onDownloadDirect = if (current.cached && !uiState.isDeleting) { file -> viewModel.downloadDirect(file.id, file.name) } else null,
         isDownloading = uiState.isDownloading,
         actions = {
+            val isZip = wholeDownloadIsZipped(downloadZipMode, current.files, { it.name }, { it.mimetype })
             TvActionButton(
-                text = stringResource(R.string.action_download),
+                text = stringResource(if (isZip) R.string.action_generate_zip else R.string.action_download),
                 icon = R.drawable.ic_download,
                 primary = true,
                 enabled = current.cached && !uiState.isDeleting,

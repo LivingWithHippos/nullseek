@@ -157,7 +157,7 @@ private fun MediaPlayersTab(viewModel: ExternalServicesViewModel = koinViewModel
                 Text(service.address, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 ActionsRow {
                     TvActionButton(
-                        stringResource(R.string.external_services_test_connection),
+                        stringResource(R.string.test),
                         { viewModel.testConnection(service) },
                         icon = R.drawable.ic_refresh,
                         loading = uiState.testingServiceId == service.id,
@@ -313,7 +313,7 @@ private fun IndexersTab(viewModel: IndexersViewModel = koinViewModel()) {
                 SwitchRow(stringResource(R.string.indexers_active_label), indexer.active, { viewModel.setActive(indexer, it) })
                 ActionsRow {
                     TvActionButton(
-                        stringResource(R.string.external_services_test_connection),
+                        stringResource(R.string.test),
                         { viewModel.testConnection(indexer) },
                         icon = R.drawable.ic_refresh,
                         loading = uiState.testingIndexerId == indexer.id,
@@ -543,7 +543,7 @@ private fun TestRow(
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         TvActionButton(
-            text = if (testing) stringResource(R.string.testing_connection) else stringResource(R.string.external_services_test_connection),
+            text = if (testing) stringResource(R.string.testing_connection) else stringResource(R.string.test),
             icon = R.drawable.ic_refresh,
             loading = testing,
             enabled = enabled,

@@ -1,6 +1,7 @@
 package com.github.livingwithhippos.nullseek
 
 import android.app.Application
+import com.github.livingwithhippos.nullseek.analytics.AppAnalytics
 import com.github.livingwithhippos.nullseek.core.di.appModule
 import com.github.livingwithhippos.nullseek.di.mobileModule
 import logcat.AndroidLogcatLogger
@@ -19,5 +20,8 @@ class MainApplication : Application() {
             androidContext(this@MainApplication)
             modules(appModule(debug = BuildConfig.DEBUG), mobileModule())
         }
+
+        // Countly in debug builds, a no-op in release
+        AppAnalytics.init(this)
     }
 }

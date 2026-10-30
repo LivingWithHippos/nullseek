@@ -77,9 +77,9 @@ fun DownloadLinkTypeRow(
     }
 }
 
-/** Offered when downloading a whole item would zip it, but it contains a video that could be streamed. */
+/** Offered when downloading a whole item would zip it, but it contains a single video that could be streamed. */
 @Composable
-fun LargestVideoShortcut(
+fun SingleVideoShortcut(
     fileName: String,
     sizeText: String,
     enabled: Boolean,
@@ -115,5 +115,53 @@ fun LargestVideoShortcut(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+/** Shown instead of [SingleVideoShortcut] when an item holds several videos: points to the file list. */
+@Composable
+fun MultipleVideosNotice(
+    count: Int,
+    enabled: Boolean,
+    onShowVideos: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_movie),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = stringResource(id = R.string.download_multiple_videos_title, count),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        Text(
+            text = stringResource(id = R.string.download_multiple_videos_notice),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FilledTonalButton(
+            onClick = onShowVideos,
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_manage_search),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = stringResource(id = R.string.download_show_videos))
+        }
     }
 }

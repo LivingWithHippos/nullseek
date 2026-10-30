@@ -90,6 +90,7 @@ import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.SuggestionChip
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
+import com.github.livingwithhippos.nullseek.ui.utils.CachedTag
 import com.github.livingwithhippos.nullseek.ui.utils.ExtendableFabMenu
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
@@ -112,6 +113,7 @@ fun SearchScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val selected by viewModel.selectedResult.collectAsStateWithLifecycle()
     val autoAdd by viewModel.autoAddDownload.collectAsStateWithLifecycle()
+    val imdbDetailsExpanded by viewModel.imdbDetailsExpanded.collectAsStateWithLifecycle()
     val adding by viewModel.addingDownload.collectAsStateWithLifecycle()
     val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
@@ -154,6 +156,7 @@ fun SearchScreen(
         onSelectEpisode = viewModel::selectSeriesEpisode,
         onSearchManualEpisode = viewModel::searchManualSeriesEpisode,
         onSearchWholeSeries = viewModel::searchWholeSeries,
+        imdbDetailsExpanded = imdbDetailsExpanded,
         onStremioBack = viewModel::navigateBackInStremio,
         onRemoveHistoryItem = viewModel::removeSearchHistoryItem,
         onClearHistory = viewModel::clearSearchHistory,
@@ -183,6 +186,7 @@ fun SearchContent(
     onSelectEpisode: (SeriesEpisodeItem) -> Unit = {},
     onSearchManualEpisode: (Int, Int) -> Unit = { _, _ -> },
     onSearchWholeSeries: () -> Unit = {},
+    imdbDetailsExpanded: Boolean = false,
     onStremioBack: () -> Unit = {},
     onRemoveHistoryItem: (String) -> Unit = {},
     onClearHistory: () -> Unit = {},
@@ -330,12 +334,20 @@ fun SearchContent(
                                             Modifier
                                                 .fillMaxWidth()
                                                 .clickable {
-                                                    textFieldState.setTextAndPlaceCursorAtEnd(historyQuery)
+                                                    textFieldState.setTextAndPlaceCursorAtEnd(
+                                                        historyQuery
+                                                    )
                                                     scope.launch {
                                                         searchBarState.animateToCollapsed()
                                                         onSearch(historyQuery)
                                                     }
-                                                }.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                                                }
+                                                .padding(
+                                                    start = 16.dp,
+                                                    end = 8.dp,
+                                                    top = 4.dp,
+                                                    bottom = 4.dp
+                                                ),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Icon(
@@ -435,6 +447,7 @@ fun SearchContent(
                             onSelectEpisode = onSelectEpisode,
                             onSearchManualEpisode = onSearchManualEpisode,
                             onSearchWholeSeries = onSearchWholeSeries,
+                            imdbDetailsExpanded = imdbDetailsExpanded,
                             onStremioFilterQuery = onStremioFilterQuery,
                             onStremioBack = onStremioBack,
                             onResultClick = onResultClick,
@@ -523,6 +536,7 @@ private fun StremioSearchContentSection(
     onSelectEpisode: (SeriesEpisodeItem) -> Unit,
     onSearchManualEpisode: (Int, Int) -> Unit,
     onSearchWholeSeries: () -> Unit,
+    imdbDetailsExpanded: Boolean,
     onStremioFilterQuery: (String) -> Unit,
     onStremioBack: () -> Unit,
     onResultClick: (SearchResult) -> Unit,
@@ -535,6 +549,7 @@ private fun StremioSearchContentSection(
                 onSelectImdbTitle = onSelectImdbTitle,
             )
         }
+
         StremioStage.EPISODES -> {
             StremioEpisodesSection(
                 stremioState = stremioState,
@@ -543,14 +558,17 @@ private fun StremioSearchContentSection(
                 onSearchManualEpisode = onSearchManualEpisode,
                 onSearchWholeSeries = onSearchWholeSeries,
                 onBackToTitles = onStremioBack,
+                imdbDetailsExpanded = imdbDetailsExpanded,
             )
         }
+
         StremioStage.STREAMS -> {
             StremioStreamsSection(
                 stremioState = stremioState,
                 onFilterQueryChange = onStremioFilterQuery,
                 onBack = onStremioBack,
                 onResultClick = onResultClick,
+                imdbDetailsExpanded = imdbDetailsExpanded,
             )
         }
     }
@@ -731,6 +749,7 @@ private fun StremioEpisodesSection(
     onSearchManualEpisode: (Int, Int) -> Unit,
     onSearchWholeSeries: () -> Unit,
     onBackToTitles: () -> Unit,
+    imdbDetailsExpanded: Boolean = false,
 ) {
     val selectedTitle = stremioState.selectedTitle ?: return
     var manualSeasonText by rememberSaveable(selectedTitle.imdbId) { mutableStateOf("1") }
@@ -745,7 +764,7 @@ private fun StremioEpisodesSection(
             canNavigateBack = stremioState.canNavigateBack,
             backButtonLabel = stringResource(R.string.search_stremio_back_titles),
             onBack = onBackToTitles,
-            initialExpanded = false,
+            initialExpanded = imdbDetailsExpanded,
             trailingAction = {
                 FilledTonalButton(onClick = onSearchWholeSeries) {
                     Text(stringResource(R.string.search_stremio_whole_series))
@@ -947,7 +966,12 @@ private fun StremioTitleDetailsCard(
         (selectedTitle?.imdbId ?: activeStreamImdbId)
             .substringBefore(":")
             .trim()
-    var isExpanded by rememberSaveable(baseImdbId, activeStreamImdbId) { mutableStateOf(initialExpanded) }
+    // keyed on initialExpanded too, so changing the setting applies right away
+    var isExpanded by rememberSaveable(baseImdbId, activeStreamImdbId, initialExpanded) {
+        mutableStateOf(
+            initialExpanded
+        )
+    }
 
     val displayTitle = selectedTitle?.title ?: activeStreamLabel
     val compactSubtitle =
@@ -956,7 +980,13 @@ private fun StremioTitleDetailsCard(
                 add(stringResource(R.string.search_stremio_imdb_rating, it))
             }
             if (selectedEpisode != null) {
-                add("S%02dE%02d · %s".format(selectedEpisode.season, selectedEpisode.episode, selectedEpisode.title))
+                add(
+                    "S%02dE%02d · %s".format(
+                        selectedEpisode.season,
+                        selectedEpisode.episode,
+                        selectedEpisode.title
+                    )
+                )
             } else {
                 selectedTitle?.year?.takeIf { it.isNotBlank() }?.let { add(it) }
                 selectedTitle?.runtime?.takeIf { it.isNotBlank() }?.let { add(it) }
@@ -1103,11 +1133,17 @@ private fun StremioTitleDetailsCard(
                                     color = MaterialTheme.colorScheme.primaryContainer,
                                 ) {
                                     Text(
-                                        text = stringResource(R.string.search_stremio_imdb_rating, rating),
+                                        text = stringResource(
+                                            R.string.search_stremio_imdb_rating,
+                                            rating
+                                        ),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        modifier = Modifier.padding(
+                                            horizontal = 6.dp,
+                                            vertical = 2.dp
+                                        ),
                                     )
                                 }
                             }
@@ -1115,7 +1151,8 @@ private fun StremioTitleDetailsCard(
                                 listOfNotNull(
                                     selectedTitle?.year?.takeIf { it.isNotBlank() },
                                     selectedTitle?.runtime?.takeIf { it.isNotBlank() },
-                                    activeStreamImdbId.ifBlank { baseImdbId }.takeIf { it.isNotBlank() },
+                                    activeStreamImdbId.ifBlank { baseImdbId }
+                                        .takeIf { it.isNotBlank() },
                                 ).joinToString(" · ")
                             if (metaLine.isNotEmpty()) {
                                 Text(
@@ -1144,7 +1181,10 @@ private fun StremioTitleDetailsCard(
 
                         if (!selectedTitle?.director.isNullOrEmpty()) {
                             Text(
-                                text = stringResource(R.string.search_stremio_director, selectedTitle.director.joinToString(", ")),
+                                text = stringResource(
+                                    R.string.search_stremio_director,
+                                    selectedTitle.director.joinToString(", ")
+                                ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -1160,7 +1200,11 @@ private fun StremioTitleDetailsCard(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "S%02dE%02d · %s".format(selectedEpisode.season, selectedEpisode.episode, selectedEpisode.title),
+                            text = "S%02dE%02d · %s".format(
+                                selectedEpisode.season,
+                                selectedEpisode.episode,
+                                selectedEpisode.title
+                            ),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.weight(1f),
@@ -1180,6 +1224,7 @@ private fun StremioTitleDetailsCard(
                     when {
                         !selectedEpisode?.overview.isNullOrBlank() && !selectedTitle?.description.isNullOrBlank() ->
                             "${selectedEpisode.overview}\n\n${selectedTitle.description}"
+
                         !selectedEpisode?.overview.isNullOrBlank() -> selectedEpisode.overview
                         !selectedTitle?.description.isNullOrBlank() -> selectedTitle.description
                         else -> null
@@ -1201,37 +1246,36 @@ private fun StremioTitleDetailsCard(
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (canNavigateBack) {
-                        TextButton(onClick = onBack) {
-                            Text(text = backButtonLabel)
-                        }
-                    } else {
-                        Spacer(modifier = Modifier.width(1.dp))
+                // Open IMDb gets its own row, so the back and trailing actions don't get squeezed
+                if (baseImdbId.startsWith("tt")) {
+                    OutlinedButton(
+                        onClick = {
+                            openWebPage(context, "https://www.imdb.com/title/$baseImdbId/")
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_open_in_new),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = stringResource(R.string.search_stremio_open_imdb))
                     }
+                }
 
+                if (canNavigateBack || trailingAction != null) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (baseImdbId.startsWith("tt")) {
-                            OutlinedButton(
-                                onClick = {
-                                    openWebPage(context, "https://www.imdb.com/title/$baseImdbId/")
-                                },
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_open_in_new),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = stringResource(R.string.search_stremio_open_imdb))
+                        if (canNavigateBack) {
+                            TextButton(onClick = onBack) {
+                                Text(text = backButtonLabel)
                             }
+                        } else {
+                            Spacer(modifier = Modifier.width(1.dp))
                         }
                         trailingAction?.invoke()
                     }
@@ -1247,6 +1291,7 @@ private fun StremioStreamsSection(
     onFilterQueryChange: (String) -> Unit,
     onBack: () -> Unit,
     onResultClick: (SearchResult) -> Unit,
+    imdbDetailsExpanded: Boolean = false,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         val selectedTitle = stremioState.selectedTitle
@@ -1264,7 +1309,7 @@ private fun StremioStreamsSection(
                         stringResource(R.string.search_stremio_back_titles)
                     },
                 onBack = onBack,
-                initialExpanded = true,
+                initialExpanded = imdbDetailsExpanded,
             )
         }
 
@@ -1444,6 +1489,7 @@ fun SearchResultCard(
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 AssistChip(onClick = {}, label = { Text(result.indexerName) })
+                if (result.isCached) CachedTag()
                 result.categories.forEach { category ->
                     Surface(
                         shape = RoundedCornerShape(0.dp),
@@ -1457,24 +1503,39 @@ fun SearchResultCard(
                         )
                     }
                 }
-                if (result.sizeBytes > 0L) {
-                    Text(convertToSize(result.sizeBytes), style = MaterialTheme.typography.labelMedium)
-                }
                 ageText(result.publishedAt)?.let {
                     Text(it, style = MaterialTheme.typography.labelMedium)
                 }
             }
-            if ((!result.isFromStremioAddon && !result.isDirectStream) || result.seeders > 0 || result.peers > 0) {
-                Text(
-                    text =
-                        if (result.isFromStremioAddon && result.seeders > 0 && result.peers == 0) {
-                            stringResource(R.string.search_result_seeders_only, result.seeders)
-                        } else {
-                            stringResource(R.string.search_result_seeders_peers, result.seeders, result.peers)
-                        },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 4.dp)
+            ) {
+
+                if ((!result.isFromStremioAddon && !result.isDirectStream) || result.seeders > 0 || result.peers > 0) {
+                    Text(
+                        text =
+                            if (result.isFromStremioAddon && result.seeders > 0 && result.peers == 0) {
+                                stringResource(R.string.search_result_seeders_only, result.seeders)
+                            } else {
+                                stringResource(
+                                    R.string.search_result_seeders_peers,
+                                    result.seeders,
+                                    result.peers
+                                )
+                            },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+
+                if (result.sizeBytes > 0L) {
+                    Text(
+                        convertToSize(result.sizeBytes),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
     }
@@ -1706,7 +1767,15 @@ fun SearchSortSheetPreview() {
 
 private val previewResults =
     listOf(
-        SearchResult("Ubuntu 24.04 Desktop amd64", "Jackett", 6_200_000_000, 120, 15, System.currentTimeMillis() - 3 * 86_400_000L),
+        SearchResult(
+            "Ubuntu 24.04 Desktop amd64",
+            "Jackett",
+            6_200_000_000,
+            120,
+            15,
+            System.currentTimeMillis() - 3 * 86_400_000L,
+            isCached = true
+        ),
         SearchResult("Debian 12 netinst", "Prowlarr", 650_000_000, 80, 4, null),
     )
 
@@ -1737,7 +1806,7 @@ fun SearchScreenLoadingPreview() {
                 SearchUiState(
                     activeIndexers = previewIndexers,
                     status = SearchStatus.Loading(1, 2),
-                    results = previewResults.take(1),
+                    results = previewResults.take(2),
                 ),
                 NullNavigationType.BOTTOM_NAVIGATION,
             )

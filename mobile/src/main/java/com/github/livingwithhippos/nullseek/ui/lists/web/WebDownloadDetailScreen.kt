@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -43,8 +45,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -75,20 +79,23 @@ import com.github.livingwithhippos.nullseek.ui.utils.DetailOverviewCard
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadLinkTypeRow
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.FileTypeBadge
-import com.github.livingwithhippos.nullseek.ui.utils.LargestVideoShortcut
+import com.github.livingwithhippos.nullseek.ui.utils.MultipleVideosNotice
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.ui.utils.OverviewInfo
+import com.github.livingwithhippos.nullseek.ui.utils.SingleVideoShortcut
+import com.github.livingwithhippos.nullseek.utils.MultiFileVideos
 import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.isAudioFile
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.nullseek.utils.isSubtitleFile
 import com.github.livingwithhippos.nullseek.utils.isVideoFile
-import com.github.livingwithhippos.nullseek.utils.largestVideoFile
+import com.github.livingwithhippos.nullseek.utils.multiFileVideos
 import com.github.livingwithhippos.nullseek.utils.openWebPage
 import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
+import com.github.livingwithhippos.nullseek.utils.wholeDownloadIsZipped
 import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import com.github.livingwithhippos.torbox.model.WebDownloadFileDto
 import kotlinx.coroutines.launch
@@ -115,6 +122,7 @@ fun WebDownloadDetailScreen(
     val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
+    val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
     val currentItem = uiState.webDownload ?: webDownload
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -146,6 +154,7 @@ fun WebDownloadDetailScreen(
                 defaultPlayer = defaultPlayer,
                 mediaPlayers = mediaPlayers,
                 filterFilesFullPath = filterFilesFullPath,
+                downloadZipMode = downloadZipMode,
                 onPlayMedia = { service, url, setAsDefault ->
                     viewModel.playOnMedia(service, url, setAsDefault)
                 },
@@ -175,6 +184,7 @@ private fun WebDownloadDetailScreen(
     defaultPlayer: ExternalService?,
     mediaPlayers: List<ExternalService>,
     filterFilesFullPath: Boolean = false,
+    downloadZipMode: DownloadZipMode = DownloadZipMode.ASK,
     onPlayMedia: (ExternalService, String, Boolean) -> Unit,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
@@ -222,6 +232,14 @@ private fun WebDownloadDetailScreen(
             }
 
             // Card 3: Download Link Card
+            // a new link appears near the top: scroll to it, the user may be at the bottom of the file list
+            val linkRequester = remember { BringIntoViewRequester() }
+            LaunchedEffect(uiState.downloadLinkResult) {
+                if (uiState.downloadLinkResult != null) {
+                    withFrameNanos { }
+                    linkRequester.bringIntoView()
+                }
+            }
             uiState.downloadLinkResult?.let { linkResult ->
                 WebDownloadLinkCard(
                     result = linkResult,
@@ -235,16 +253,27 @@ private fun WebDownloadDetailScreen(
                         }
                     },
                     onDismiss = onDismissDownloadLink,
+                    modifier = Modifier.bringIntoViewRequester(linkRequester),
                 )
             }
 
             // Card 4: Actions
+            // the Video filter lives here so the actions card can turn it on
+            var filterVideo by rememberSaveable { mutableStateOf(false) }
+            val filesRequester = remember { BringIntoViewRequester() }
+            val scope = rememberCoroutineScope()
+            val showVideos: () -> Unit = {
+                filterVideo = true
+                scope.launch { filesRequester.bringIntoView() }
+            }
             WebActionsCard(
                 item = item,
                 uiState = uiState,
                 onRefresh = onRefresh,
                 onDownloadZip = onDownloadZip,
                 onDownloadDirect = onDownloadDirect,
+                onShowVideos = showVideos,
+                downloadZipMode = downloadZipMode,
                 onDelete = { onShowDeleteDialog(true) },
             )
 
@@ -253,6 +282,9 @@ private fun WebDownloadDetailScreen(
                 WebFilesCard(
                     files = item.files,
                     isCached = item.cached,
+                    filterVideo = filterVideo,
+                    onFilterVideoChange = { filterVideo = it },
+                    modifier = Modifier.bringIntoViewRequester(filesRequester),
                     filterFilesFullPath = filterFilesFullPath,
                     onDownloadFile = onDownloadFile,
                 )
@@ -633,6 +665,9 @@ private fun WebActionsCard(
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
     onDownloadDirect: (Int, String) -> Unit = { _, _ -> },
+    // several videos: turn on the Video filter and scroll to the file list
+    onShowVideos: () -> Unit = {},
+    downloadZipMode: DownloadZipMode = DownloadZipMode.ASK,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -671,23 +706,31 @@ private fun WebActionsCard(
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.action_download))
+                val isZip = wholeDownloadIsZipped(downloadZipMode, item.files, { it.name }, { it.mimetype })
+                Text(text = stringResource(id = if (isZip) R.string.action_generate_zip else R.string.action_download))
             }
 
-            // a full download with several files is zipped: offer a direct link to the main video
-            val largestVideo =
-                if (item.cached && item.files.size > 1) {
-                    largestVideoFile(item.files, { it.name }, { it.mimetype }, { it.size })
-                } else {
-                    null
+            // a full download with several files is zipped: offer the only video directly, or point to the file list
+            when (val videos = if (item.cached) multiFileVideos(item.files, { it.name }, { it.mimetype }) else null) {
+                is MultiFileVideos.Single -> {
+                    val video = videos.file
+                    SingleVideoShortcut(
+                        fileName = video.name,
+                        sizeText = convertToSize(video.size),
+                        enabled = !uiState.isDownloading && !uiState.isDeleting,
+                        onClick = { onDownloadDirect(video.id, video.name) },
+                    )
                 }
-            if (largestVideo != null) {
-                LargestVideoShortcut(
-                    fileName = largestVideo.name,
-                    sizeText = convertToSize(largestVideo.size),
-                    enabled = !uiState.isDownloading && !uiState.isDeleting,
-                    onClick = { onDownloadDirect(largestVideo.id, largestVideo.name) },
-                )
+
+                is MultiFileVideos.Many -> {
+                    MultipleVideosNotice(
+                        count = videos.count,
+                        enabled = !uiState.isDeleting,
+                        onShowVideos = onShowVideos,
+                    )
+                }
+
+                null -> {}
             }
 
             if (!item.cached) {
@@ -766,12 +809,13 @@ private fun WebDownloadFileDto.isSubtitle(): Boolean = isSubtitleFile(name)
 private fun WebFilesCard(
     files: List<WebDownloadFileDto>,
     isCached: Boolean,
+    filterVideo: Boolean,
+    onFilterVideoChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     filterFilesFullPath: Boolean = false,
     onDownloadFile: (Int, String) -> Unit,
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    var filterVideo by rememberSaveable { mutableStateOf(false) }
     var filterAudio by rememberSaveable { mutableStateOf(false) }
     var filterSubtitles by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -853,7 +897,7 @@ private fun WebFilesCard(
             ) {
                 FilterChip(
                     selected = filterVideo,
-                    onClick = { filterVideo = !filterVideo },
+                    onClick = { onFilterVideoChange(!filterVideo) },
                     label = { Text(text = stringResource(id = R.string.filter_video)) },
                     leadingIcon = {
                         Icon(

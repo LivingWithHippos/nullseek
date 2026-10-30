@@ -36,6 +36,7 @@ import com.github.livingwithhippos.nullseek.ui.theme.Button
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.SuggestionChip
+import com.github.livingwithhippos.nullseek.ui.utils.CachedTag
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
 import java.text.DateFormat
@@ -88,16 +89,22 @@ fun SearchResultDetailScreen(
                     AssistChip(onClick = {}, label = { Text(convertToSize(result.sizeBytes)) })
                 }
             }
-            if ((!result.isFromStremioAddon && !result.isDirectStream) || result.seeders > 0 || result.peers > 0) {
-                Text(
-                    text = stringResource(
-                        R.string.search_result_seeders_peers,
-                        result.seeders,
-                        result.peers
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if ((!result.isFromStremioAddon && !result.isDirectStream) || result.seeders > 0 || result.peers > 0) {
+                    Text(
+                        text = stringResource(
+                            R.string.search_result_seeders_peers,
+                            result.seeders,
+                            result.peers
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                if (result.isCached) CachedTag()
             }
             result.publishedAt?.let { published ->
                 val absolute = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
@@ -217,6 +224,7 @@ fun SearchResultDetailMagnetPreview() {
                     magnetLink = "magnet:?xt=urn:btih:abcdef&dn=Ubuntu%2024.04&tr=udp%3A%2F%2Ftracker",
                     infoUrl = "https://example.com/ubuntu",
                     categories = listOf("Software", "Linux"),
+                    isCached = true
                 ),
                 onClose = {},
                 onDownload = {},
@@ -233,7 +241,7 @@ fun SearchResultDetailTorrentPreview() {
             SearchResultDetailScreen(
                 result = SearchResult(
                     "Debian 12 netinst", "Prowlarr", 650_000_000, 80, 4, null,
-                    downloadLink = "https://example.com/download/debian.torrent",
+                    downloadLink = "https://example.com/download/debian.torrent", isCached = true
                 ),
                 onClose = {},
                 onDownload = {},

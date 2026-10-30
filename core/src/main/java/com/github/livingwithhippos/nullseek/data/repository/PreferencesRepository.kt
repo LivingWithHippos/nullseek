@@ -44,6 +44,15 @@ enum class DownloadZipMode {
     ZIP_NON_MEDIA,
 }
 
+/** TorBox's `seed` values when creating a torrent. */
+enum class SeedingOption(
+    val apiValue: Int,
+) {
+    AUTO(1),
+    SEED(2),
+    DONT_SEED(3),
+}
+
 enum class ThemeMode {
     SYSTEM,
     LIGHT,
@@ -66,10 +75,13 @@ class PreferencesRepository(
     private val dataStore: DataStore<Preferences>,
 ) {
     private val zipModeKey = stringPreferencesKey("download_zip_mode")
+    private val defaultSeedingKey = stringPreferencesKey("default_seeding_option")
     private val pagingLoadSizeKey = intPreferencesKey("paging_load_size")
 
     private val referralKey = booleanPreferencesKey("include_referral_in_browser")
     private val searchAutoAddDownloadKey = booleanPreferencesKey("search_auto_add_download")
+    private val searchCheckCacheKey = booleanPreferencesKey("search_check_cache")
+    private val imdbDetailsExpandedKey = booleanPreferencesKey("imdb_details_expanded")
     private val filterFilesFullPathKey = booleanPreferencesKey("filter_files_full_path")
 
     private val searchSortOptionKey = stringPreferencesKey("search_sort_option")
@@ -117,6 +129,14 @@ class PreferencesRepository(
 
     val searchAutoAddDownload: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[searchAutoAddDownloadKey] ?: false }
+
+    // on by default
+    val searchCheckCache: Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[searchCheckCacheKey] ?: true }
+
+    // the IMDb details card in the Stremio search starts collapsed unless enabled
+    val imdbDetailsExpanded: Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[imdbDetailsExpandedKey] ?: false }
 
     val filterFilesFullPath: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[filterFilesFullPathKey] ?: false }
@@ -210,6 +230,24 @@ class PreferencesRepository(
         }
     }
 
+    // Auto is TorBox's own default
+    val defaultSeedingOption: Flow<SeedingOption> =
+        dataStore.data.map { preferences ->
+            SeedingOption.entries.firstOrNull { it.name == preferences[defaultSeedingKey] } ?: SeedingOption.AUTO
+        }
+
+    suspend fun getDefaultSeedingOption(): SeedingOption = defaultSeedingOption.first()
+
+    suspend fun setDefaultSeedingOption(option: SeedingOption) {
+        dataStore.edit { preferences ->
+            if (option == SeedingOption.AUTO) {
+                preferences.remove(defaultSeedingKey)
+            } else {
+                preferences[defaultSeedingKey] = option.name
+            }
+        }
+    }
+
     suspend fun getPagingLoadSize(): Int = pagingLoadSize.first()
 
     suspend fun setPagingLoadSize(size: Int) {
@@ -229,6 +267,14 @@ class PreferencesRepository(
 
     suspend fun resetIncludeReferral() {
         dataStore.edit { preferences -> preferences.remove(referralKey) }
+    }
+
+    suspend fun setSearchCheckCache(enabled: Boolean) {
+        dataStore.edit { preferences -> preferences[searchCheckCacheKey] = enabled }
+    }
+
+    suspend fun setImdbDetailsExpanded(enabled: Boolean) {
+        dataStore.edit { preferences -> preferences[imdbDetailsExpandedKey] = enabled }
     }
 
     suspend fun setSearchAutoAddDownload(enabled: Boolean) {

@@ -2,6 +2,7 @@ package com.github.livingwithhippos.nullseek
 
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.LocalActivity
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
@@ -164,6 +165,7 @@ fun NullSeekApp(
                 Route.NewDownload(
                     links = incoming.links.ifBlank { null },
                     files = incoming.files.map(Uri::toString),
+                    fromShare = true,
                 )
             ) {
                 launchSingleTop = true
@@ -293,11 +295,20 @@ private fun NullNavHost(
         }
         composable<Route.NewDownload> { backStackEntry ->
             val route = backStackEntry.toRoute<Route.NewDownload>()
+            val context = LocalContext.current
+            val activity = LocalActivity.current
             NewDownloadScreen(
                 initialLinks = route.links.orEmpty(),
                 initialFiles = route.files.map(Uri::parse),
                 contentType = contentType,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onQueued = { count ->
+                    // a toast, since it must stay visible after leaving the screen or the app
+                    Toast.makeText(context, context.getString(R.string.queued_success, count), Toast.LENGTH_SHORT).show()
+                    navController.popBackStack()
+                    // back to the app that shared the links, keeping our back stack
+                    if (route.fromShare) activity?.moveTaskToBack(true)
+                },
             )
         }
     }

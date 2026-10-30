@@ -89,6 +89,13 @@ private fun NavDestination?.matches(route: Route): Boolean =
     } ?: false
 
 private fun NavHostController.navigateTopLevel(route: Route) {
+    // New Download opens over the current screen, so closing it returns there
+    if (route is Route.NewDownload) {
+        navigate(route) { launchSingleTop = true }
+        return
+    }
+    // leaving New Download through the drawer: drop it, or it would be saved with the previous screen's state
+    if (currentDestination?.hasRoute<Route.NewDownload>() == true) popBackStack()
     navigate(route) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
@@ -191,7 +198,10 @@ fun TvNullSeekApp(
                         }
                         composable<Route.NewDownload> { entry ->
                             val route = entry.toRoute<Route.NewDownload>()
-                            TvNewDownloadScreen(initialLinks = route.links.orEmpty())
+                            TvNewDownloadScreen(
+                                initialLinks = route.links.orEmpty(),
+                                onQueued = { navController.popBackStack() },
+                            )
                         }
                         composable<Route.Settings> {
                             TvSettingsScreen(

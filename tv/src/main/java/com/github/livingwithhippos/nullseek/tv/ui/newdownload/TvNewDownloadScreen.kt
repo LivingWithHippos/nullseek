@@ -39,6 +39,7 @@ import androidx.tv.material3.Tab
 import androidx.tv.material3.TabRow
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
 import com.github.livingwithhippos.nullseek.tv.ui.components.LocalMessenger
 import com.github.livingwithhippos.nullseek.tv.ui.components.ScreenHeader
 import com.github.livingwithhippos.nullseek.tv.ui.components.SectionCard
@@ -49,7 +50,9 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.TvTextField
 import com.github.livingwithhippos.nullseek.tv.ui.components.launchSafely
 import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadViewModel
 import com.github.livingwithhippos.nullseek.ui.newdownload.UploadState
+import com.github.livingwithhippos.nullseek.ui.newdownload.appendLinkLine
 import com.github.livingwithhippos.nullseek.ui.newdownload.getFileName
+import com.github.livingwithhippos.nullseek.ui.newdownload.labelRes
 import com.github.livingwithhippos.nullseek.ui.newdownload.parseDownloadLinks
 import com.github.livingwithhippos.nullseek.ui.newdownload.readPickedFiles
 import com.github.livingwithhippos.nullseek.utils.getClipboardText
@@ -68,12 +71,7 @@ private enum class NewDownloadTab(
 }
 
 // api values used by the torbox client
-private val SEEDING_OPTIONS =
-    listOf(
-        R.string.seeding_auto to 1,
-        R.string.seeding_seed to 2,
-        R.string.seeding_dont_seed to 3,
-    )
+private val SEEDING_OPTIONS = SeedingOption.entries.map { it.labelRes() to it.apiValue }
 
 private val USENET_OPTIONS =
     listOf(
@@ -97,6 +95,8 @@ internal fun normalizeTorrentInput(text: String): String =
 fun TvNewDownloadScreen(
     initialLinks: String,
     modifier: Modifier = Modifier,
+    // called when everything was added
+    onQueued: () -> Unit = {},
     viewModel: NewDownloadViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
@@ -107,7 +107,9 @@ fun TvNewDownloadScreen(
     var selectedTab by rememberSaveable { mutableIntStateOf(if (initialLinks.startsWith("http")) 1 else 0) }
     var linkText by rememberSaveable(initialLinks) { mutableStateOf(initialLinks) }
     var password by rememberSaveable { mutableStateOf("") }
-    var seedingOption by rememberSaveable { mutableIntStateOf(1) }
+    // starts from the "Default seeding" setting, keyed so it applies once the setting has loaded
+    val defaultSeeding by viewModel.defaultSeedingOption.collectAsStateWithLifecycle()
+    var seedingOption by rememberSaveable(defaultSeeding) { mutableIntStateOf(defaultSeeding.apiValue) }
     var usenetOption by rememberSaveable { mutableIntStateOf(-1) }
     var allowZipped by rememberSaveable { mutableStateOf(true) }
     var selectedFiles by remember { mutableStateOf<List<Uri>>(emptyList()) }
@@ -132,11 +134,10 @@ fun TvNewDownloadScreen(
     LaunchedEffect(uploadState) {
         val state = uploadState
         if (state is UploadState.Finished && state.failed == 0) {
+            // the messenger lives at the app root, so the message outlives this screen
             messenger.show(context.getString(R.string.queued_success, state.successful))
-            linkText = ""
-            password = ""
-            selectedFiles = emptyList()
             viewModel.resetState()
+            onQueued()
         }
     }
 
@@ -171,12 +172,15 @@ fun TvNewDownloadScreen(
                         TvActionButton(
                             text = stringResource(R.string.paste_from_clipboard),
                             icon = R.drawable.ic_paste,
-                            onClick = {
-                                getClipboardText(context)?.let { clip ->
-                                    linkText = if (linkText.isBlank()) clip else "$linkText\n$clip"
-                                }
-                            },
+                            onClick = { linkText = appendLinkLine(linkText, getClipboardText(context)) },
                         )
+                        if (linkText.isNotBlank()) {
+                            TvActionButton(
+                                text = stringResource(R.string.clear_links),
+                                icon = R.drawable.ic_close,
+                                onClick = { linkText = "" },
+                            )
+                        }
                         Text(
                             stringResource(R.string.valid_links_count, links.size),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

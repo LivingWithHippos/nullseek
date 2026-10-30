@@ -8,6 +8,7 @@ import com.github.livingwithhippos.nullseek.core.data.repository.BackupRepositor
 import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
+import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
 import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
 import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -51,6 +52,13 @@ class SettingsViewModel(
             initialValue = DownloadZipMode.ASK,
         )
 
+    val defaultSeedingOption: StateFlow<SeedingOption> =
+        preferencesRepository.defaultSeedingOption.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = SeedingOption.AUTO,
+        )
+
     val pagingLoadSize: StateFlow<Int> =
         preferencesRepository.pagingLoadSize.stateIn(
             scope = viewModelScope,
@@ -63,6 +71,20 @@ class SettingsViewModel(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = false,
+        )
+
+    val imdbDetailsExpanded: StateFlow<Boolean> =
+        preferencesRepository.imdbDetailsExpanded.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false,
+        )
+
+    val searchCheckCache: StateFlow<Boolean> =
+        preferencesRepository.searchCheckCache.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true,
         )
 
     val filterFilesFullPath: StateFlow<Boolean> =
@@ -110,6 +132,14 @@ class SettingsViewModel(
         viewModelScope.launch { preferencesRepository.setSearchAutoAddDownload(enabled) }
     }
 
+    fun setImdbDetailsExpanded(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setImdbDetailsExpanded(enabled) }
+    }
+
+    fun setSearchCheckCache(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setSearchCheckCache(enabled) }
+    }
+
     fun setFilterFilesFullPath(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setFilterFilesFullPath(enabled) }
     }
@@ -118,6 +148,10 @@ class SettingsViewModel(
         viewModelScope.launch {
             preferencesRepository.setDownloadZipMode(mode)
         }
+    }
+
+    fun setDefaultSeedingOption(option: SeedingOption) {
+        viewModelScope.launch { preferencesRepository.setDefaultSeedingOption(option) }
     }
 
     fun setPagingLoadSize(size: Int) {

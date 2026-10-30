@@ -83,6 +83,14 @@ class WebDownloadDetailViewModel(
             initialValue = emptyList(),
         )
 
+    // used to label the download button "Generate Zip" when the result will be a zip
+    val downloadZipMode: StateFlow<DownloadZipMode> =
+        preferencesRepository.downloadZipMode.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = DownloadZipMode.ASK,
+        )
+
     val filterFilesFullPath: StateFlow<Boolean> =
         preferencesRepository.filterFilesFullPath.stateIn(
             scope = viewModelScope,
