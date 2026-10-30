@@ -4,10 +4,10 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -33,7 +33,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 @OptIn(
     ExperimentalMaterial3WindowSizeClassApi::class,
 )
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     private val viewModel: NullRootViewModel by viewModel()
     private var pendingWidgetDestination by mutableStateOf<String?>(null)
     private var pendingIncomingDownload by mutableStateOf<IncomingDownload?>(null)
