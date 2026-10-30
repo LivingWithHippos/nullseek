@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,6 +54,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -114,6 +116,7 @@ fun SearchScreen(
     val selected by viewModel.selectedResult.collectAsStateWithLifecycle()
     val autoAdd by viewModel.autoAddDownload.collectAsStateWithLifecycle()
     val imdbDetailsExpanded by viewModel.imdbDetailsExpanded.collectAsStateWithLifecycle()
+    val favourites by viewModel.favourites.collectAsStateWithLifecycle()
     val adding by viewModel.addingDownload.collectAsStateWithLifecycle()
     val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
@@ -157,6 +160,10 @@ fun SearchScreen(
         onSearchManualEpisode = viewModel::searchManualSeriesEpisode,
         onSearchWholeSeries = viewModel::searchWholeSeries,
         imdbDetailsExpanded = imdbDetailsExpanded,
+        favourites = favourites,
+        onSetFavourite = viewModel::setFavourite,
+        onClearFavourites = viewModel::clearFavourites,
+        onShowFavourites = viewModel::showFavourites,
         onStremioBack = viewModel::navigateBackInStremio,
         onRemoveHistoryItem = viewModel::removeSearchHistoryItem,
         onClearHistory = viewModel::clearSearchHistory,
@@ -187,6 +194,10 @@ fun SearchContent(
     onSearchManualEpisode: (Int, Int) -> Unit = { _, _ -> },
     onSearchWholeSeries: () -> Unit = {},
     imdbDetailsExpanded: Boolean = false,
+    favourites: List<ImdbTitleResult> = emptyList(),
+    onSetFavourite: (ImdbTitleResult, Boolean) -> Unit = { _, _ -> },
+    onClearFavourites: () -> Unit = {},
+    onShowFavourites: () -> Unit = {},
     onStremioBack: () -> Unit = {},
     onRemoveHistoryItem: (String) -> Unit = {},
     onClearHistory: () -> Unit = {},
@@ -205,6 +216,7 @@ fun SearchContent(
     initialSheetVisible: Boolean = false,
 ) {
     var showSheet by rememberSaveable { mutableStateOf(initialSheetVisible) }
+    val favouriteIds = remember(favourites) { favourites.mapTo(HashSet()) { it.imdbId } }
     val searchBarState = rememberSearchBarState()
     val textFieldState = rememberTextFieldState()
     val scope = rememberCoroutineScope()
@@ -448,9 +460,18 @@ fun SearchContent(
                             onSearchManualEpisode = onSearchManualEpisode,
                             onSearchWholeSeries = onSearchWholeSeries,
                             imdbDetailsExpanded = imdbDetailsExpanded,
+                            favouriteIds = favouriteIds,
+                            onSetFavourite = onSetFavourite,
                             onStremioFilterQuery = onStremioFilterQuery,
                             onStremioBack = onStremioBack,
                             onResultClick = onResultClick,
+                        )
+                    } else if (state.hasActiveAddons && favourites.isNotEmpty()) {
+                        // no IMDb search yet: show the starred titles
+                        StremioFavouritesSection(
+                            favourites = favourites,
+                            onSelectImdbTitle = onSelectImdbTitle,
+                            onClearAll = onClearFavourites,
                         )
                     } else {
                         SearchEmptyOrPromptSection(
@@ -486,7 +507,82 @@ fun SearchContent(
             onStremioAscending = onStremioAscending,
             stremioShowFilterBar = state.stremioState.showFilterBar,
             onStremioShowFilterBar = onStremioShowFilterBar,
+            favouritesCount = favourites.size,
+            onShowFavourites = {
+                showSheet = false
+                onShowFavourites()
+            },
             onDismiss = { showSheet = false },
+        )
+    }
+}
+
+/** Star toggle for the opened IMDb title. */
+@Composable
+private fun FavouriteStarButton(
+    isFavourite: Boolean,
+    onClick: () -> Unit,
+) {
+    IconButton(onClick = onClick, modifier = Modifier.size(32.dp)) {
+        Icon(
+            painter = painterResource(if (isFavourite) R.drawable.ic_star else R.drawable.ic_star_border),
+            contentDescription =
+                stringResource(if (isFavourite) R.string.search_favourites_remove else R.string.search_favourites_add),
+            tint = if (isFavourite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** Starred IMDb titles, shown in Stremio mode before any search. */
+@Composable
+private fun StremioFavouritesSection(
+    favourites: List<ImdbTitleResult>,
+    onSelectImdbTitle: (ImdbTitleResult) -> Unit,
+    onClearAll: () -> Unit,
+) {
+    var confirmClear by remember { mutableStateOf(false) }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 88.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        item(key = "header") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "${stringResource(R.string.search_favourites_title)} (${favourites.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                if (favourites.size >= 2) {
+                    TextButton(onClick = { confirmClear = true }) {
+                        Text(stringResource(R.string.search_favourites_clear))
+                    }
+                }
+            }
+        }
+        items(favourites, key = { "fav:${it.imdbId}" }) { title ->
+            ImdbTitleCard(item = title, onClick = { onSelectImdbTitle(title) })
+        }
+    }
+
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text(stringResource(R.string.search_favourites_clear)) },
+            text = { Text(stringResource(R.string.search_favourites_clear_confirm, favourites.size)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmClear = false
+                    onClearAll()
+                }) { Text(stringResource(R.string.search_favourites_clear)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.cancel)) }
+            },
         )
     }
 }
@@ -537,6 +633,8 @@ private fun StremioSearchContentSection(
     onSearchManualEpisode: (Int, Int) -> Unit,
     onSearchWholeSeries: () -> Unit,
     imdbDetailsExpanded: Boolean,
+    favouriteIds: Set<String>,
+    onSetFavourite: (ImdbTitleResult, Boolean) -> Unit,
     onStremioFilterQuery: (String) -> Unit,
     onStremioBack: () -> Unit,
     onResultClick: (SearchResult) -> Unit,
@@ -559,6 +657,8 @@ private fun StremioSearchContentSection(
                 onSearchWholeSeries = onSearchWholeSeries,
                 onBackToTitles = onStremioBack,
                 imdbDetailsExpanded = imdbDetailsExpanded,
+                favouriteIds = favouriteIds,
+                onSetFavourite = onSetFavourite,
             )
         }
 
@@ -569,6 +669,8 @@ private fun StremioSearchContentSection(
                 onBack = onStremioBack,
                 onResultClick = onResultClick,
                 imdbDetailsExpanded = imdbDetailsExpanded,
+                favouriteIds = favouriteIds,
+                onSetFavourite = onSetFavourite,
             )
         }
     }
@@ -750,6 +852,8 @@ private fun StremioEpisodesSection(
     onSearchWholeSeries: () -> Unit,
     onBackToTitles: () -> Unit,
     imdbDetailsExpanded: Boolean = false,
+    favouriteIds: Set<String> = emptySet(),
+    onSetFavourite: (ImdbTitleResult, Boolean) -> Unit = { _, _ -> },
 ) {
     val selectedTitle = stremioState.selectedTitle ?: return
     var manualSeasonText by rememberSaveable(selectedTitle.imdbId) { mutableStateOf("1") }
@@ -765,6 +869,8 @@ private fun StremioEpisodesSection(
             backButtonLabel = stringResource(R.string.search_stremio_back_titles),
             onBack = onBackToTitles,
             initialExpanded = imdbDetailsExpanded,
+            isFavourite = selectedTitle.imdbId in favouriteIds,
+            onToggleFavourite = { onSetFavourite(selectedTitle, selectedTitle.imdbId !in favouriteIds) },
             trailingAction = {
                 FilledTonalButton(onClick = onSearchWholeSeries) {
                     Text(stringResource(R.string.search_stremio_whole_series))
@@ -960,6 +1066,8 @@ private fun StremioTitleDetailsCard(
     onBack: () -> Unit,
     initialExpanded: Boolean = true,
     trailingAction: (@Composable () -> Unit)? = null,
+    isFavourite: Boolean = false,
+    onToggleFavourite: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val baseImdbId =
@@ -1047,6 +1155,9 @@ private fun StremioTitleDetailsCard(
                             Text(text = backButtonLabel)
                         }
                     }
+                    if (onToggleFavourite != null) {
+                        FavouriteStarButton(isFavourite = isFavourite, onClick = onToggleFavourite)
+                    }
                     IconButton(
                         onClick = { isExpanded = true },
                         modifier = Modifier.size(32.dp),
@@ -1112,6 +1223,9 @@ private fun StremioTitleDetailsCard(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.weight(1f),
                             )
+                            if (onToggleFavourite != null) {
+                                FavouriteStarButton(isFavourite = isFavourite, onClick = onToggleFavourite)
+                            }
                             IconButton(
                                 onClick = { isExpanded = false },
                                 modifier = Modifier.size(32.dp),
@@ -1292,6 +1406,8 @@ private fun StremioStreamsSection(
     onBack: () -> Unit,
     onResultClick: (SearchResult) -> Unit,
     imdbDetailsExpanded: Boolean = false,
+    favouriteIds: Set<String> = emptySet(),
+    onSetFavourite: (ImdbTitleResult, Boolean) -> Unit = { _, _ -> },
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         val selectedTitle = stremioState.selectedTitle
@@ -1310,6 +1426,9 @@ private fun StremioStreamsSection(
                     },
                 onBack = onBack,
                 initialExpanded = imdbDetailsExpanded,
+                isFavourite = selectedTitle?.imdbId in favouriteIds,
+                // only a title picked from IMDb can be starred, not a stream opened from a raw id
+                onToggleFavourite = selectedTitle?.let { title -> { onSetFavourite(title, title.imdbId !in favouriteIds) } },
             )
         }
 
@@ -1577,6 +1696,8 @@ fun SearchSortSheet(
     onStremioAscending: (Boolean) -> Unit = {},
     stremioShowFilterBar: Boolean = true,
     onStremioShowFilterBar: (Boolean) -> Unit = {},
+    favouritesCount: Int = 0,
+    onShowFavourites: () -> Unit = {},
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -1626,6 +1747,30 @@ fun SearchSortSheet(
                 }
 
                 SearchMode.STREMIO_ADDONS -> {
+                    OutlinedButton(
+                        onClick = onShowFavourites,
+                        enabled = favouritesCount > 0,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_star),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text =
+                                if (favouritesCount > 0) {
+                                    stringResource(R.string.search_favourites_show_count, favouritesCount)
+                                } else {
+                                    stringResource(R.string.search_favourites_show)
+                                },
+                        )
+                    }
+
                     Row(
                         modifier =
                             Modifier

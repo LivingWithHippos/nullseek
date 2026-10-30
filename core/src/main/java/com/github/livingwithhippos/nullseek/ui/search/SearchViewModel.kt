@@ -2,6 +2,8 @@ package com.github.livingwithhippos.nullseek.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.livingwithhippos.nullseek.core.data.database.dao.ImdbFavouriteDao
+import com.github.livingwithhippos.nullseek.core.data.database.model.ImdbFavouriteEntity
 import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity
 import com.github.livingwithhippos.nullseek.core.data.stremio.AddonScrapedItem
 import com.github.livingwithhippos.nullseek.core.data.stremio.AddonSearchHelper
@@ -257,7 +259,15 @@ class SearchViewModel(
     private val addonSearchHelper: AddonSearchHelper,
     private val externalServicesRepository: ExternalServicesRepository,
     private val cacheChecker: CacheChecker,
+    private val imdbFavouriteDao: ImdbFavouriteDao,
 ) : ViewModel() {
+    /** Starred IMDb titles, newest first. */
+    val favourites: StateFlow<List<ImdbTitleResult>> =
+        imdbFavouriteDao
+            .observeAll()
+            .map { list -> list.map { it.toTitle() } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     val autoAddDownload: StateFlow<Boolean> =
         preferencesRepository.searchAutoAddDownload.stateIn(
             viewModelScope,
@@ -703,6 +713,29 @@ class SearchViewModel(
                 },
             )
         }
+    }
+
+    fun setFavourite(
+        title: ImdbTitleResult,
+        favourite: Boolean,
+    ) {
+        viewModelScope.launch {
+            if (favourite) {
+                imdbFavouriteDao.insert(ImdbFavouriteEntity.fromTitle(title))
+            } else {
+                imdbFavouriteDao.delete(title.imdbId)
+            }
+        }
+    }
+
+    fun clearFavourites() {
+        viewModelScope.launch { imdbFavouriteDao.deleteAll() }
+    }
+
+    /** Leaves the current IMDb search: the idle Stremio screen lists the favourites. */
+    fun showFavourites() {
+        stremioJob?.cancel()
+        stremioState.value = StremioSearchState()
     }
 
     fun setSearchMode(mode: SearchMode) {

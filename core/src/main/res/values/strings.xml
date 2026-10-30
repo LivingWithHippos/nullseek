@@ -343,6 +343,13 @@
     <string name="search_stremio_filter_hint">Filter titles…</string>
     <string name="search_stremio_no_filtered_results">No results match your filter</string>
     <string name="search_stremio_open_imdb">Open IMDb</string>
+    <string name="search_favourites_title">Favourites</string>
+    <string name="search_favourites_add">Add to favourites</string>
+    <string name="search_favourites_remove">Remove from favourites</string>
+    <string name="search_favourites_clear">Clear all</string>
+    <string name="search_favourites_clear_confirm">Remove all %1$d favourites?</string>
+    <string name="search_favourites_show">Show favourites</string>
+    <string name="search_favourites_show_count">Show favourites (%1$d)</string>
     <string name="search_stremio_imdb_rating">★ %1$s</string>
     <string name="search_stremio_expand_details">Expand details</string>
     <string name="search_stremio_collapse_details">Collapse details</string>

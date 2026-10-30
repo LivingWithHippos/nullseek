@@ -7,10 +7,12 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.github.livingwithhippos.nullseek.core.data.database.dao.ExternalServiceDao
+import com.github.livingwithhippos.nullseek.core.data.database.dao.ImdbFavouriteDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.IndexerDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.NullProviderDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.StremioAddonDao
 import com.github.livingwithhippos.nullseek.core.data.database.model.ExternalServiceEntity
+import com.github.livingwithhippos.nullseek.core.data.database.model.ImdbFavouriteEntity
 import com.github.livingwithhippos.nullseek.core.data.database.model.IndexerEntity
 import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
 import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity
@@ -44,7 +46,35 @@ data class AppBackup(
     val externalServices: List<ExternalServiceBackup> = emptyList(),
     val indexers: List<IndexerBackup> = emptyList(),
     val stremioAddons: List<StremioAddonBackup> = emptyList(),
+    // null in backups made before favourites existed: restoring those keeps the current favourites
+    val imdbFavourites: List<ImdbFavouriteBackup>? = null,
 )
+
+@Serializable
+data class ImdbFavouriteBackup(
+    val imdbId: String,
+    val title: String,
+    val year: String? = null,
+    val type: String = "movie",
+    val posterUrl: String? = null,
+    val imdbRating: String? = null,
+    val addedTimestamp: Long = 0L,
+) {
+    fun toEntity(): ImdbFavouriteEntity = ImdbFavouriteEntity(imdbId, title, year, type, posterUrl, imdbRating, addedTimestamp)
+
+    companion object {
+        fun fromEntity(entity: ImdbFavouriteEntity): ImdbFavouriteBackup =
+            ImdbFavouriteBackup(
+                imdbId = entity.imdbId,
+                title = entity.title,
+                year = entity.year,
+                type = entity.type,
+                posterUrl = entity.posterUrl,
+                imdbRating = entity.imdbRating,
+                addedTimestamp = entity.addedTimestamp,
+            )
+    }
+}
 
 @Serializable
 data class PreferencesBackup(
@@ -238,6 +268,7 @@ class BackupRepositoryImpl(
     private val externalServiceDao: ExternalServiceDao,
     private val indexerDao: IndexerDao,
     private val stremioAddonDao: StremioAddonDao,
+    private val imdbFavouriteDao: ImdbFavouriteDao,
     private val dataStore: DataStore<Preferences>,
     private val torboxClient: TorboxClient,
 ) : BackupRepository {
@@ -269,6 +300,7 @@ class BackupRepositoryImpl(
             val indexers = indexerDao.getAll().map { IndexerBackup.fromEntity(it) }
             val stremioAddons =
                 stremioAddonDao.getAll().map { StremioAddonBackup.fromEntity(it) }
+            val imdbFavourites = imdbFavouriteDao.getAll().map { ImdbFavouriteBackup.fromEntity(it) }
 
             val backup =
                 AppBackup(
@@ -279,6 +311,7 @@ class BackupRepositoryImpl(
                     externalServices = externalServices,
                     indexers = indexers,
                     stremioAddons = stremioAddons,
+                    imdbFavourites = imdbFavourites,
                 )
             encodeBackupToJson(backup)
         }
@@ -321,6 +354,11 @@ class BackupRepositoryImpl(
             stremioAddonDao.deleteAllAddons()
             backup.stremioAddons.forEach { item ->
                 stremioAddonDao.insertAddon(item.toEntity())
+            }
+
+            backup.imdbFavourites?.let { favourites ->
+                imdbFavouriteDao.deleteAll()
+                favourites.forEach { imdbFavouriteDao.insert(it.toEntity()) }
             }
 
             restorePreferences(backup.preferences)

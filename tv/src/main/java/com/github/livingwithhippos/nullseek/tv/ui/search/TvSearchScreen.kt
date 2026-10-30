@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,6 +43,7 @@ import com.github.livingwithhippos.nullseek.core.data.stremio.SeriesEpisodeItem
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.data.model.SearchResult
 import com.github.livingwithhippos.nullseek.tv.ui.components.Badge
+import com.github.livingwithhippos.nullseek.tv.ui.components.ConfirmDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.EmptyState
 import com.github.livingwithhippos.nullseek.tv.ui.components.ErrorBanner
 import com.github.livingwithhippos.nullseek.tv.ui.components.LoadingBox
@@ -334,7 +337,7 @@ private fun StremioContent(
     viewModel: SearchViewModel,
 ) {
     when (stremio.stage) {
-        StremioStage.IDLE -> EmptyState(stringResource(R.string.search_prompt_stremio))
+        StremioStage.IDLE -> FavouritesOrPrompt(viewModel)
         StremioStage.TITLES ->
             when {
                 stremio.isSearchingTitles -> LoadingBox(text = stringResource(R.string.search_imdb_searching))
@@ -343,6 +346,48 @@ private fun StremioContent(
             }
         StremioStage.EPISODES -> EpisodesSection(stremio, viewModel)
         StremioStage.STREAMS -> StreamsSection(stremio, viewModel)
+    }
+}
+
+@Composable
+private fun SearchViewModel.favouriteIdsState() =
+    favourites.collectAsStateWithLifecycle().let { state ->
+        remember(state.value) { derivedStateOf { state.value.mapTo(HashSet()) { it.imdbId } } }
+    }
+
+/** Idle IMDb search: the starred titles, or the usual prompt when there are none. */
+@Composable
+private fun FavouritesOrPrompt(viewModel: SearchViewModel) {
+    val favourites by viewModel.favourites.collectAsStateWithLifecycle()
+    var confirmClear by remember { mutableStateOf(false) }
+    if (favourites.isEmpty()) {
+        EmptyState(stringResource(R.string.search_prompt_stremio))
+        return
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                "${stringResource(R.string.search_favourites_title)} (${favourites.size})",
+                style = MaterialTheme.typography.titleLarge,
+            )
+            if (favourites.size >= 2) {
+                TvActionButton(stringResource(R.string.search_favourites_clear), { confirmClear = true }, icon = R.drawable.ic_delete)
+            }
+        }
+        TitlesGrid(favourites, onSelect = viewModel::selectImdbTitle)
+    }
+    if (confirmClear) {
+        ConfirmDialog(
+            title = stringResource(R.string.search_favourites_clear),
+            message = stringResource(R.string.search_favourites_clear_confirm, favourites.size),
+            confirmText = stringResource(R.string.search_favourites_clear),
+            onConfirm = {
+                confirmClear = false
+                viewModel.clearFavourites()
+            },
+            onDismiss = { confirmClear = false },
+            dismissText = stringResource(R.string.cancel),
+        )
     }
 }
 
@@ -382,7 +427,16 @@ private fun EpisodesSection(
                 TvActionButton(stringResource(R.string.search_stremio_whole_series), viewModel::searchWholeSeries, icon = R.drawable.ic_search)
             }
         }
-        if (title != null) item { TitleDetails(title) }
+        if (title != null) {
+            item {
+                val favouriteIds by viewModel.favouriteIdsState()
+                TitleDetails(
+                    title = title,
+                    isFavourite = title.imdbId in favouriteIds,
+                    onToggleFavourite = { viewModel.setFavourite(title, title.imdbId !in favouriteIds) },
+                )
+            }
+        }
         item {
             SectionCard {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -469,7 +523,13 @@ private fun StreamsSection(
                         if (stremio.selectedTitle?.isSeries == true) R.string.search_stremio_back_episodes else R.string.search_stremio_back_titles
                     TvActionButton(stringResource(back), viewModel::navigateBackInStremio, icon = R.drawable.ic_close)
                 }
-                Text(stremio.activeStreamLabel, style = MaterialTheme.typography.titleMedium, maxLines = 2)
+                Text(stremio.activeStreamLabel, style = MaterialTheme.typography.titleMedium, maxLines = 2, modifier = Modifier.weight(1f))
+                // movies have no title details here: the star sits in the header
+                val title = stremio.selectedTitle
+                if (title != null && !title.isSeries) {
+                    val favouriteIds by viewModel.favouriteIdsState()
+                    TvFavouriteButton(title.imdbId in favouriteIds) { viewModel.setFavourite(title, title.imdbId !in favouriteIds) }
+                }
             }
         }
         item {
