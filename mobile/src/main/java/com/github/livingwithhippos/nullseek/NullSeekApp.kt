@@ -282,8 +282,6 @@ private fun NullNavHost(
         }
         composable<Route.ExternalServices> {
             ExternalServicesScreen(
-                contentType = contentType,
-                navigationType = navigationType,
                 onNavigateBack = { navController.popBackStack() },
             )
         }
