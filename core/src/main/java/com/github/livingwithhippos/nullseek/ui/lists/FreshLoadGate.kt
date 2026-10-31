@@ -1,7 +1,7 @@
 package com.github.livingwithhippos.nullseek.ui.lists
 
 /** Minimum time between two loads that bypass TorBox's list cache. */
-internal const val FRESH_LOAD_INTERVAL_MS = 5_000L
+internal const val FRESH_LOAD_INTERVAL_MS = 7_000L
 
 /**
  * Allows a cache-bypassing load at most once every [intervalMs].
