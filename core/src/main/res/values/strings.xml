@@ -389,6 +389,7 @@
     <string name="language_system">Follow system</string>
     <string name="language_english" translatable="false">English</string>
     <string name="language_italian" translatable="false">Italiano</string>
+    <string name="language_french" translatable="false">Français</string>
 
     <!-- Theme & Appearance -->
     <string name="theme_preference_title">Theme &amp; Appearance</string>

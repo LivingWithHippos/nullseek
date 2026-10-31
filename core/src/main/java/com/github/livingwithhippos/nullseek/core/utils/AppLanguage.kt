@@ -16,6 +16,7 @@ enum class AppLanguage(
     SYSTEM("", R.string.language_system),
     ENGLISH("en", R.string.language_english),
     ITALIAN("it", R.string.language_italian),
+    FRENCH("fr", R.string.language_french),
     ;
 
     /** Switches the app language; visible activities are recreated with it. */
