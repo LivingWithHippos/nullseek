@@ -44,9 +44,9 @@ minSdk = "27"
 # @keep
 targetSdk = "37"
 # @keep
-versionCode = "4"
+versionCode = "5"
 # @keep
-versionName = "0.4"
+versionName = "0.5"
 
 [libraries]
 countly-sdk = { module = "ly.count.android:sdk", version.ref = "countly" }
