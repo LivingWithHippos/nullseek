@@ -39,6 +39,8 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.AppLanguage
+import com.github.livingwithhippos.nullseek.core.utils.PRIVACY_POLICY_URL
+import com.github.livingwithhippos.nullseek.core.utils.REPOSITORY_URL
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.PAGING_LOAD_SIZE_PRESETS
 import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
@@ -79,6 +81,7 @@ private enum class SettingsSection(
     DOWNLOADS(R.string.settings_downloads_section, R.string.download_zip_preference_summary, R.drawable.ic_download),
     BACKUP(R.string.backup_preference_title, R.string.backup_preference_summary, R.drawable.ic_history),
     DONATE(R.string.donate_title, R.string.donate_summary, R.drawable.ic_favorite),
+    ABOUT(R.string.about_title, R.string.about_contribute, R.drawable.ic_info),
 }
 
 // The donation links are only set in the FOSS build
@@ -237,6 +240,28 @@ fun TvSettingsScreen(
                             // many TVs have no browser: show the links so they can be typed elsewhere
                             Text(BuildConfig.DONATE_KOFI_URL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(BuildConfig.DONATE_GITHUB_URL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+
+                    SettingsSection.ABOUT ->
+                        SectionCard(title = stringResource(R.string.about_title), icon = R.drawable.ic_info) {
+                            Text(stringResource(R.string.about_version, BuildConfig.VERSION_NAME), style = MaterialTheme.typography.titleSmall)
+                            Text(stringResource(R.string.about_contribute), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                TvActionButton(
+                                    text = stringResource(R.string.about_open_repository),
+                                    icon = R.drawable.ic_open_in_new,
+                                    primary = true,
+                                    onClick = { safeOpenUrl(context, REPOSITORY_URL) },
+                                )
+                                TvActionButton(
+                                    text = stringResource(R.string.about_privacy_policy),
+                                    icon = R.drawable.ic_open_in_new,
+                                    onClick = { safeOpenUrl(context, PRIVACY_POLICY_URL) },
+                                )
+                            }
+                            // many TVs have no browser: show the links so they can be typed elsewhere
+                            Text(REPOSITORY_URL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(PRIVACY_POLICY_URL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                 }
             }

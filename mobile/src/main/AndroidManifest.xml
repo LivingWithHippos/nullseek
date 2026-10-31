@@ -43,9 +43,7 @@
                 <data android:scheme="magnet" />
             </intent-filter>
 
-            <!-- .torrent and .nzb files opened from file managers or downloads.
-                 octet-stream is needed because many apps report torrents that way;
-                 other files are rejected in code by extension. -->
+            <!-- .torrent and .nzb files opened from file managers or downloads -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 

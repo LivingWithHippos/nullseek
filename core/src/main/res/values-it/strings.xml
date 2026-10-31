@@ -520,4 +520,11 @@
 
     <!-- widget -->
     <string name="widget_active_count">(%1$d attivi)</string>
+
+    <!-- About -->
+    <string name="about_title">Informazioni</string>
+    <string name="about_version">Versione %1$s</string>
+    <string name="about_contribute">NullSeek è open source: i contributi al codice o alle traduzioni sono benvenuti su GitHub.</string>
+    <string name="about_open_repository">Contribuisci su GitHub</string>
+    <string name="about_privacy_policy">Informativa sulla privacy</string>
 </resources>

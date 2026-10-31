@@ -70,6 +70,8 @@ import com.github.livingwithhippos.nullseek.billing.BillingManager
 import com.github.livingwithhippos.nullseek.billing.EntitlementState
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.AppLanguage
+import com.github.livingwithhippos.nullseek.core.utils.PRIVACY_POLICY_URL
+import com.github.livingwithhippos.nullseek.core.utils.REPOSITORY_URL
 import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.PAGING_LOAD_SIZE_PRESETS
@@ -871,6 +873,73 @@ fun SettingsScreen(
 
             if (showDonations) {
                 DonationSettingsCard()
+            }
+
+            AboutSettingsCard()
+        }
+    }
+}
+
+/** App version, an invitation to contribute and the privacy policy link. */
+@Composable
+private fun AboutSettingsCard() {
+    val uriHandler = LocalUriHandler.current
+    // openUri throws when no app can handle the link
+    val openLink: (String) -> Unit = { url -> runCatching { uriHandler.openUri(url) } }
+
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_info),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = stringResource(id = R.string.about_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Text(
+                text = stringResource(id = R.string.about_version, BuildConfig.VERSION_NAME),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = stringResource(id = R.string.about_contribute),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            OutlinedButton(
+                onClick = { openLink(REPOSITORY_URL) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(text = stringResource(id = R.string.about_open_repository))
+                Spacer(modifier = Modifier.size(8.dp))
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_open_in_new),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+            TextButton(
+                onClick = { openLink(PRIVACY_POLICY_URL) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(text = stringResource(id = R.string.about_privacy_policy))
             }
         }
     }
