@@ -155,7 +155,7 @@
     <string name="download_option_uncompressed">Diretto / non compresso</string>
     <string name="download_remember_choice">Ricorda la scelta</string>
     <string name="download_zip_preference_title">Formato di download</string>
-    <string name="download_zip_preference_summary">Scegli se comprimere i file in zip o lasciarli non compressi quando crei un link di download</string>
+    <string name="download_zip_preference_summary">Torbox comprime sempre i link generati se contengono più files. Scegli se i file singoli devono essere compressi in zip o tenuti nel loro formato originale (necessario per lo streaming)</string>
     <string name="download_zip_preference_ask">Chiedi sempre</string>
     <string name="download_zip_preference_zip">Sempre zip</string>
     <string name="download_zip_preference_uncompressed">Sempre non compresso</string>
