@@ -334,14 +334,6 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
 
-            WidgetsPremiumSettingsCard(
-                entitlementState = entitlementState,
-                onSubscribeClick = onSubscribeClick,
-                onRestorePurchasesClick = onRestorePurchasesClick,
-                onPinDownloadsWidgetClick = onPinDownloadsWidgetClick,
-                onPinQuickActionsWidgetClick = onPinQuickActionsWidgetClick,
-            )
-
             NavigationSettingCard(
                 title = R.string.external_services_title,
                 summary = R.string.external_services_summary,
@@ -361,6 +353,14 @@ fun SettingsScreen(
             )
 
             LanguageSettingsCard()
+
+            WidgetsPremiumSettingsCard(
+                entitlementState = entitlementState,
+                onSubscribeClick = onSubscribeClick,
+                onRestorePurchasesClick = onRestorePurchasesClick,
+                onPinDownloadsWidgetClick = onPinDownloadsWidgetClick,
+                onPinQuickActionsWidgetClick = onPinQuickActionsWidgetClick,
+            )
 
             ThemeSettingsCard(
                 themeMode = themeMode,
