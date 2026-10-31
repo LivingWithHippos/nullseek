@@ -10,12 +10,13 @@ import logcat.logcat
 class UsenetPagingSource(
     val client: TorboxClient,
     val pageSize: Int = DEFAULT_PAGING_LOAD_SIZE,
+    val bypassCache: Boolean = true
 ) : PagingSource<Int, UsenetDownloadDto>() {
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, UsenetDownloadDto> {
         try {
             val nextPageNumber = params.key ?: 0
             val nextOffset = nextPageNumber * pageSize
-            val response = client.usenet.list(offset = nextOffset, limit = pageSize)
+            val response = client.usenet.list(offset = nextOffset, limit = pageSize, bypassCache = bypassCache)
             if (response is ApiResult.Success) {
                 val items = response.value.data ?: emptyList()
                 val isEndOfList = items.size < pageSize

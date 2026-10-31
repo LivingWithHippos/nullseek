@@ -73,9 +73,9 @@ class TorboxWidgetRepository(
             torboxClient.updateBearerToken(activeProvider.token)
             val snapshot =
                 coroutineScope {
-                    val torrentsDeferred = async { torboxClient.torrent.list(offset = 0, limit = FETCH_LIMIT) }
-                    val webDeferred = async { torboxClient.web.list(offset = 0, limit = FETCH_LIMIT) }
-                    val usenetDeferred = async { torboxClient.usenet.list(offset = 0, limit = FETCH_LIMIT) }
+                    val torrentsDeferred = async { torboxClient.torrent.list(offset = 0, limit = FETCH_LIMIT, bypassCache = true) }
+                    val webDeferred = async { torboxClient.web.list(offset = 0, limit = FETCH_LIMIT, bypassCache = true) }
+                    val usenetDeferred = async { torboxClient.usenet.list(offset = 0, limit = FETCH_LIMIT, bypassCache = true) }
 
                     val torrentsResult = torrentsDeferred.await()
                     val webResult = webDeferred.await()

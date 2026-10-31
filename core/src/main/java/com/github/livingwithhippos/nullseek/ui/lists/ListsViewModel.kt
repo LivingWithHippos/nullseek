@@ -26,6 +26,11 @@ class ListsViewModel(
     private val client: TorboxClient,
     preferencesRepository: PreferencesRepository,
 ) : ViewModel() {
+    // one per list: a quick repeated pull to refresh reads TorBox's cached list instead of bypassing it
+    private val torrentsGate = FreshLoadGate()
+    private val webGate = FreshLoadGate()
+    private val usenetGate = FreshLoadGate()
+
     val torrentsPagingFlow: Flow<PagingData<TorrentDto>> =
         preferencesRepository.pagingLoadSize
             .distinctUntilChanged()
@@ -37,7 +42,7 @@ class ListsViewModel(
                             enablePlaceholders = true,
                         ),
                     pagingSourceFactory = {
-                        TorrentsPagingSource(client, pageSize)
+                        TorrentsPagingSource(client, pageSize, bypassCache = torrentsGate.tryFreshLoad())
                     },
                 ).flow
             }.cachedIn(viewModelScope)
@@ -53,7 +58,7 @@ class ListsViewModel(
                             enablePlaceholders = true,
                         ),
                     pagingSourceFactory = {
-                        WebPagingSource(client, pageSize)
+                        WebPagingSource(client, pageSize, bypassCache = webGate.tryFreshLoad())
                     },
                 ).flow
             }.cachedIn(viewModelScope)
@@ -69,7 +74,7 @@ class ListsViewModel(
                             enablePlaceholders = true,
                         ),
                     pagingSourceFactory = {
-                        UsenetPagingSource(client, pageSize)
+                        UsenetPagingSource(client, pageSize, bypassCache = usenetGate.tryFreshLoad())
                     },
                 ).flow
             }.cachedIn(viewModelScope)
