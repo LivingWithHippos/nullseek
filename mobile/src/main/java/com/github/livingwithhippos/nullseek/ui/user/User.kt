@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -46,6 +47,7 @@ import androidx.core.net.toUri
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToDays
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
+import com.github.livingwithhippos.nullseek.core.utils.formatBandwidthMonth
 import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.core.utils.getPlanName
 import com.github.livingwithhippos.nullseek.core.utils.isDateNotInPast
@@ -56,6 +58,7 @@ import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.model.UserDataDto
+import java.util.Locale
 import logcat.asLog
 import logcat.logcat
 import org.koin.compose.viewmodel.koinViewModel
@@ -82,6 +85,7 @@ fun UserScreen(
     }
 
     val referralPreference by viewModel.includeReferralPreference.collectAsState()
+    val detailedStats by viewModel.detailedStats.collectAsState()
     var showReferralDialog by remember { mutableStateOf(false) }
 
     if (showReferralDialog) {
@@ -122,6 +126,8 @@ fun UserScreen(
         modifier = modifier,
         user = user,
         error = error,
+        detailedStats = detailedStats,
+        onLoadDetailedStats = viewModel::loadDetailedStats,
         onOpenSettingsClick = {
             openBrowser(context, viewModel.getTorboxSettingsUrl())
         },
@@ -147,6 +153,8 @@ fun UserScreenContent(
     onOpenSubscriptionClick: () -> Unit,
     context: Context = LocalContext.current,
     enabled: Boolean = true,
+    detailedStats: DetailedStatsState = DetailedStatsState.Idle,
+    onLoadDetailedStats: () -> Unit = {},
 ) {
     Column(
         modifier =
@@ -173,7 +181,7 @@ fun UserScreenContent(
                 enabled = enabled,
             )
 
-            UserStatsCard(user = user)
+            UserStatsCard(user = user, detailedStats = detailedStats, onLoadDetailedStats = onLoadDetailedStats)
 
             AccountFeaturesCard(user = user)
 
@@ -523,6 +531,8 @@ private fun AccountFeaturesCard(
 @Composable
 private fun UserStatsCard(
     user: UserDataDto,
+    detailedStats: DetailedStatsState,
+    onLoadDetailedStats: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
@@ -532,119 +542,147 @@ private fun UserStatsCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = stringResource(id = R.string.usage_stats_title),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = stringResource(id = R.string.stats_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = stringResource(id = R.string.stats_since, formatToLocalDate(user.createdAt)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            StatsRow(
+                label = stringResource(id = R.string.stats_data_downloaded),
+                value = convertToSize(user.totalBytesDownloaded),
+                hint = stringResource(id = R.string.stats_data_downloaded_hint),
+                highlight = true,
             )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            StatsRow(
+                label = stringResource(id = R.string.stats_data_uploaded),
+                value = convertToSize(user.totalBytesUploaded),
+                hint = stringResource(id = R.string.stats_data_uploaded_hint),
+                highlight = true,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            Text(
+                text = stringResource(id = R.string.stats_items_title),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            // the per-type counts are indented under the total so they read as a breakdown
+            StatsRow(label = stringResource(id = R.string.stats_items_total), value = user.totalDownloaded.toString())
+            Column(
+                modifier = Modifier.padding(start = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    text = stringResource(id = R.string.data_downloaded),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = convertToSize(user.totalBytesDownloaded),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                StatsRow(label = stringResource(id = R.string.torrents), value = user.torrentsDownloaded.toString(), small = true)
+                StatsRow(label = stringResource(id = R.string.web_downloads), value = user.webDownloadsDownloaded.toString(), small = true)
+                StatsRow(label = stringResource(id = R.string.usenet_downloads), value = user.usenetDownloadsDownloaded.toString(), small = true)
             }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.data_uploaded),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = convertToSize(user.totalBytesUploaded),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
+            DetailedStatsSection(state = detailedStats, onLoad = onLoadDetailedStats)
+        }
+    }
+}
+
+/** Ratio and the last 30 days of bandwidth from user/stats, loaded when the user asks for it. */
+@Composable
+private fun DetailedStatsSection(
+    state: DetailedStatsState,
+    onLoad: () -> Unit,
+) {
+    when (state) {
+        DetailedStatsState.Idle -> {
+            OutlinedButton(onClick = onLoad, modifier = Modifier.fillMaxWidth()) {
+                Text(text = stringResource(id = R.string.stats_show_detailed))
+            }
+        }
+
+        DetailedStatsState.Loading -> {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            }
+        }
+
+        is DetailedStatsState.Error -> {
+            Text(
+                text = state.message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            OutlinedButton(onClick = onLoad, modifier = Modifier.fillMaxWidth()) {
+                Text(text = stringResource(id = R.string.retry))
+            }
+        }
+
+        is DetailedStatsState.Loaded -> {
+            state.stats.general?.let { general ->
+                StatsRow(
+                    label = stringResource(id = R.string.stats_ratio),
+                    value = String.format(Locale.getDefault(), "%.2f", general.ratio),
                 )
             }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Text(
+                text = stringResource(id = R.string.stats_bandwidth_title),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            val bandwidth = state.stats.bandwidth.orEmpty()
+            if (bandwidth.isEmpty()) {
                 Text(
-                    text = stringResource(id = R.string.total_files),
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = stringResource(id = R.string.stats_bandwidth_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Text(
-                    text = user.totalDownloaded.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
+            } else {
+                bandwidth.forEach { period ->
+                    StatsRow(label = formatBandwidthMonth(period.date), value = convertToSize(period.bytesDownloaded), small = true)
+                }
             }
+        }
+    }
+}
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+@Composable
+private fun StatsRow(
+    label: String,
+    value: String,
+    hint: String? = null,
+    highlight: Boolean = false,
+    small: Boolean = false,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = if (small) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
+            )
+            if (hint != null) {
                 Text(
-                    text = stringResource(id = R.string.torrents),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = user.torrentsDownloaded.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.web_downloads),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = user.webDownloadsDownloaded.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(id = R.string.usenet_downloads),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    text = user.usenetDownloadsDownloaded.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    text = hint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
+        Text(
+            text = value,
+            style = if (small) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = if (highlight) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 

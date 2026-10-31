@@ -3,6 +3,7 @@ package com.github.livingwithhippos.nullseek.data.repository
 import com.github.livingwithhippos.nullseek.core.data.repository.AppBackup
 import com.github.livingwithhippos.nullseek.core.data.repository.CURRENT_BACKUP_VERSION
 import com.github.livingwithhippos.nullseek.core.data.repository.ExternalServiceBackup
+import com.github.livingwithhippos.nullseek.core.data.repository.ImdbFavouriteBackup
 import com.github.livingwithhippos.nullseek.core.data.repository.IndexerBackup
 import com.github.livingwithhippos.nullseek.core.data.repository.PreferencesBackup
 import com.github.livingwithhippos.nullseek.core.data.repository.ProviderBackup
@@ -10,6 +11,7 @@ import com.github.livingwithhippos.nullseek.core.data.repository.StremioAddonBac
 import com.github.livingwithhippos.nullseek.core.data.repository.decodeBackupFromJson
 import com.github.livingwithhippos.nullseek.core.data.repository.encodeBackupToJson
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -92,12 +94,30 @@ class BackupRepositoryTest {
                             customName = "Custom Addon",
                         ),
                     ),
+                imdbFavourites =
+                    listOf(
+                        ImdbFavouriteBackup(
+                            imdbId = "tt0111161",
+                            title = "The Shawshank Redemption",
+                            year = "1994",
+                            type = "movie",
+                            posterUrl = "https://example.com/poster.jpg",
+                            imdbRating = "9.3",
+                            addedTimestamp = 1_700_000_000_000L,
+                        ),
+                    ),
             )
 
         val json = encodeBackupToJson(original)
         val restored = decodeBackupFromJson(json)
 
         assertEquals(original, restored)
+    }
+
+    @Test
+    fun `older backups without favourites decode to null so restore keeps them`() {
+        val restored = decodeBackupFromJson("""{"version": 1}""")
+        assertNull(restored.imdbFavourites)
     }
 
     @Test

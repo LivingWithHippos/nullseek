@@ -45,7 +45,6 @@
     <string name="referral_section_title">Your Referral</string>
     <string name="referral_code">Referral Code</string>
     <string name="purchases_referred">Purchases Referred</string>
-    <string name="usage_stats_title">Download &amp; Upload Statistics</string>
     <string name="active_subscription">Active Subscription</string>
     <string name="no_subscription">No Subscription</string>
     <string name="vendor_badge">Vendor</string>
@@ -53,12 +52,9 @@
     <string name="long_term_storage">Long-Term Storage</string>
     <string name="concurrent_slots">Extra Concurrent Slots</string>
     <string name="cooldown_active">Cooldown Active Until</string>
-    <string name="total_files">Total Files</string>
     <string name="torrents">Torrents</string>
     <string name="web_downloads">Web Downloads</string>
     <string name="usenet_downloads">Usenet Downloads</string>
-    <string name="data_downloaded">Total Downloaded</string>
-    <string name="data_uploaded">Total Uploaded</string>
     <string name="referral_support_active">Referral support active</string>
     <string name="referral_support_inactive">Referral support off</string>
     <string name="change_referral_choice">Change</string>
@@ -158,7 +154,7 @@
     <string name="download_option_uncompressed">Direct / Uncompressed</string>
     <string name="download_remember_choice">Remember choice</string>
     <string name="download_zip_preference_title">Download format</string>
-    <string name="download_zip_preference_summary">Choose whether files should be zipped or uncompressed when creating a download link</string>
+    <string name="download_zip_preference_summary">Torbox always zips generated download links when multiple files are included, for single files you can choose whether they should be zipped or uncompressed (necessary when streaming)</string>
     <string name="download_zip_preference_ask">Always ask</string>
     <string name="download_zip_preference_zip">Always zip</string>
     <string name="download_zip_preference_uncompressed">Always uncompressed</string>
@@ -343,6 +339,13 @@
     <string name="search_stremio_filter_hint">Filter titles…</string>
     <string name="search_stremio_no_filtered_results">No results match your filter</string>
     <string name="search_stremio_open_imdb">Open IMDb</string>
+    <string name="search_favourites_title">Favourites</string>
+    <string name="search_favourites_add">Add to favourites</string>
+    <string name="search_favourites_remove">Remove from favourites</string>
+    <string name="search_favourites_clear">Clear all</string>
+    <string name="search_favourites_clear_confirm">Remove all %1$d favourites?</string>
+    <string name="search_favourites_show">Show favourites</string>
+    <string name="search_favourites_show_count">Show favourites (%1$d)</string>
     <string name="search_stremio_imdb_rating">★ %1$s</string>
     <string name="search_stremio_expand_details">Expand details</string>
     <string name="search_stremio_collapse_details">Collapse details</string>
@@ -375,6 +378,14 @@
     <string name="stremio_addon_delete_title">Delete Addon</string>
     <string name="stremio_addon_delete_message">Are you sure you want to delete addon \"%s\"?</string>
     <string name="delete">Delete</string>
+
+    <!-- Language -->
+    <string name="language_title">Language</string>
+    <string name="language_summary">Language used by the app</string>
+    <string name="language_system">Follow system</string>
+    <string name="language_english" translatable="false">English</string>
+    <string name="language_italian" translatable="false">Italiano</string>
+    <string name="language_french" translatable="false">Français</string>
 
     <!-- Theme & Appearance -->
     <string name="theme_preference_title">Theme &amp; Appearance</string>
@@ -519,4 +530,25 @@
 
     <!-- widget -->
     <string name="widget_active_count">(%1$d active)</string>
+
+    <!-- About -->
+    <string name="about_title">About</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_contribute">NullSeek is open source: contributions to the code or translations are welcome on GitHub.</string>
+    <string name="about_open_repository">Contribute on GitHub</string>
+    <string name="about_privacy_policy">Privacy policy</string>
+
+    <!-- Account statistics -->
+    <string name="stats_title">Account statistics</string>
+    <string name="stats_since">Totals since %1$s</string>
+    <string name="stats_data_downloaded">Data downloaded</string>
+    <string name="stats_data_downloaded_hint">Downloaded by TorBox for your torrents, web and usenet downloads</string>
+    <string name="stats_data_uploaded">Seeded data</string>
+    <string name="stats_data_uploaded_hint">Uploaded to other peers</string>
+    <string name="stats_items_title">Items downloaded</string>
+    <string name="stats_items_total">Total</string>
+    <string name="stats_show_detailed">Show detailed stats</string>
+    <string name="stats_ratio">Seeding ratio</string>
+    <string name="stats_bandwidth_title">Downloaded in the last 30 days</string>
+    <string name="stats_bandwidth_empty">No downloads in the last 30 days</string>
 </resources>

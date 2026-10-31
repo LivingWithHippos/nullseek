@@ -26,6 +26,7 @@ import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.core.utils.convertToDays
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
+import com.github.livingwithhippos.nullseek.core.utils.formatBandwidthMonth
 import com.github.livingwithhippos.nullseek.core.utils.formatToLocalDate
 import com.github.livingwithhippos.nullseek.core.utils.getPlanName
 import com.github.livingwithhippos.nullseek.core.utils.isDateNotInPast
@@ -41,9 +42,11 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.TvActionButton
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvDialog
 import com.github.livingwithhippos.nullseek.tv.ui.components.safeOpenUrl
 import com.github.livingwithhippos.nullseek.tv.ui.provider.TvProviderSetupScreen
+import com.github.livingwithhippos.nullseek.ui.user.DetailedStatsState
 import com.github.livingwithhippos.nullseek.ui.user.UserViewModel
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.torbox.model.UserDataDto
+import java.util.Locale
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -98,6 +101,7 @@ private fun UserOverview(
     val referralPreference by viewModel.includeReferralPreference.collectAsStateWithLifecycle()
     var showReferralDialog by remember { mutableStateOf(false) }
     val isRestoring by viewModel.isRestoringBackup.collectAsStateWithLifecycle()
+    val detailedStats by viewModel.detailedStats.collectAsStateWithLifecycle()
     val enabled = !isRestoring
 
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -162,13 +166,25 @@ private fun UserOverview(
             }
 
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                SectionCard(title = stringResource(R.string.usage_stats_title), icon = R.drawable.ic_download) {
-                    InfoRow(stringResource(R.string.data_downloaded), convertToSize(user.totalBytesDownloaded))
-                    InfoRow(stringResource(R.string.data_uploaded), convertToSize(user.totalBytesUploaded))
-                    InfoRow(stringResource(R.string.total_files), user.totalDownloaded.toString())
-                    InfoRow(stringResource(R.string.torrents), user.torrentsDownloaded.toString())
-                    InfoRow(stringResource(R.string.web_downloads), user.webDownloadsDownloaded.toString())
-                    InfoRow(stringResource(R.string.usenet_downloads), user.usenetDownloadsDownloaded.toString())
+                SectionCard(title = stringResource(R.string.stats_title), icon = R.drawable.ic_download) {
+                    Text(
+                        stringResource(R.string.stats_since, formatToLocalDate(user.createdAt)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    InfoRow(stringResource(R.string.stats_data_downloaded), convertToSize(user.totalBytesDownloaded))
+                    StatsHint(stringResource(R.string.stats_data_downloaded_hint))
+                    InfoRow(stringResource(R.string.stats_data_uploaded), convertToSize(user.totalBytesUploaded))
+                    StatsHint(stringResource(R.string.stats_data_uploaded_hint))
+                    Text(stringResource(R.string.stats_items_title), style = MaterialTheme.typography.titleSmall)
+                    InfoRow(stringResource(R.string.stats_items_total), user.totalDownloaded.toString())
+                    // the per-type counts are indented under the total so they read as a breakdown
+                    Column(modifier = Modifier.padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        InfoRow(stringResource(R.string.torrents), user.torrentsDownloaded.toString())
+                        InfoRow(stringResource(R.string.web_downloads), user.webDownloadsDownloaded.toString())
+                        InfoRow(stringResource(R.string.usenet_downloads), user.usenetDownloadsDownloaded.toString())
+                    }
+                    TvDetailedStats(detailedStats, onLoad = viewModel::loadDetailedStats)
                 }
 
                 SectionCard(title = stringResource(R.string.referral_section_title), icon = R.drawable.ic_share) {
@@ -230,3 +246,46 @@ private fun UserOverview(
 }
 
 private fun yesNo(value: Boolean) = if (value) "✓" else "—"
+
+@Composable
+private fun StatsHint(text: String) {
+    Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
+/** Ratio and the last 30 days of bandwidth from user/stats, loaded when the user asks for it. */
+@Composable
+private fun TvDetailedStats(
+    state: DetailedStatsState,
+    onLoad: () -> Unit,
+) {
+    when (state) {
+        DetailedStatsState.Idle -> {
+            TvActionButton(stringResource(R.string.stats_show_detailed), onLoad, icon = R.drawable.ic_info)
+        }
+
+        DetailedStatsState.Loading -> {
+            TvActionButton(stringResource(R.string.stats_show_detailed), onLoad, icon = R.drawable.ic_info, loading = true)
+        }
+
+        is DetailedStatsState.Error -> {
+            Text(state.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            TvActionButton(stringResource(R.string.retry), onLoad, icon = R.drawable.ic_refresh)
+        }
+
+        is DetailedStatsState.Loaded -> {
+            state.stats.general?.let { general ->
+                InfoRow(stringResource(R.string.stats_ratio), String.format(Locale.getDefault(), "%.2f", general.ratio))
+            }
+            Text(stringResource(R.string.stats_bandwidth_title), style = MaterialTheme.typography.titleSmall)
+            val bandwidth = state.stats.bandwidth.orEmpty()
+            if (bandwidth.isEmpty()) {
+                StatsHint(stringResource(R.string.stats_bandwidth_empty))
+            } else {
+                bandwidth.forEach { period ->
+                    InfoRow(formatBandwidthMonth(period.date), convertToSize(period.bytesDownloaded))
+                }
+            }
+        }
+    }
+}
+

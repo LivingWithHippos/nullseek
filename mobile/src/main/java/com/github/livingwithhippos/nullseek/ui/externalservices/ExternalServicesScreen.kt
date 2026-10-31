@@ -103,8 +103,6 @@ private fun openAppSettings(context: Context) {
 
 @Composable
 fun ExternalServicesScreen(
-    contentType: NullContentType,
-    navigationType: NullNavigationType,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ExternalServicesViewModel = koinViewModel(),
@@ -229,7 +227,9 @@ fun ExternalServicesScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                    ) {
                         Text(
                             text = stringResource(id = R.string.external_services_media_players_title),
                             style = MaterialTheme.typography.titleMedium,
@@ -243,6 +243,7 @@ fun ExternalServicesScreen(
                     }
                     Button(
                         onClick = { isAddingService = true },
+                        modifier = Modifier.padding(start = 12.dp),
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_add),
@@ -564,6 +565,7 @@ private fun ServiceCard(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
                     onClick = onTestConnection,
@@ -886,6 +888,7 @@ private fun LocalNetworkPermissionWarningCard(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
                     onClick = onOpenSettings,
@@ -906,6 +909,7 @@ private fun LocalNetworkPermissionWarningCard(
         }
     }
 }
+
 
 @Preview
 @Composable

@@ -100,7 +100,11 @@ fun PosterCard(
 }
 
 @Composable
-fun TitleDetails(title: ImdbTitleResult) {
+fun TitleDetails(
+    title: ImdbTitleResult,
+    isFavourite: Boolean = false,
+    onToggleFavourite: (() -> Unit)? = null,
+) {
     val context = LocalContext.current
     SectionCard {
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -115,14 +119,31 @@ fun TitleDetails(title: ImdbTitleResult) {
                 title.description?.let { Text(it, maxLines = 4, overflow = TextOverflow.Ellipsis) }
                 if (title.director.isNotEmpty()) Text(stringResource(R.string.search_stremio_director, title.director.joinToString()))
                 title.stars?.let { Text(stringResource(R.string.search_stremio_cast, it), maxLines = 2) }
-                TvActionButton(
-                    stringResource(R.string.search_stremio_open_imdb),
-                    { safeOpenUrl(context, "https://www.imdb.com/title/${title.imdbId}/") },
-                    icon = R.drawable.ic_open_in_new,
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TvActionButton(
+                        stringResource(R.string.search_stremio_open_imdb),
+                        { safeOpenUrl(context, "https://www.imdb.com/title/${title.imdbId}/") },
+                        icon = R.drawable.ic_open_in_new,
+                    )
+                    if (onToggleFavourite != null) TvFavouriteButton(isFavourite, onToggleFavourite)
+                }
             }
         }
     }
+}
+
+/** Star toggle for the opened IMDb title. */
+@Composable
+fun TvFavouriteButton(
+    isFavourite: Boolean,
+    onClick: () -> Unit,
+) {
+    TvActionButton(
+        text = stringResource(if (isFavourite) R.string.search_favourites_remove else R.string.search_favourites_add),
+        onClick = onClick,
+        icon = if (isFavourite) R.drawable.ic_star else R.drawable.ic_star_border,
+        primary = isFavourite,
+    )
 }
 
 /** Right pane of the search screen: torrent/magnet result or a direct Stremio stream. */

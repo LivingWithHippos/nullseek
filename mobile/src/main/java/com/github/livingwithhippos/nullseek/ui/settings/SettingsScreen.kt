@@ -8,40 +8,19 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenu
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,13 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -71,18 +44,12 @@ import com.github.livingwithhippos.nullseek.billing.EntitlementState
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.data.repository.DEFAULT_PAGING_LOAD_SIZE
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
-import com.github.livingwithhippos.nullseek.data.repository.PAGING_LOAD_SIZE_PRESETS
 import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
 import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
 import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
-import com.github.livingwithhippos.nullseek.ui.newdownload.labelRes
 import com.github.livingwithhippos.nullseek.ui.theme.Button
-import com.github.livingwithhippos.nullseek.ui.theme.FilterChip
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
-import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
-import com.github.livingwithhippos.nullseek.ui.theme.shouldUseDarkTheme
-import com.github.livingwithhippos.nullseek.ui.theme.swatchColor
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
 import com.github.livingwithhippos.nullseek.widget.TorboxDownloadsWidgetReceiver
@@ -264,9 +231,9 @@ fun SettingsScreen(
 fun SettingsScreen(
     downloadZipMode: DownloadZipMode,
     onDownloadZipModeSelected: (DownloadZipMode) -> Unit,
+    modifier: Modifier = Modifier,
     defaultSeedingOption: SeedingOption = SeedingOption.AUTO,
     onDefaultSeedingOptionSelected: (SeedingOption) -> Unit = {},
-    modifier: Modifier = Modifier,
     pagingLoadSize: Int = DEFAULT_PAGING_LOAD_SIZE,
     onPagingLoadSizeSelected: (Int) -> Unit = {},
     searchAutoAddDownload: Boolean = false,
@@ -301,14 +268,8 @@ fun SettingsScreen(
     onPinDownloadsWidgetClick: () -> Unit = {},
     onPinQuickActionsWidgetClick: () -> Unit = {},
 ) {
-    val focusManager = LocalFocusManager.current
-    var pageSizeInput by rememberSaveable { mutableStateOf(pagingLoadSize.toString()) }
     var showExternalDisclaimerDialog by rememberSaveable { mutableStateOf(false) }
     var showRestoreConfirmDialog by rememberSaveable { mutableStateOf(false) }
-
-    LaunchedEffect(pagingLoadSize) {
-        pageSizeInput = pagingLoadSize.toString()
-    }
 
     if (showExternalDisclaimerDialog) {
         AlertDialog(
@@ -372,42 +333,10 @@ fun SettingsScreen(
                     .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            OutlinedCard(
-                onClick = onNavigateToProviders,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.providers_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = stringResource(id = R.string.providers_summary),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_open_in_new),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
 
-            OutlinedCard(
+            NavigationSettingCard(
+                title = R.string.external_services_title,
+                summary = R.string.external_services_summary,
                 onClick = {
                     if (externalDisclaimerAccepted) {
                         onNavigateToExternalServices()
@@ -415,38 +344,15 @@ fun SettingsScreen(
                         showExternalDisclaimerDialog = true
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.external_services_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = stringResource(id = R.string.external_services_summary),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_open_in_new),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
+            )
+
+            NavigationSettingCard(
+                title = R.string.providers_title,
+                summary = R.string.providers_summary,
+                onClick = onNavigateToProviders,
+            )
+
+            LanguageSettingsCard()
 
             WidgetsPremiumSettingsCard(
                 entitlementState = entitlementState,
@@ -456,593 +362,60 @@ fun SettingsScreen(
                 onPinQuickActionsWidgetClick = onPinQuickActionsWidgetClick,
             )
 
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                val resolvedDarkTheme = shouldUseDarkTheme(themeMode)
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.theme_preference_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = stringResource(id = R.string.theme_preference_summary),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+            ThemeSettingsCard(
+                themeMode = themeMode,
+                onThemeModeSelected = onThemeModeSelected,
+                themeColor = themeColor,
+                onThemeColorSelected = onThemeColorSelected,
+                useStandardFont = useStandardFont,
+                onUseStandardFontChanged = onUseStandardFontChanged,
+            )
 
-                    Spacer(modifier = Modifier.height(2.dp))
+            DownloadFormatSettingsCard(mode = downloadZipMode, onModeSelected = onDownloadZipModeSelected)
 
-                    Text(
-                        text = stringResource(id = R.string.theme_dark_mode_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                    )
+            DefaultSeedingSettingsCard(option = defaultSeedingOption, onOptionSelected = onDefaultSeedingOptionSelected)
 
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        ThemeMode.entries.forEach { mode ->
-                            FilterChip(
-                                selected = themeMode == mode,
-                                onClick = { onThemeModeSelected(mode) },
-                                label = { Text(text = stringResource(id = mode.labelRes())) },
-                            )
-                        }
-                    }
+            SwitchSettingCard(
+                title = R.string.search_auto_add_download_title,
+                summary = R.string.search_auto_add_download_summary,
+                checked = searchAutoAddDownload,
+                onCheckedChange = onSearchAutoAddDownloadChanged,
+            )
 
-                    Spacer(modifier = Modifier.height(2.dp))
+            SwitchSettingCard(
+                title = R.string.search_check_cache_title,
+                summary = R.string.search_check_cache_summary,
+                checked = searchCheckCache,
+                onCheckedChange = onSearchCheckCacheChanged,
+            )
 
-                    Text(
-                        text = stringResource(id = R.string.theme_color_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                    )
+            SwitchSettingCard(
+                title = R.string.imdb_details_expanded_title,
+                summary = R.string.imdb_details_expanded_summary,
+                checked = imdbDetailsExpanded,
+                onCheckedChange = onImdbDetailsExpandedChanged,
+            )
 
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        ThemeColor.entries.forEach { colorOption ->
-                            val swatch = colorOption.swatchColor(resolvedDarkTheme)
-                            FilterChip(
-                                selected = themeColor == colorOption,
-                                onClick = { onThemeColorSelected(colorOption) },
-                                leadingIcon =
-                                    if (swatch != null) {
-                                        {
-                                            Box(
-                                                modifier =
-                                                    Modifier
-                                                        .size(12.dp)
-                                                        .background(swatch)
-                                                        .border(
-                                                            width = 1.dp,
-                                                            color = MaterialTheme.colorScheme.outline,
-                                                        ),
-                                            )
-                                        }
-                                    } else {
-                                        null
-                                    },
-                                label = { Text(text = stringResource(id = colorOption.labelRes())) },
-                            )
-                        }
-                    }
+            SwitchSettingCard(
+                title = R.string.filter_files_full_path_title,
+                summary = R.string.filter_files_full_path_summary,
+                checked = filterFilesFullPath,
+                onCheckedChange = onFilterFilesFullPathChanged,
+            )
 
-                    Spacer(modifier = Modifier.height(2.dp))
+            PagingLoadSizeSettingsCard(pagingLoadSize = pagingLoadSize, onPagingLoadSizeSelected = onPagingLoadSizeSelected)
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Text(
-                                text = stringResource(id = R.string.theme_standard_font_title),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                            Text(
-                                text = stringResource(id = R.string.theme_standard_font_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Switch(
-                            checked = useStandardFont,
-                            onCheckedChange = onUseStandardFontChanged,
-                        )
-                    }
-                }
-            }
-
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.download_zip_preference_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = stringResource(id = R.string.download_zip_preference_summary),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    DownloadZipModeDropdown(
-                        selected = downloadZipMode,
-                        onSelected = onDownloadZipModeSelected,
-                    )
-                }
-            }
-
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.default_seeding_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = stringResource(id = R.string.default_seeding_summary),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    SeedingOptionDropdown(
-                        selected = defaultSeedingOption,
-                        onSelected = onDefaultSeedingOptionSelected,
-                    )
-                }
-            }
-
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.search_auto_add_download_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = stringResource(id = R.string.search_auto_add_download_summary),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = searchAutoAddDownload,
-                        onCheckedChange = onSearchAutoAddDownloadChanged,
-                    )
-                }
-            }
-
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.search_check_cache_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = stringResource(id = R.string.search_check_cache_summary),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = searchCheckCache,
-                        onCheckedChange = onSearchCheckCacheChanged,
-                    )
-                }
-            }
-
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.imdb_details_expanded_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = stringResource(id = R.string.imdb_details_expanded_summary),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = imdbDetailsExpanded,
-                        onCheckedChange = onImdbDetailsExpandedChanged,
-                    )
-                }
-            }
-
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.filter_files_full_path_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = stringResource(id = R.string.filter_files_full_path_summary),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = filterFilesFullPath,
-                        onCheckedChange = onFilterFilesFullPathChanged,
-                    )
-                }
-            }
-
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.paging_load_size_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = stringResource(id = R.string.paging_load_size_summary),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        PAGING_LOAD_SIZE_PRESETS.forEach { preset ->
-                            FilterChip(
-                                selected = pagingLoadSize == preset,
-                                onClick = {
-                                    pageSizeInput = preset.toString()
-                                    onPagingLoadSizeSelected(preset)
-                                },
-                                label = { Text(text = preset.toString()) },
-                            )
-                        }
-                    }
-
-                    OutlinedTextField(
-                        value = pageSizeInput,
-                        onValueChange = { newValue ->
-                            val filtered = newValue.filter { it.isDigit() }
-                            pageSizeInput = filtered
-                            filtered.toIntOrNull()?.takeIf { it > 0 }?.let { validSize ->
-                                onPagingLoadSizeSelected(validSize)
-                            }
-                        },
-                        label = { Text(text = stringResource(id = R.string.paging_load_size_label)) },
-                        singleLine = true,
-                        keyboardOptions =
-                            KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done,
-                            ),
-                        keyboardActions =
-                            KeyboardActions(
-                                onDone = {
-                                    val parsed = pageSizeInput.toIntOrNull()?.takeIf { it > 0 }
-                                    if (parsed != null) {
-                                        onPagingLoadSizeSelected(parsed)
-                                    } else {
-                                        pageSizeInput = pagingLoadSize.toString()
-                                    }
-                                    focusManager.clearFocus()
-                                },
-                            ),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.backup_preference_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = stringResource(id = R.string.backup_preference_summary),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Button(
-                            onClick = onCreateBackup,
-                            enabled = !isBackupBusy,
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(text = stringResource(id = R.string.backup_create_button))
-                        }
-
-                        OutlinedButton(
-                            onClick = { showRestoreConfirmDialog = true },
-                            enabled = !isBackupBusy,
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(text = stringResource(id = R.string.backup_restore_button))
-                        }
-                    }
-                }
-            }
+            BackupSettingsCard(
+                isBusy = isBackupBusy,
+                onCreateBackup = onCreateBackup,
+                onRestoreClick = { showRestoreConfirmDialog = true },
+            )
 
             if (showDonations) {
                 DonationSettingsCard()
             }
-        }
-    }
-}
 
-@Composable
-private fun DonationSettingsCard() {
-    val uriHandler = LocalUriHandler.current
-    // openUri throws when no app can handle the link
-    val openLink: (String) -> Unit = { url -> runCatching { uriHandler.openUri(url) } }
-
-    OutlinedCard(
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_favorite),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp),
-                )
-                Text(
-                    text = stringResource(id = R.string.donate_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-            Text(
-                text = stringResource(id = R.string.donate_summary),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = stringResource(id = R.string.donate_github_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Button(
-                    onClick = { openLink(BuildConfig.DONATE_KOFI_URL) },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(text = stringResource(id = R.string.donate_kofi_button))
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_open_in_new),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
-
-                OutlinedButton(
-                    onClick = { openLink(BuildConfig.DONATE_GITHUB_URL) },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(text = stringResource(id = R.string.donate_github_button))
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_open_in_new),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun WidgetsPremiumSettingsCard(
-    entitlementState: EntitlementState,
-    onSubscribeClick: () -> Unit,
-    onRestorePurchasesClick: () -> Unit,
-    onPinDownloadsWidgetClick: () -> Unit,
-    onPinQuickActionsWidgetClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val summaryText =
-        when {
-            entitlementState.isFossBuild -> stringResource(id = R.string.widgets_foss_summary)
-            entitlementState.isPremiumUnlocked -> stringResource(id = R.string.widgets_playstore_unlocked_summary)
-            else -> stringResource(id = R.string.widgets_playstore_locked_summary)
-        }
-
-    OutlinedCard(
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = stringResource(id = R.string.widgets_premium_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = summaryText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            if (entitlementState.errorMessage != null) {
-                Text(
-                    text = entitlementState.errorMessage,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            if (entitlementState.isPremiumUnlocked) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    OutlinedButton(
-                        onClick = onPinDownloadsWidgetClick,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(text = stringResource(id = R.string.widgets_pin_downloads))
-                    }
-
-                    OutlinedButton(
-                        onClick = onPinQuickActionsWidgetClick,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(text = stringResource(id = R.string.widgets_pin_quick_actions))
-                    }
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Button(
-                        onClick = onSubscribeClick,
-                        enabled = !entitlementState.isLoading,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        val buttonText =
-                            if (!entitlementState.formattedPrice.isNullOrBlank()) {
-                                stringResource(
-                                    id = R.string.widgets_subscribe_with_price,
-                                    entitlementState.formattedPrice,
-                                )
-                            } else {
-                                stringResource(id = R.string.widgets_subscribe_button)
-                            }
-                        Text(text = buttonText)
-                    }
-
-                    OutlinedButton(
-                        onClick = onRestorePurchasesClick,
-                        enabled = !entitlementState.isLoading,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(text = stringResource(id = R.string.widgets_restore_purchases))
-                    }
-                }
-            }
+            AboutSettingsCard()
         }
     }
 }
@@ -1064,124 +437,6 @@ private tailrec fun Context.findActivity(): Activity? =
         is Activity -> this
         is ContextWrapper -> baseContext.findActivity()
         else -> null
-    }
-
-@Composable
-private fun DownloadZipModeDropdown(
-    selected: DownloadZipMode,
-    onSelected: (DownloadZipMode) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it },
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        OutlinedTextField(
-            value = stringResource(id = selected.labelRes()),
-            onValueChange = {},
-            readOnly = true,
-            singleLine = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            DOWNLOAD_ZIP_MODE_ORDER.forEach { mode ->
-                DropdownMenuItem(
-                    text = { Text(text = stringResource(id = mode.labelRes())) },
-                    onClick = {
-                        expanded = false
-                        onSelected(mode)
-                    },
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SeedingOptionDropdown(
-    selected: SeedingOption,
-    onSelected: (SeedingOption) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it },
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        OutlinedTextField(
-            value = stringResource(id = selected.labelRes()),
-            onValueChange = {},
-            readOnly = true,
-            singleLine = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            SeedingOption.entries.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(text = stringResource(id = option.labelRes())) },
-                    onClick = {
-                        expanded = false
-                        onSelected(option)
-                    },
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
-                )
-            }
-        }
-    }
-}
-
-private val DOWNLOAD_ZIP_MODE_ORDER =
-    listOf(
-        DownloadZipMode.ASK,
-        DownloadZipMode.ZIP,
-        DownloadZipMode.ZIP_NON_MEDIA,
-        DownloadZipMode.UNCOMPRESSED,
-    )
-
-private fun DownloadZipMode.labelRes(): Int =
-    when (this) {
-        DownloadZipMode.ASK -> R.string.download_zip_preference_ask
-        DownloadZipMode.ZIP -> R.string.download_zip_preference_zip
-        DownloadZipMode.ZIP_NON_MEDIA -> R.string.download_zip_preference_zip_non_media
-        DownloadZipMode.UNCOMPRESSED -> R.string.download_zip_preference_uncompressed
-    }
-
-private fun ThemeMode.labelRes(): Int =
-    when (this) {
-        ThemeMode.SYSTEM -> R.string.theme_mode_system
-        ThemeMode.LIGHT -> R.string.theme_mode_light
-        ThemeMode.DARK -> R.string.theme_mode_dark
-        ThemeMode.AMOLED -> R.string.theme_mode_amoled
-    }
-
-private fun ThemeColor.labelRes(): Int =
-    when (this) {
-        ThemeColor.SYSTEM -> R.string.theme_color_system
-        ThemeColor.PURPLE -> R.string.theme_color_purple
-        ThemeColor.BLUE -> R.string.theme_color_blue
-        ThemeColor.TEAL -> R.string.theme_color_teal
-        ThemeColor.GREEN -> R.string.theme_color_green
-        ThemeColor.ORANGE -> R.string.theme_color_orange
-        ThemeColor.RED -> R.string.theme_color_red
-        ThemeColor.TORBOX -> R.string.theme_color_torbox
     }
 
 @Preview

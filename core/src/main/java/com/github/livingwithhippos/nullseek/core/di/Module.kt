@@ -9,6 +9,7 @@ import androidx.room3.Room
 import com.github.livingwithhippos.nullseek.NullRootViewModel
 import com.github.livingwithhippos.nullseek.core.data.database.NullDatabase
 import com.github.livingwithhippos.nullseek.core.data.database.dao.ExternalServiceDao
+import com.github.livingwithhippos.nullseek.core.data.database.dao.ImdbFavouriteDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.IndexerDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.NullProviderDao
 import com.github.livingwithhippos.nullseek.core.data.database.dao.StremioAddonDao
@@ -85,6 +86,8 @@ private fun indexerDao(db: NullDatabase): IndexerDao = db.indexer()
 
 private fun stremioAddonDao(db: NullDatabase): StremioAddonDao = db.stremioAddon()
 
+private fun imdbFavouriteDao(db: NullDatabase): ImdbFavouriteDao = db.imdbFavourite()
+
 private fun indexerRepository(dao: IndexerDao): IndexerRepository = IndexerRepositoryImpl(dao)
 
 private fun providerRepository(dao: NullProviderDao): NullProviderRepository = NullProviderRepositoryImpl(dao)
@@ -98,6 +101,7 @@ private fun backupRepository(
     externalServiceDao: ExternalServiceDao,
     indexerDao: IndexerDao,
     stremioAddonDao: StremioAddonDao,
+    imdbFavouriteDao: ImdbFavouriteDao,
     dataStore: DataStore<Preferences>,
     torboxClient: TorboxClient,
 ): BackupRepository =
@@ -106,6 +110,7 @@ private fun backupRepository(
         externalServiceDao = externalServiceDao,
         indexerDao = indexerDao,
         stremioAddonDao = stremioAddonDao,
+        imdbFavouriteDao = imdbFavouriteDao,
         dataStore = dataStore,
         torboxClient = torboxClient,
     )
@@ -134,6 +139,8 @@ private val storageModule =
         single { create(::indexerRepository) }
 
         single { create(::stremioAddonDao) }
+
+        single { create(::imdbFavouriteDao) }
 
         single { create(::stremioAddonRepository) }
 

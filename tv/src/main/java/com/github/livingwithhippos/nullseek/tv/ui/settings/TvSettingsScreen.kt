@@ -38,6 +38,9 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
+import com.github.livingwithhippos.nullseek.core.utils.AppLanguage
+import com.github.livingwithhippos.nullseek.core.utils.PRIVACY_POLICY_URL
+import com.github.livingwithhippos.nullseek.core.utils.REPOSITORY_URL
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.PAGING_LOAD_SIZE_PRESETS
 import com.github.livingwithhippos.nullseek.data.repository.SeedingOption
@@ -78,6 +81,7 @@ private enum class SettingsSection(
     DOWNLOADS(R.string.settings_downloads_section, R.string.download_zip_preference_summary, R.drawable.ic_download),
     BACKUP(R.string.backup_preference_title, R.string.backup_preference_summary, R.drawable.ic_history),
     DONATE(R.string.donate_title, R.string.donate_summary, R.drawable.ic_favorite),
+    ABOUT(R.string.about_title, R.string.about_contribute, R.drawable.ic_info),
 }
 
 // The donation links are only set in the FOSS build
@@ -179,64 +183,23 @@ fun TvSettingsScreen(
             ) {
                 when (visibleSections[section]) {
                     SettingsSection.ACCOUNTS ->
-                        SectionCard(title = stringResource(R.string.providers_title), icon = R.drawable.ic_contact_page) {
-                            Text(stringResource(R.string.providers_summary))
-                            TvActionButton(stringResource(R.string.providers_title), onOpenProviders, icon = R.drawable.ic_open_in_new, primary = true)
-                        }
+                        NavigationSettings(R.string.providers_title, R.string.providers_summary, R.drawable.ic_contact_page, onOpenProviders)
 
                     SettingsSection.EXTERNAL ->
-                        SectionCard(title = stringResource(R.string.external_services_title), icon = R.drawable.ic_apps) {
-                            Text(stringResource(R.string.external_services_summary))
-                            TvActionButton(
-                                stringResource(R.string.external_services_title),
-                                openExternalServices,
-                                icon = R.drawable.ic_open_in_new,
-                                primary = true,
-                            )
-                        }
+                        NavigationSettings(R.string.external_services_title, R.string.external_services_summary, R.drawable.ic_apps, openExternalServices)
 
                     SettingsSection.APPEARANCE -> AppearanceSettings(viewModel)
                     SettingsSection.DOWNLOADS -> DownloadSettings(viewModel)
                     SettingsSection.BACKUP ->
-                        SectionCard(title = stringResource(R.string.backup_preference_title), icon = R.drawable.ic_history) {
-                            Text(stringResource(R.string.backup_preference_summary))
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                TvActionButton(
-                                    text = stringResource(R.string.backup_create_button),
-                                    icon = R.drawable.ic_download,
-                                    loading = isBackupBusy,
-                                    onClick = viewModel::exportBackup,
-                                )
-                                TvActionButton(
-                                    text = stringResource(R.string.backup_restore_button),
-                                    icon = R.drawable.ic_history,
-                                    enabled = !isBackupBusy,
-                                    onClick = { showRestoreConfirm = true },
-                                )
-                            }
-                        }
-
+                        BackupSettings(
+                            isBusy = isBackupBusy,
+                            onCreate = viewModel::exportBackup,
+                            onRestore = { showRestoreConfirm = true },
+                        )
                     SettingsSection.DONATE ->
-                        SectionCard(title = stringResource(R.string.donate_title), icon = R.drawable.ic_favorite) {
-                            Text(stringResource(R.string.donate_summary))
-                            Text(stringResource(R.string.donate_github_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                TvActionButton(
-                                    text = stringResource(R.string.donate_kofi_button),
-                                    icon = R.drawable.ic_open_in_new,
-                                    primary = true,
-                                    onClick = { safeOpenUrl(context, BuildConfig.DONATE_KOFI_URL) },
-                                )
-                                TvActionButton(
-                                    text = stringResource(R.string.donate_github_button),
-                                    icon = R.drawable.ic_open_in_new,
-                                    onClick = { safeOpenUrl(context, BuildConfig.DONATE_GITHUB_URL) },
-                                )
-                            }
-                            // many TVs have no browser: show the links so they can be typed elsewhere
-                            Text(BuildConfig.DONATE_KOFI_URL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(BuildConfig.DONATE_GITHUB_URL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                        DonateSettings()
+                    SettingsSection.ABOUT ->
+                        AboutSettings()
                 }
             }
         }
@@ -277,8 +240,46 @@ fun TvSettingsScreen(
 private fun AppearanceSettings(viewModel: SettingsViewModel) {
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val themeColor by viewModel.themeColor.collectAsStateWithLifecycle()
-    val dark = shouldUseDarkTheme(themeMode)
 
+    LanguageSettings()
+    ThemeSettings(
+        themeMode = themeMode,
+        onThemeMode = viewModel::setThemeMode,
+        themeColor = themeColor,
+        onThemeColor = viewModel::setThemeColor,
+    )
+}
+
+/** Follow system, English, Italian or French; choosing one recreates the screen in that language. */
+@Composable
+private fun LanguageSettings() {
+    var language by remember { mutableStateOf(AppLanguage.current()) }
+    SectionCard(title = stringResource(R.string.language_title), icon = R.drawable.ic_tune) {
+        Text(stringResource(R.string.language_summary), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        ChipRow {
+            AppLanguage.entries.forEach { option ->
+                FilterChip(
+                    selected = language == option,
+                    onClick = {
+                        if (option != language) {
+                            language = option
+                            option.apply()
+                        }
+                    },
+                ) { Text(stringResource(option.labelRes)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeSettings(
+    themeMode: ThemeMode,
+    onThemeMode: (ThemeMode) -> Unit,
+    themeColor: ThemeColor,
+    onThemeColor: (ThemeColor) -> Unit,
+) {
+    val dark = shouldUseDarkTheme(themeMode)
     SectionCard(title = stringResource(R.string.theme_preference_title), icon = R.drawable.ic_tune) {
         Text(stringResource(R.string.theme_dark_mode_label), style = MaterialTheme.typography.titleSmall)
         ChipRow {
@@ -288,7 +289,7 @@ private fun AppearanceSettings(viewModel: SettingsViewModel) {
                 ThemeMode.DARK to R.string.theme_mode_dark,
                 ThemeMode.AMOLED to R.string.theme_mode_amoled,
             ).forEach { (mode, label) ->
-                FilterChip(selected = themeMode == mode, onClick = { viewModel.setThemeMode(mode) }) { Text(stringResource(label)) }
+                FilterChip(selected = themeMode == mode, onClick = { onThemeMode(mode) }) { Text(stringResource(label)) }
             }
         }
         Text(stringResource(R.string.theme_color_label), style = MaterialTheme.typography.titleSmall)
@@ -305,7 +306,7 @@ private fun AppearanceSettings(viewModel: SettingsViewModel) {
             ).forEach { (color, label) ->
                 FilterChip(
                     selected = themeColor == color,
-                    onClick = { viewModel.setThemeColor(color) },
+                    onClick = { onThemeColor(color) },
                     leadingIcon =
                         color.swatchColor(dark)?.let { swatch ->
                             { Box(Modifier.size(16.dp).background(swatch, CircleShape)) }
@@ -325,6 +326,24 @@ private fun DownloadSettings(viewModel: SettingsViewModel) {
     val checkCache by viewModel.searchCheckCache.collectAsStateWithLifecycle()
     val fullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
 
+    DownloadFormatSettings(selected = zipMode, onSelect = viewModel::setDownloadZipMode)
+    DefaultSeedingSettings(selected = defaultSeeding, onSelect = viewModel::setDefaultSeedingOption)
+    PagingSizeSettings(selected = pagingSize, onSelect = viewModel::setPagingLoadSize)
+    DownloadSwitchSettings(
+        autoAdd = autoAdd,
+        onAutoAdd = viewModel::setSearchAutoAddDownload,
+        checkCache = checkCache,
+        onCheckCache = viewModel::setSearchCheckCache,
+        fullPath = fullPath,
+        onFullPath = viewModel::setFilterFilesFullPath,
+    )
+}
+
+@Composable
+private fun DownloadFormatSettings(
+    selected: DownloadZipMode,
+    onSelect: (DownloadZipMode) -> Unit,
+) {
     SectionCard(title = stringResource(R.string.download_zip_preference_title), icon = R.drawable.ic_download) {
         Text(stringResource(R.string.download_zip_preference_summary), color = MaterialTheme.colorScheme.onSurfaceVariant)
         ChipRow {
@@ -334,47 +353,162 @@ private fun DownloadSettings(viewModel: SettingsViewModel) {
                 DownloadZipMode.ZIP to R.string.download_zip_preference_zip,
                 DownloadZipMode.UNCOMPRESSED to R.string.download_zip_preference_uncompressed,
             ).forEach { (mode, label) ->
-                FilterChip(selected = zipMode == mode, onClick = { viewModel.setDownloadZipMode(mode) }) { Text(stringResource(label)) }
+                FilterChip(selected = selected == mode, onClick = { onSelect(mode) }) { Text(stringResource(label)) }
             }
         }
     }
+}
+
+@Composable
+private fun DefaultSeedingSettings(
+    selected: SeedingOption,
+    onSelect: (SeedingOption) -> Unit,
+) {
     SectionCard(title = stringResource(R.string.default_seeding_title), icon = R.drawable.ic_magnet) {
         Text(stringResource(R.string.default_seeding_summary), color = MaterialTheme.colorScheme.onSurfaceVariant)
         ChipRow {
             SeedingOption.entries.forEach { option ->
-                FilterChip(selected = defaultSeeding == option, onClick = { viewModel.setDefaultSeedingOption(option) }) {
+                FilterChip(selected = selected == option, onClick = { onSelect(option) }) {
                     Text(stringResource(option.labelRes()))
                 }
             }
         }
     }
+}
+
+@Composable
+private fun PagingSizeSettings(
+    selected: Int,
+    onSelect: (Int) -> Unit,
+) {
     SectionCard(title = stringResource(R.string.paging_load_size_title), icon = R.drawable.ic_list_bullet) {
         Text(stringResource(R.string.paging_load_size_summary), color = MaterialTheme.colorScheme.onSurfaceVariant)
         ChipRow {
             PAGING_LOAD_SIZE_PRESETS.forEach { size ->
-                FilterChip(selected = pagingSize == size, onClick = { viewModel.setPagingLoadSize(size) }) { Text(size.toString()) }
+                FilterChip(selected = selected == size, onClick = { onSelect(size) }) { Text(size.toString()) }
             }
         }
     }
+}
+
+@Composable
+private fun DownloadSwitchSettings(
+    autoAdd: Boolean,
+    onAutoAdd: (Boolean) -> Unit,
+    checkCache: Boolean,
+    onCheckCache: (Boolean) -> Unit,
+    fullPath: Boolean,
+    onFullPath: (Boolean) -> Unit,
+) {
     SectionCard {
         SwitchRow(
             title = stringResource(R.string.search_auto_add_download_title),
             summary = stringResource(R.string.search_auto_add_download_summary),
             checked = autoAdd,
-            onCheckedChange = viewModel::setSearchAutoAddDownload,
+            onCheckedChange = onAutoAdd,
         )
         SwitchRow(
             title = stringResource(R.string.search_check_cache_title),
             summary = stringResource(R.string.search_check_cache_summary),
             checked = checkCache,
-            onCheckedChange = viewModel::setSearchCheckCache,
+            onCheckedChange = onCheckCache,
         )
         SwitchRow(
             title = stringResource(R.string.filter_files_full_path_title),
             summary = stringResource(R.string.filter_files_full_path_summary),
             checked = fullPath,
-            onCheckedChange = viewModel::setFilterFilesFullPath,
+            onCheckedChange = onFullPath,
         )
+    }
+}
+
+/** Section that only leads to another screen. */
+@Composable
+private fun NavigationSettings(
+    @StringRes title: Int,
+    @StringRes summary: Int,
+    @DrawableRes icon: Int,
+    onOpen: () -> Unit,
+) {
+    SectionCard(title = stringResource(title), icon = icon) {
+        Text(stringResource(summary))
+        TvActionButton(stringResource(title), onOpen, icon = R.drawable.ic_open_in_new, primary = true)
+    }
+}
+
+/** Create or restore a backup; the file pickers and the restore confirmation stay in the screen. */
+@Composable
+private fun BackupSettings(
+    isBusy: Boolean,
+    onCreate: () -> Unit,
+    onRestore: () -> Unit,
+) {
+    SectionCard(title = stringResource(R.string.backup_preference_title), icon = R.drawable.ic_history) {
+        Text(stringResource(R.string.backup_preference_summary))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            TvActionButton(
+                text = stringResource(R.string.backup_create_button),
+                icon = R.drawable.ic_download,
+                loading = isBusy,
+                onClick = onCreate,
+            )
+            TvActionButton(
+                text = stringResource(R.string.backup_restore_button),
+                icon = R.drawable.ic_history,
+                enabled = !isBusy,
+                onClick = onRestore,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DonateSettings() {
+    val context = LocalContext.current
+    SectionCard(title = stringResource(R.string.donate_title), icon = R.drawable.ic_favorite) {
+        Text(stringResource(R.string.donate_summary))
+        Text(stringResource(R.string.donate_github_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            TvActionButton(
+                text = stringResource(R.string.donate_kofi_button),
+                icon = R.drawable.ic_open_in_new,
+                primary = true,
+                onClick = { safeOpenUrl(context, BuildConfig.DONATE_KOFI_URL) },
+            )
+            TvActionButton(
+                text = stringResource(R.string.donate_github_button),
+                icon = R.drawable.ic_open_in_new,
+                onClick = { safeOpenUrl(context, BuildConfig.DONATE_GITHUB_URL) },
+            )
+        }
+        // many TVs have no browser: show the links so they can be typed elsewhere
+        Text(BuildConfig.DONATE_KOFI_URL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(BuildConfig.DONATE_GITHUB_URL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun AboutSettings() {
+    val context = LocalContext.current
+    SectionCard(title = stringResource(R.string.about_title), icon = R.drawable.ic_info) {
+        Text(stringResource(R.string.about_version, BuildConfig.VERSION_NAME), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.about_contribute), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            TvActionButton(
+                text = stringResource(R.string.about_open_repository),
+                icon = R.drawable.ic_open_in_new,
+                primary = true,
+                onClick = { safeOpenUrl(context, REPOSITORY_URL) },
+            )
+            TvActionButton(
+                text = stringResource(R.string.about_privacy_policy),
+                icon = R.drawable.ic_open_in_new,
+                onClick = { safeOpenUrl(context, PRIVACY_POLICY_URL) },
+            )
+        }
+        // many TVs have no browser: show the links so they can be typed elsewhere
+        Text(REPOSITORY_URL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(PRIVACY_POLICY_URL, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
