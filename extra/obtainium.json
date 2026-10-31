@@ -1,0 +1,61 @@
+{
+  "_comment": "Generate Obtainium README badges. Edit here, then run: python3 extra/obtainium_links.py",
+  "apps": [
+    {
+      "badgeAlt": "Get nullseek on Obtainium",
+      "config": {
+        "id": "com.github.livingwithhippos.nullseek",
+        "url": "https://github.com/LivingWithHippos/nullseek",
+        "author": "LivingWithHippos",
+        "name": "nullseek",
+        "additionalSettings": {
+          "includePrereleases": true,
+          "apkFilterRegEx": "^mobile-foss-release\\.apk$",
+          "about": "Android client for TorBox: manage your torrents, web and usenet downloads, search indexers and Stremio addons, and stream to Kodi or VLC."
+        }
+      }
+    },
+    {
+      "badgeAlt": "Get nullseek TV on Obtainium",
+      "config": {
+        "id": "com.github.livingwithhippos.nullseek.tv",
+        "url": "https://github.com/LivingWithHippos/nullseek",
+        "author": "LivingWithHippos",
+        "name": "nullseek TV",
+        "additionalSettings": {
+          "includePrereleases": true,
+          "apkFilterRegEx": "^tv-foss-release\\.apk$",
+          "about": "Android TV client for TorBox: manage your torrents, web and usenet downloads, search indexers and Stremio addons, and stream to Kodi or VLC."
+        }
+      }
+    },
+    {
+      "badgeAlt": "Get nullseek debug on Obtainium",
+      "config": {
+        "id": "com.github.livingwithhippos.nullseek.debug",
+        "url": "https://github.com/LivingWithHippos/nullseek",
+        "author": "LivingWithHippos",
+        "name": "nullseek debug",
+        "additionalSettings": {
+          "includePrereleases": true,
+          "apkFilterRegEx": "^mobile-foss-debug\\.apk$",
+          "about": "Debug build, includes telemetry to log crashes. Installs next to the release one. Android client for TorBox: manage your torrents, web and usenet downloads, search indexers and Stremio addons, and stream to Kodi or VLC."
+        }
+      }
+    },
+    {
+      "badgeAlt": "Get nullseek TV debug on Obtainium",
+      "config": {
+        "id": "com.github.livingwithhippos.nullseek.tv.debug",
+        "url": "https://github.com/LivingWithHippos/nullseek",
+        "author": "LivingWithHippos",
+        "name": "nullseek TV debug",
+        "additionalSettings": {
+          "includePrereleases": true,
+          "apkFilterRegEx": "^tv-foss-debug\\.apk$",
+          "about": "Debug build, includes telemetry to log crashes. Installs next to the release one. Android TV client for TorBox: manage your torrents, web and usenet downloads, search indexers and Stremio addons, and stream to Kodi or VLC."
+        }
+      }
+    }
+  ]
+}
