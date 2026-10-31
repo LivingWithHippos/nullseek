@@ -375,40 +375,14 @@ fun SettingsScreen(
                     .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            OutlinedCard(
-                onClick = onNavigateToProviders,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.providers_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            text = stringResource(id = R.string.providers_summary),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_open_in_new),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
+
+            WidgetsPremiumSettingsCard(
+                entitlementState = entitlementState,
+                onSubscribeClick = onSubscribeClick,
+                onRestorePurchasesClick = onRestorePurchasesClick,
+                onPinDownloadsWidgetClick = onPinDownloadsWidgetClick,
+                onPinQuickActionsWidgetClick = onPinQuickActionsWidgetClick,
+            )
 
             OutlinedCard(
                 onClick = {
@@ -451,13 +425,40 @@ fun SettingsScreen(
                 }
             }
 
-            WidgetsPremiumSettingsCard(
-                entitlementState = entitlementState,
-                onSubscribeClick = onSubscribeClick,
-                onRestorePurchasesClick = onRestorePurchasesClick,
-                onPinDownloadsWidgetClick = onPinDownloadsWidgetClick,
-                onPinQuickActionsWidgetClick = onPinQuickActionsWidgetClick,
-            )
+            OutlinedCard(
+                onClick = onNavigateToProviders,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.providers_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = stringResource(id = R.string.providers_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_open_in_new),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
 
             LanguageSettingsCard()
 
