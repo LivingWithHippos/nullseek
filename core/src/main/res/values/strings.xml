@@ -158,7 +158,7 @@
     <string name="download_option_uncompressed">Direct / Uncompressed</string>
     <string name="download_remember_choice">Remember choice</string>
     <string name="download_zip_preference_title">Download format</string>
-    <string name="download_zip_preference_summary">Torbox always zips generated download links if multiple files are included, for single files you can choose whether they should be zipped or uncompressed (necessary when streaming)</string>
+    <string name="download_zip_preference_summary">Torbox always zips generated download links when multiple files are included, for single files you can choose whether they should be zipped or uncompressed (necessary when streaming)</string>
     <string name="download_zip_preference_ask">Always ask</string>
     <string name="download_zip_preference_zip">Always zip</string>
     <string name="download_zip_preference_uncompressed">Always uncompressed</string>
