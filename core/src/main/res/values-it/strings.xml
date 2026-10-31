@@ -42,7 +42,6 @@
     <string name="referral_section_title">Il tuo referral</string>
     <string name="referral_code">Codice referral</string>
     <string name="purchases_referred">Acquisti tramite referral</string>
-    <string name="usage_stats_title">Statistiche di download e upload</string>
     <string name="active_subscription">Abbonamento attivo</string>
     <string name="no_subscription">Nessun abbonamento</string>
     <string name="vendor_badge">Rivenditore</string>
@@ -50,12 +49,9 @@
     <string name="long_term_storage">Archiviazione a lungo termine</string>
     <string name="concurrent_slots">Slot simultanei extra</string>
     <string name="cooldown_active">Attesa attiva fino a</string>
-    <string name="total_files">File totali</string>
     <string name="torrents">Torrent</string>
     <string name="web_downloads">Download web</string>
     <string name="usenet_downloads">Download Usenet</string>
-    <string name="data_downloaded">Totale scaricato</string>
-    <string name="data_uploaded">Totale caricato</string>
     <string name="referral_support_active">Supporto referral attivo</string>
     <string name="referral_support_inactive">Supporto referral disattivato</string>
     <string name="change_referral_choice">Cambia</string>
@@ -527,4 +523,18 @@
     <string name="about_contribute">NullSeek è open source: i contributi al codice o alle traduzioni sono benvenuti su GitHub.</string>
     <string name="about_open_repository">Contribuisci su GitHub</string>
     <string name="about_privacy_policy">Informativa sulla privacy</string>
+
+    <!-- Account statistics -->
+    <string name="stats_title">Statistiche dell\'account</string>
+    <string name="stats_since">Totali dal %1$s</string>
+    <string name="stats_data_downloaded">Dati scaricati</string>
+    <string name="stats_data_downloaded_hint">Scaricati da TorBox per i tuoi torrent e download web e Usenet</string>
+    <string name="stats_data_uploaded">Dati in seeding</string>
+    <string name="stats_data_uploaded_hint">Inviati ad altri peer</string>
+    <string name="stats_items_title">Elementi scaricati</string>
+    <string name="stats_items_total">Totale</string>
+    <string name="stats_show_detailed">Mostra statistiche dettagliate</string>
+    <string name="stats_ratio">Rapporto di seeding</string>
+    <string name="stats_bandwidth_title">Scaricato negli ultimi 30 giorni</string>
+    <string name="stats_bandwidth_empty">Nessun download negli ultimi 30 giorni</string>
 </resources>

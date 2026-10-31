@@ -45,7 +45,6 @@
     <string name="referral_section_title">Your Referral</string>
     <string name="referral_code">Referral Code</string>
     <string name="purchases_referred">Purchases Referred</string>
-    <string name="usage_stats_title">Download &amp; Upload Statistics</string>
     <string name="active_subscription">Active Subscription</string>
     <string name="no_subscription">No Subscription</string>
     <string name="vendor_badge">Vendor</string>
@@ -53,12 +52,9 @@
     <string name="long_term_storage">Long-Term Storage</string>
     <string name="concurrent_slots">Extra Concurrent Slots</string>
     <string name="cooldown_active">Cooldown Active Until</string>
-    <string name="total_files">Total Files</string>
     <string name="torrents">Torrents</string>
     <string name="web_downloads">Web Downloads</string>
     <string name="usenet_downloads">Usenet Downloads</string>
-    <string name="data_downloaded">Total Downloaded</string>
-    <string name="data_uploaded">Total Uploaded</string>
     <string name="referral_support_active">Referral support active</string>
     <string name="referral_support_inactive">Referral support off</string>
     <string name="change_referral_choice">Change</string>
@@ -541,4 +537,18 @@
     <string name="about_contribute">NullSeek is open source: contributions to the code or translations are welcome on GitHub.</string>
     <string name="about_open_repository">Contribute on GitHub</string>
     <string name="about_privacy_policy">Privacy policy</string>
+
+    <!-- Account statistics -->
+    <string name="stats_title">Account statistics</string>
+    <string name="stats_since">Totals since %1$s</string>
+    <string name="stats_data_downloaded">Data downloaded</string>
+    <string name="stats_data_downloaded_hint">Downloaded by TorBox for your torrents, web and usenet downloads</string>
+    <string name="stats_data_uploaded">Seeded data</string>
+    <string name="stats_data_uploaded_hint">Uploaded to other peers</string>
+    <string name="stats_items_title">Items downloaded</string>
+    <string name="stats_items_total">Total</string>
+    <string name="stats_show_detailed">Show detailed stats</string>
+    <string name="stats_ratio">Seeding ratio</string>
+    <string name="stats_bandwidth_title">Downloaded in the last 30 days</string>
+    <string name="stats_bandwidth_empty">No downloads in the last 30 days</string>
 </resources>
