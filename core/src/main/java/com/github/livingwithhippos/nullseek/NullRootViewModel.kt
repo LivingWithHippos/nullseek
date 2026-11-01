@@ -9,23 +9,26 @@ import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRep
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.nullseek.data.repository.ThemeColor
 import com.github.livingwithhippos.nullseek.data.repository.ThemeMode
-import com.github.livingwithhippos.torbox.client.TorboxClient
-import com.github.livingwithhippos.torbox.model.TorrentDto
-import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
-import com.github.livingwithhippos.torbox.model.UserDataDto
-import com.github.livingwithhippos.torbox.model.WebDownloadDto
-import com.github.livingwithhippos.torbox.network.ApiResult
-import com.github.livingwithhippos.torbox.network.TorboxClientConfig
+import com.github.livingwithhippos.nullseek.core.domain.DebridCapabilities
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
+import com.github.livingwithhippos.nullseek.core.domain.DebridError
+import com.github.livingwithhippos.nullseek.core.domain.DebridResult
+import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
+import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
+import com.github.livingwithhippos.nullseek.core.domain.ProviderKind
+import com.github.livingwithhippos.nullseek.core.domain.UserProfile
+import com.github.livingwithhippos.nullseek.core.domain.describe
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
 
 @KoinViewModel
 class NullRootViewModel(
-    private val client: TorboxClient,
+    private val debridProvider: DebridServiceProvider,
     val providerRepository: NullProviderRepository,
     preferencesRepository: PreferencesRepository,
 ) : ViewModel() {
@@ -53,43 +56,69 @@ class NullRootViewModel(
             initialValue = false,
         )
 
-    // todo: decide if we should have a factory method for temp clients
-    private val tempClient =
-        TorboxClient.create(
-            TorboxClientConfig(),
-        )
+    /** what the active provider supports, null until an account is loaded */
+    val capabilities: StateFlow<DebridCapabilities?> =
+        debridProvider.active
+            .map { it?.capabilities }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, debridProvider.active.value?.capabilities)
 
     init {
-        // check if there's an active token and enable it, initializing the TorboxClient with the token
-        // todo: try catch and handle errors, like network issues, invalid token, etc.
+        // check if there's an active token and enable it
         loadActiveToken()
     }
 
     fun loadActiveToken() {
         viewModelScope.launch {
-            val activeProvider = providerRepository.getActive()
-            if (activeProvider != null) {
-                client.updateBearerToken(activeProvider.token)
-                // refresh user data on app start to cache it
-                val response = client.user.data()
-                if (response is ApiResult.Success) {
-                    val user = response.value.data
-                    if (user != null) {
-                        activeTokenLoaded(user)
-                    } else {
-                        // todo: manage this (should not happen)
-                    }
-                } else {
-                    when (response) {
-                        is ApiResult.Failure.BadRequest -> TODO()
-                        is ApiResult.Failure.Http -> TODO()
-                        is ApiResult.Failure.Network -> TODO()
-                        is ApiResult.Failure.NoSuccess<*> -> TODO()
-                        is ApiResult.Failure.Serialization -> TODO()
+            val previousId = debridProvider.active.value?.provider?.id
+            val active = debridProvider.activate()
+            if (active == null) {
+                setupNeeded()
+                return@launch
+            }
+            if (previousId != active.provider.id) {
+                // the lists and details belong to another account
+                closeDetails()
+            }
+            _uiState.value = _uiState.value.copy(loading = true, provider = active.kind)
+            // refresh user data on app start to cache it
+            when (val response = active.service.user()) {
+                is DebridResult.Ok -> {
+                    activeTokenLoaded(response.value)
+                }
+
+                is DebridResult.Err -> {
+                    when (val error = response.error) {
+                        DebridError.InvalidToken -> {
+                            _uiState.value =
+                                _uiState.value.copy(
+                                    loading = false,
+                                    setup = false,
+                                    user = null,
+                                    tokenInvalid = true,
+                                    error = "The ${active.kind.displayName} token for ${active.provider.name} is invalid or expired, replace it from Settings > Accounts",
+                                )
+                        }
+
+                        is DebridError.Network -> {
+                            _uiState.value =
+                                _uiState.value.copy(
+                                    loading = false,
+                                    setup = false,
+                                    isOnline = false,
+                                    error = "Unable to reach ${active.kind.displayName}, check your connection",
+                                )
+                        }
+
+                        else -> {
+                            _uiState.value =
+                                _uiState.value.copy(
+                                    loading = false,
+                                    setup = false,
+                                    error = error.describe("Loading the ${active.kind.displayName} account"),
+                                )
+                        }
                     }
                 }
-            } else {
-                setupNeeded()
             }
         }
     }
@@ -100,47 +129,41 @@ class NullRootViewModel(
     ) {
         viewModelScope.launch {
             setLoading(true)
-            tempClient.updateBearerToken(token)
-            val response = tempClient.user.data()
-
-            if (response is ApiResult.Success) {
-                val user = response.value.data
-                if (user != null) {
-                    // this should update the singleton value
-                    client.updateBearerToken(token)
+            val tempService = debridProvider.newTemp(provider.kind, token.trim())
+            when (val response = tempService.user()) {
+                is DebridResult.Ok -> {
                     providerRepository.insertActive(
                         NullProvider(
                             type = provider.type,
                             name = provider.name,
-                            token = token,
+                            token = token.trim(),
                             active = true,
                         ),
                     )
-                    setupCompleted(user)
-                } else {
-                    setupInvalid("Invalid token")
+                    val active = debridProvider.activate()
+                    _uiState.value = _uiState.value.copy(provider = active?.kind)
+                    setupCompleted(response.value)
                 }
-            } else {
-                setupInvalid("Invalid token")
+
+                is DebridResult.Err -> {
+                    setupInvalid(
+                        if (response.error is DebridError.Network) "Network error, try again" else "Invalid token",
+                    )
+                }
             }
         }
     }
 
     fun loadTorrentDetails(
-        torrent: TorrentDto,
+        torrent: DebridTorrent,
         reload: Boolean = false,
     ) {
         viewModelScope.launch {
             if (reload) {
                 loadingTorrentDetails()
-                val response = client.torrent.get(id = torrent.id)
-                if (response is ApiResult.Success) {
-                    val torrentDetails = response.value.data
-                    if (torrentDetails != null) {
-                        loadedTorrentDetails(torrentDetails)
-                    } else {
-                        setupInvalid("Failed to load torrent details")
-                    }
+                val response = debridProvider.current.torrent(torrent.id)
+                if (response is DebridResult.Ok) {
+                    loadedTorrentDetails(response.value)
                 } else {
                     setupInvalid("Failed to load torrent details")
                 }
@@ -151,20 +174,15 @@ class NullRootViewModel(
     }
 
     fun loadWebDetails(
-        webDownload: WebDownloadDto,
+        webDownload: DebridDownload,
         reload: Boolean = false,
     ) {
         viewModelScope.launch {
             if (reload) {
                 loadingWebDetails()
-                val response = client.web.get(id = webDownload.id)
-                if (response is ApiResult.Success) {
-                    val webDetails = response.value.data
-                    if (webDetails != null) {
-                        loadedWebDetails(webDetails)
-                    } else {
-                        setupInvalid("Failed to load web details")
-                    }
+                val response = debridProvider.current.web(webDownload.id)
+                if (response is DebridResult.Ok) {
+                    loadedWebDetails(response.value)
                 } else {
                     setupInvalid("Failed to load web details")
                 }
@@ -175,20 +193,15 @@ class NullRootViewModel(
     }
 
     fun loadUsenetDetails(
-        usenetDownload: UsenetDownloadDto,
+        usenetDownload: DebridDownload,
         reload: Boolean = false,
     ) {
         viewModelScope.launch {
             if (reload) {
                 loadingUsenetDetails()
-                val response = client.usenet.get(id = usenetDownload.id)
-                if (response is ApiResult.Success) {
-                    val usenetDetails = response.value.data
-                    if (usenetDetails != null) {
-                        loadedUsenetDetails(usenetDetails)
-                    } else {
-                        setupInvalid("Failed to load usenet details")
-                    }
+                val response = debridProvider.current.usenet(usenetDownload.id)
+                if (response is DebridResult.Ok) {
+                    loadedUsenetDetails(response.value)
                 } else {
                     setupInvalid("Failed to load usenet details")
                 }
@@ -216,7 +229,7 @@ class NullRootViewModel(
         _uiState.value = _uiState.value.copy(loading = true, selectedTorrent = null, error = null)
     }
 
-    private fun loadedTorrentDetails(torrent: TorrentDto) {
+    private fun loadedTorrentDetails(torrent: DebridTorrent) {
         _uiState.value =
             _uiState.value.copy(loading = false, selectedTorrent = torrent, error = null)
     }
@@ -225,7 +238,7 @@ class NullRootViewModel(
         _uiState.value = _uiState.value.copy(loading = true, selectedWeb = null, error = null)
     }
 
-    private fun loadedWebDetails(webDownload: WebDownloadDto) {
+    private fun loadedWebDetails(webDownload: DebridDownload) {
         _uiState.value =
             _uiState.value.copy(loading = false, selectedWeb = webDownload, error = null)
     }
@@ -234,23 +247,31 @@ class NullRootViewModel(
         _uiState.value = _uiState.value.copy(loading = true, selectedUsenet = null, error = null)
     }
 
-    private fun loadedUsenetDetails(usenetDownload: UsenetDownloadDto) {
+    private fun loadedUsenetDetails(usenetDownload: DebridDownload) {
         _uiState.value =
             _uiState.value.copy(loading = false, selectedUsenet = usenetDownload, error = null)
     }
 
-    private fun activeTokenLoaded(user: UserDataDto) {
+    private fun activeTokenLoaded(user: UserProfile) {
         _uiState.value =
-            _uiState.value.copy(loading = false, setup = false, user = user, error = null)
+            _uiState.value.copy(
+                loading = false,
+                setup = false,
+                user = user,
+                error = null,
+                tokenInvalid = false,
+                isOnline = true,
+            )
     }
 
     private fun setupNeeded() {
-        _uiState.value = _uiState.value.copy(loading = false, setup = true, user = null)
+        _uiState.value =
+            NullRootUiState(loading = false, setup = true)
     }
 
-    private fun setupCompleted(user: UserDataDto) {
+    private fun setupCompleted(user: UserProfile) {
         _uiState.value =
-            _uiState.value.copy(loading = false, setup = false, user = user, error = null)
+            _uiState.value.copy(loading = false, setup = false, user = user, error = null, tokenInvalid = false)
     }
 
     private fun setupInvalid(error: String) {
@@ -280,17 +301,21 @@ data class NullRootUiState(
     /**
      * user to cache the current user data
      */
-    val user: UserDataDto? = null,
+    val user: UserProfile? = null,
     /**
      * currently selected a torrent, to show its details page
      */
-    val selectedTorrent: TorrentDto? = null,
+    val selectedTorrent: DebridTorrent? = null,
     /**
      * currently selected a web download, to show its details page
      */
-    val selectedWeb: WebDownloadDto? = null,
-    val selectedUsenet: UsenetDownloadDto? = null,
+    val selectedWeb: DebridDownload? = null,
+    val selectedUsenet: DebridDownload? = null,
     val isDetailOnlyOpen: Boolean = false,
     val error: String? = null,
     val isOnline: Boolean = true,
+    /** the provider of the active account */
+    val provider: ProviderKind? = null,
+    /** the active account token was rejected */
+    val tokenInvalid: Boolean = false,
 )

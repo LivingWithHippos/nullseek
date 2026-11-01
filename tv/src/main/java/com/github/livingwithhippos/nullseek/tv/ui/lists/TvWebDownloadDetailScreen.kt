@@ -16,12 +16,12 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.TvActionButton
 import com.github.livingwithhippos.nullseek.ui.lists.web.WebDownloadDetailEvent
 import com.github.livingwithhippos.nullseek.ui.lists.web.WebDownloadDetailViewModel
 import com.github.livingwithhippos.nullseek.utils.wholeDownloadIsZipped
-import com.github.livingwithhippos.torbox.model.WebDownloadDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun TvWebDownloadDetailScreen(
-    item: WebDownloadDto,
+    item: DebridDownload,
     onClose: () -> Unit,
     isFullScreen: Boolean,
     onToggleFullScreen: () -> Unit,

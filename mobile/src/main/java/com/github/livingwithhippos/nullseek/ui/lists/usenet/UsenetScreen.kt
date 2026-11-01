@@ -53,7 +53,7 @@ import com.github.livingwithhippos.nullseek.ui.lists.utils.rememberFindInListSta
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
-import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
 import kotlinx.coroutines.flow.Flow
 
 @Composable
@@ -61,9 +61,9 @@ fun UsenetScreen(
     modifier: Modifier = Modifier,
     contentType: NullContentType,
     navigationType: NullNavigationType,
-    usenet: UsenetDownloadDto?,
-    flow: Flow<PagingData<UsenetDownloadDto>>,
-    loadDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
+    usenet: DebridDownload?,
+    flow: Flow<PagingData<DebridDownload>>,
+    loadDetails: (usenetDownload: DebridDownload) -> Unit,
     closeDetails: () -> Unit
 ) {
     val context = LocalContext.current
@@ -94,10 +94,10 @@ fun UsenetScreen(
 private fun UsenetScreen(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    flow: Flow<PagingData<UsenetDownloadDto>>,
+    flow: Flow<PagingData<DebridDownload>>,
     query: String,
     onQueryChange: (String) -> Unit,
-    loadDetails: (usenetDownload: UsenetDownloadDto) -> Unit
+    loadDetails: (usenetDownload: DebridDownload) -> Unit
 ) {
     val listState: LazyListState = rememberLazyListState()
     val lazyPagingItems = flow.collectAsLazyPagingItems()
@@ -158,9 +158,9 @@ private fun UsenetScreen(
 
 @Composable
 private fun UsenetRow(
-    item: UsenetDownloadDto,
+    item: DebridDownload,
     modifier: Modifier = Modifier,
-    loadDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
+    loadDetails: (usenetDownload: DebridDownload) -> Unit,
     highlight: MatchHighlight = MatchHighlight.NONE,
 ) {
     OutlinedCard(

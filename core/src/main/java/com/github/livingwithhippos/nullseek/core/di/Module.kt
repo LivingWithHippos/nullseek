@@ -26,6 +26,11 @@ import com.github.livingwithhippos.nullseek.core.data.repository.StremioAddonRep
 import com.github.livingwithhippos.nullseek.core.data.stremio.AddonClient
 import com.github.livingwithhippos.nullseek.core.data.stremio.AddonManager
 import com.github.livingwithhippos.nullseek.core.data.stremio.AddonSearchHelper
+import com.github.livingwithhippos.nullseek.core.domain.DebridService
+import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
+import com.github.livingwithhippos.nullseek.core.domain.ProviderKind
+import com.github.livingwithhippos.nullseek.core.domain.realdebrid.RealDebridService
+import com.github.livingwithhippos.nullseek.core.domain.torbox.TorboxService
 import com.github.livingwithhippos.nullseek.data.remote.IndexerRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.KodiRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.VlcRemoteClient
@@ -46,6 +51,9 @@ import com.github.livingwithhippos.nullseek.ui.providers.ProvidersViewModel
 import com.github.livingwithhippos.nullseek.ui.search.SearchViewModel
 import com.github.livingwithhippos.nullseek.ui.settings.SettingsViewModel
 import com.github.livingwithhippos.nullseek.ui.user.UserViewModel
+import com.github.livingwithhippos.realdebrid.client.RealDebridClient
+import com.github.livingwithhippos.realdebrid.network.RealDebridAuthState
+import com.github.livingwithhippos.realdebrid.network.RealDebridClientConfig
 import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.network.TorboxAuthState
 import com.github.livingwithhippos.torbox.network.TorboxClientConfig
@@ -66,7 +74,37 @@ private fun networkModule(logLevel: String = "none") =
             )
         }
 
+        single<RealDebridClient> {
+            RealDebridClient.create(
+                RealDebridClientConfig(
+                    logLevel = logLevel,
+                ),
+                RealDebridAuthState(),
+            )
+        }
+
+        single { TorboxService(get()) }
+        single { RealDebridService(get()) }
+        single {
+            DebridServiceProvider(
+                services =
+                    mapOf<ProviderKind, DebridService>(
+                        ProviderKind.TORBOX to get<TorboxService>(),
+                        ProviderKind.REAL_DEBRID to get<RealDebridService>(),
+                    ),
+                repository = get(),
+                tempFactory = ::tempService,
+            )
+        }
+
         single { AddonClient() }
+    }
+
+// separate clients, used to check tokens and by the widgets
+private fun tempService(kind: ProviderKind): DebridService =
+    when (kind) {
+        ProviderKind.TORBOX -> TorboxService(TorboxClient.create(TorboxClientConfig(), TorboxAuthState()))
+        ProviderKind.REAL_DEBRID -> RealDebridService(RealDebridClient.create(RealDebridClientConfig(), RealDebridAuthState()))
     }
 
 private fun database(context: Context): NullDatabase =
@@ -103,7 +141,7 @@ private fun backupRepository(
     stremioAddonDao: StremioAddonDao,
     imdbFavouriteDao: ImdbFavouriteDao,
     dataStore: DataStore<Preferences>,
-    torboxClient: TorboxClient,
+    debridProvider: DebridServiceProvider,
 ): BackupRepository =
     BackupRepositoryImpl(
         providerDao = providerDao,
@@ -112,7 +150,7 @@ private fun backupRepository(
         stremioAddonDao = stremioAddonDao,
         imdbFavouriteDao = imdbFavouriteDao,
         dataStore = dataStore,
-        torboxClient = torboxClient,
+        debridProvider = debridProvider,
     )
 
 private fun datastore(context: Context): DataStore<Preferences> =

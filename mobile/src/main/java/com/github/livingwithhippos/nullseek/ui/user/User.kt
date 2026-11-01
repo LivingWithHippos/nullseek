@@ -57,6 +57,8 @@ import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
+import com.github.livingwithhippos.nullseek.core.domain.ProviderUserExtras
+import com.github.livingwithhippos.nullseek.core.domain.UserProfile
 import com.github.livingwithhippos.torbox.model.UserDataDto
 import java.util.Locale
 import logcat.asLog
@@ -67,7 +69,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun UserScreen(
     modifier: Modifier = Modifier,
-    user: UserDataDto?,
+    user: UserProfile?,
     loading: Boolean,
     error: String?,
     context: Context = LocalContext.current,
@@ -76,13 +78,55 @@ fun UserScreen(
 ) {
     if (loading || user == null) {
         Box(
-            modifier = modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize().padding(16.dp),
             contentAlignment = Alignment.Center,
         ) {
-            LoadingIndicator()
+            if (!loading && error != null) {
+                // e.g. an invalid token, the accounts can be fixed from the settings
+                ErrorNotice(error = error)
+            } else {
+                LoadingIndicator()
+            }
         }
         return
     }
+
+    when (val extras = user.extras) {
+        is ProviderUserExtras.RealDebrid -> {
+            RealDebridUserContent(
+                modifier = modifier,
+                user = user,
+                extras = extras,
+                error = error,
+                onOpenSettingsClick = { openBrowser(context, viewModel.getAccountSettingsUrl()) },
+                onOpenSubscriptionClick = { openBrowser(context, viewModel.buildSubscriptionUrl(false)) },
+                enabled = enabled,
+            )
+            return
+        }
+
+        is ProviderUserExtras.Torbox -> {
+            TorboxUserScreen(
+                modifier = modifier,
+                user = extras.data,
+                error = error,
+                context = context,
+                viewModel = viewModel,
+                enabled = enabled,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TorboxUserScreen(
+    modifier: Modifier,
+    user: UserDataDto,
+    error: String?,
+    context: Context,
+    viewModel: UserViewModel,
+    enabled: Boolean,
+) {
 
     val referralPreference by viewModel.includeReferralPreference.collectAsState()
     val detailedStats by viewModel.detailedStats.collectAsState()
@@ -102,7 +146,7 @@ fun UserScreen(
                     onClick = {
                         showReferralDialog = false
                         viewModel.setReferralPreference(true)
-                        openBrowser(context, viewModel.buildTorboxSubscriptionUrl(true))
+                        openBrowser(context, viewModel.buildSubscriptionUrl(true))
                     },
                 ) {
                     Text(text = stringResource(id = R.string.referral_dialog_positive))
@@ -113,7 +157,7 @@ fun UserScreen(
                     onClick = {
                         showReferralDialog = false
                         viewModel.setReferralPreference(false)
-                        openBrowser(context, viewModel.buildTorboxSubscriptionUrl(false))
+                        openBrowser(context, viewModel.buildSubscriptionUrl(false))
                     },
                 ) {
                     Text(text = stringResource(id = R.string.referral_dialog_negative))
@@ -129,13 +173,13 @@ fun UserScreen(
         detailedStats = detailedStats,
         onLoadDetailedStats = viewModel::loadDetailedStats,
         onOpenSettingsClick = {
-            openBrowser(context, viewModel.getTorboxSettingsUrl())
+            openBrowser(context, viewModel.getAccountSettingsUrl())
         },
         onOpenSubscriptionClick = {
             if (referralPreference == null) {
                 showReferralDialog = true
             } else {
-                val url = viewModel.buildTorboxSubscriptionUrl(referralPreference == true)
+                val url = viewModel.buildSubscriptionUrl(referralPreference == true)
                 openBrowser(context, url)
             }
         },
@@ -187,20 +231,144 @@ fun UserScreenContent(
 
             // Error Notice (if any)
             if (error != null) {
-                OutlinedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors =
-                        CardDefaults.outlinedCardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
-                        ),
+                ErrorNotice(error = error)
+            }
+
+            // Extra bottom spacing to account for the FAB
+            Spacer(modifier = Modifier.height(88.dp))
+        }
+    }
+}
+
+@Composable
+private fun ErrorNotice(
+    error: String,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+        colors =
+            CardDefaults.outlinedCardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
+            ),
+    ) {
+        Text(
+            text = error,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}
+
+@Composable
+private fun InfoLine(
+    label: String,
+    value: String,
+    highlight: Boolean = false,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(end = 8.dp),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Text(
+            text = value,
+            style = if (highlight) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyMedium,
+            fontWeight = if (highlight) FontWeight.Bold else FontWeight.SemiBold,
+            color = if (highlight) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/** The Real-Debrid account, it has less details than the TorBox one. */
+@Composable
+private fun RealDebridUserContent(
+    modifier: Modifier,
+    user: UserProfile,
+    extras: ProviderUserExtras.RealDebrid,
+    error: String?,
+    onOpenSettingsClick: () -> Unit,
+    onOpenSubscriptionClick: () -> Unit,
+    enabled: Boolean,
+) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .widthIn(max = 600.dp)
+                    .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(
-                        text = error,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(16.dp),
+                        text = stringResource(id = R.string.account_overview),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
                     )
+                    InfoLine(stringResource(R.string.provider_service), user.provider.displayName)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    InfoLine(stringResource(R.string.user), user.username ?: user.email)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    InfoLine(stringResource(R.string.user_account_type), extras.type.uppercase(), highlight = true)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    InfoLine(
+                        stringResource(R.string.user_premium_expires),
+                        if (user.isPremium) {
+                            stringResource(R.string.user_premium_days_left, (extras.premiumSecondsLeft / 86_400).toInt())
+                        } else {
+                            stringResource(R.string.none)
+                        },
+                    )
+                    user.points?.let { points ->
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        InfoLine(stringResource(R.string.user_points), points.toString())
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    OutlinedButton(
+                        onClick = onOpenSettingsClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = enabled,
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_link),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(id = R.string.open_provider_web, user.provider.displayName))
+                    }
+                    OutlinedButton(
+                        onClick = onOpenSubscriptionClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = enabled,
+                    ) {
+                        Text(text = stringResource(id = R.string.open_torbox_subscription))
+                    }
                 }
+            }
+
+            if (error != null) {
+                ErrorNotice(error = error)
             }
 
             // Extra bottom spacing to account for the FAB
@@ -332,7 +500,7 @@ private fun AccountOverviewAndActionsCard(
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.open_torbox_web))
+                Text(text = stringResource(id = R.string.open_provider_web, "TorBox"))
             }
 
             OutlinedButton(
@@ -707,7 +875,7 @@ fun UserScreenPreview() {
         ) { innerPadding ->
             UserScreenContent(
                 modifier = Modifier.padding(innerPadding),
-                user = mockUser,
+                user = (mockUser.extras as ProviderUserExtras.Torbox).data,
                 error = null,
                 onOpenSettingsClick = {},
                 onOpenSubscriptionClick = {},

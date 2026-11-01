@@ -49,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
+import com.github.livingwithhippos.nullseek.core.domain.ProviderKind
+import com.github.livingwithhippos.nullseek.ui.provider.ProviderKindSelector
 import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
 import com.github.livingwithhippos.nullseek.ui.theme.Button
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
@@ -181,12 +183,13 @@ fun ProvidersScreen(
             title = stringResource(id = R.string.providers_add_title),
             showName = true,
             showToken = true,
-            initialName = "",
+            showKind = true,
+            initialName = ProviderKind.TORBOX.displayName,
             validating = uiState.validating,
             tokenError = uiState.tokenError,
             onDismiss = { dialog = null },
-            onConfirm = { name, token ->
-                viewModel.add(name, token) { ok -> if (ok) dialog = null }
+            onConfirm = { kind, name, token ->
+                viewModel.add(kind, name, token) { ok -> if (ok) dialog = null }
             },
         )
 
@@ -198,7 +201,7 @@ fun ProvidersScreen(
             validating = false,
             tokenError = false,
             onDismiss = { dialog = null },
-            onConfirm = { name, _ ->
+            onConfirm = { _, name, _ ->
                 viewModel.rename(d.provider, name)
                 dialog = null
             },
@@ -212,7 +215,7 @@ fun ProvidersScreen(
             validating = uiState.validating,
             tokenError = uiState.tokenError,
             onDismiss = { dialog = null },
-            onConfirm = { _, token ->
+            onConfirm = { _, _, token ->
                 viewModel.replaceToken(d.provider, token) { ok -> if (ok) dialog = null }
             },
         )
@@ -265,6 +268,18 @@ private fun ProviderCard(
                     maxLines = 1,
                     overflow = TextOverflow.MiddleEllipsis,
                 )
+                Surface(
+                    shape = RoundedCornerShape(0.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.padding(end = 4.dp),
+                ) {
+                    Text(
+                        text = ProviderKind.fromDbType(provider.type).displayName,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
                 if (provider.active) {
                     Surface(
                         shape = RoundedCornerShape(0.dp),
@@ -319,8 +334,10 @@ private fun ProviderInputDialog(
     validating: Boolean,
     tokenError: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: (name: String, token: String) -> Unit,
+    onConfirm: (kind: ProviderKind, name: String, token: String) -> Unit,
+    showKind: Boolean = false,
 ) {
+    var kind by rememberSaveable { mutableStateOf(ProviderKind.TORBOX) }
     var name by rememberSaveable { mutableStateOf(initialName) }
     var token by rememberSaveable { mutableStateOf("") }
     val valid = (!showName || name.isNotBlank()) && (!showToken || token.isNotBlank())
@@ -330,6 +347,23 @@ private fun ProviderInputDialog(
         title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (showKind) {
+                    Text(
+                        text = stringResource(id = R.string.provider_service),
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                    ProviderKindSelector(
+                        selected = kind,
+                        onSelect = { newKind ->
+                            // keep a custom name, follow the service otherwise
+                            if (name.isBlank() || ProviderKind.entries.any { it.displayName == name }) {
+                                name = newKind.displayName
+                            }
+                            kind = newKind
+                        },
+                        enabled = !validating,
+                    )
+                }
                 if (showName) {
                     OutlinedTextField(
                         value = name,
@@ -367,7 +401,7 @@ private fun ProviderInputDialog(
             }
         },
         confirmButton = {
-            TextButton(enabled = valid && !validating, onClick = { onConfirm(name, token) }) {
+            TextButton(enabled = valid && !validating, onClick = { onConfirm(kind, name, token) }) {
                 Text(stringResource(id = R.string.save))
             }
         },

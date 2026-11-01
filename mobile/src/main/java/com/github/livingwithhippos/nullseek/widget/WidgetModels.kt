@@ -17,7 +17,7 @@ enum class WidgetDownloadType {
 
 @Serializable
 data class WidgetDownloadItem(
-    val id: Int,
+    val id: String,
     val name: String,
     val type: WidgetDownloadType,
     val progress: Double,

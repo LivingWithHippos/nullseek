@@ -48,9 +48,8 @@ import com.github.livingwithhippos.nullseek.tv.ui.providers.TvProvidersScreen
 import com.github.livingwithhippos.nullseek.tv.ui.search.TvSearchScreen
 import com.github.livingwithhippos.nullseek.tv.ui.settings.TvSettingsScreen
 import com.github.livingwithhippos.nullseek.ui.navigation.Route
-import com.github.livingwithhippos.torbox.model.TorrentDto
-import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
-import com.github.livingwithhippos.torbox.model.WebDownloadDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
 
 private data class DrawerDestination(
     val route: Route,
@@ -107,9 +106,9 @@ private fun NavHostController.navigateTopLevel(route: Route) {
 fun TvNullSeekApp(
     rootUiState: NullRootUiState,
     checkValidToken: (NetProvider, String) -> Unit,
-    loadTorrentDetails: (TorrentDto) -> Unit,
-    loadWebDetails: (WebDownloadDto) -> Unit,
-    loadUsenetDetails: (UsenetDownloadDto) -> Unit,
+    loadTorrentDetails: (DebridTorrent) -> Unit,
+    loadWebDetails: (DebridDownload) -> Unit,
+    loadUsenetDetails: (DebridDownload) -> Unit,
     closeDetails: () -> Unit,
     reloadProviders: () -> Unit,
 ) {

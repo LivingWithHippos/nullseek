@@ -169,7 +169,7 @@ private fun DownloadsWidgetContent(
                     }
                 } else {
                     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
-                        items(snapshot.items, itemId = { it.id.toLong() }) { item ->
+                        items(snapshot.items, itemId = { "${it.type}:${it.id}".hashCode().toLong() }) { item ->
                             Column(
                                 modifier =
                                     GlanceModifier

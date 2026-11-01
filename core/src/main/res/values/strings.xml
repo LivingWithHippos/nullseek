@@ -551,4 +551,34 @@
     <string name="stats_ratio">Seeding ratio</string>
     <string name="stats_bandwidth_title">Downloaded in the last 30 days</string>
     <string name="stats_bandwidth_empty">No downloads in the last 30 days</string>
+
+    <!-- multiple providers -->
+    <string name="provider_service">Service</string>
+    <string name="open_provider_web">Open %1$s Web</string>
+    <string name="user_points">Fidelity points</string>
+    <string name="user_account_type">Account type</string>
+    <string name="user_premium_days_left">%1$d days left</string>
+    <string name="file_selection_title">Choose the files to download</string>
+    <string name="file_selection_needed">This torrent is waiting for the files to download to be picked</string>
+    <string name="file_selection_remaining">%1$d more torrents after this one</string>
+    <string name="file_selection_confirm">Start download</string>
+    <string name="file_selection_later">Later</string>
+    <string name="file_selection_select_all_rest">All files for every torrent</string>
+    <string name="file_selection_select_all">Select all</string>
+    <string name="file_selection_select_none">Select none</string>
+    <string name="file_selection_selected_count">%1$d of %2$d files selected</string>
+    <string name="file_selection_resolving">Reading the torrents…</string>
+    <string name="file_selection_action_needed">Pick files</string>
+    <string name="uploads_awaiting_selection">%1$d torrents are still waiting for their files to be picked, finish from their page</string>
+    <string name="copy_all_links">Copy all links</string>
+    <string name="no_zip_hint">This service can\'t zip downloads, pick single files</string>
+    <string name="web_history_hint">Real-Debrid keeps unrestricted links here, they expire after a while</string>
+    <string name="setup_provider_description_generic">NullSeek connects to your debrid account to stream, download, and manage your cloud files and torrents. Pick your service below.</string>
+    <string name="setup_signup_title_provider">New to %1$s?</string>
+    <string name="setup_signup_description_provider">Create an account on %1$s to get started.</string>
+    <string name="setup_signup_button_provider">Create a %1$s Account</string>
+    <string name="setup_key_description_provider">Retrieve your API token from your %1$s account and paste it below to link your account.</string>
+    <string name="setup_get_key_button_provider">Get API Token from %1$s</string>
+    <string name="widget_setup_needed_title_generic">Account Needed</string>
+    <string name="widget_setup_needed_message_generic">Tap to configure your account in NullSeek</string>
 </resources>

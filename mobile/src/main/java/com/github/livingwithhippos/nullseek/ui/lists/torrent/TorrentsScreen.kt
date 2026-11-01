@@ -53,7 +53,8 @@ import com.github.livingwithhippos.nullseek.ui.lists.utils.rememberFindInListSta
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
-import com.github.livingwithhippos.torbox.model.TorrentDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
+import com.github.livingwithhippos.nullseek.core.domain.needsFileSelection
 import kotlinx.coroutines.flow.Flow
 
 @Composable
@@ -61,9 +62,9 @@ fun TorrentsScreen(
     modifier: Modifier = Modifier,
     contentType: NullContentType,
     navigationType: NullNavigationType,
-    torrent: TorrentDto?,
-    flow: Flow<PagingData<TorrentDto>>,
-    loadDetails: (torrent: TorrentDto) -> Unit,
+    torrent: DebridTorrent?,
+    flow: Flow<PagingData<DebridTorrent>>,
+    loadDetails: (torrent: DebridTorrent) -> Unit,
     closeDetails: () -> Unit
 ) {
     val context = LocalContext.current
@@ -96,10 +97,10 @@ fun TorrentsScreen(
 private fun TorrentsScreen(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    flow: Flow<PagingData<TorrentDto>>,
+    flow: Flow<PagingData<DebridTorrent>>,
     query: String,
     onQueryChange: (String) -> Unit,
-    loadDetails: (torrent: TorrentDto) -> Unit
+    loadDetails: (torrent: DebridTorrent) -> Unit
 ) {
     val listState: LazyListState = rememberLazyListState()
     val lazyPagingItems = flow.collectAsLazyPagingItems()
@@ -159,9 +160,9 @@ private fun TorrentsScreen(
 
 @Composable
 private fun TorrentRow(
-    item: TorrentDto,
+    item: DebridTorrent,
     modifier: Modifier = Modifier,
-    loadDetails: (torrent: TorrentDto) -> Unit,
+    loadDetails: (torrent: DebridTorrent) -> Unit,
     highlight: MatchHighlight = MatchHighlight.NONE,
 ) {
     OutlinedCard(
@@ -192,20 +193,24 @@ private fun TorrentRow(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 val isDone = item.downloadFinished || item.progress >= 1.0
+                val needsFiles = item.needsFileSelection
                 val badgeContainerColor =
                     when {
+                        needsFiles -> MaterialTheme.colorScheme.tertiaryContainer
                         isDone -> MaterialTheme.colorScheme.primaryContainer
                         item.cached -> MaterialTheme.colorScheme.secondaryContainer
                         else -> MaterialTheme.colorScheme.surfaceVariant
                     }
                 val badgeContentColor =
                     when {
+                        needsFiles -> MaterialTheme.colorScheme.onTertiaryContainer
                         isDone -> MaterialTheme.colorScheme.onPrimaryContainer
                         item.cached -> MaterialTheme.colorScheme.onSecondaryContainer
                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 val badgeText =
                     when {
+                        needsFiles -> stringResource(R.string.file_selection_action_needed)
                         isDone -> stringResource(R.string.status_ready)
                         item.cached -> stringResource(R.string.cached)
                         item.downloadState.isNotBlank() -> item.downloadState.replaceFirstChar { it.uppercase() }
@@ -227,7 +232,7 @@ private fun TorrentRow(
             }
 
             // Slim progress bar for in-progress downloads
-            val isDownloading = !item.downloadFinished && item.progress < 1.0
+            val isDownloading = !item.downloadFinished && item.progress < 1.0 && !item.needsFileSelection
             if (isDownloading) {
                 LinearProgressIndicator(
                     progress = { item.progress.toFloat().coerceIn(0f, 1f) },
@@ -251,9 +256,9 @@ private fun TorrentRow(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    if (item.seeds > 0) {
+                    if ((item.seeds ?: 0) > 0) {
                         Text(
-                            text = " • " + stringResource(R.string.seeds_count, item.seeds),
+                            text = " • " + stringResource(R.string.seeds_count, item.seeds ?: 0),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import com.github.livingwithhippos.nullseek.NullRootUiState
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
+import com.github.livingwithhippos.nullseek.core.domain.ProviderKind
 import com.github.livingwithhippos.nullseek.ui.theme.FilledTonalButton
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
@@ -67,12 +68,14 @@ fun ProviderSetup(
     onBackupRestored: () -> Unit = {},
     viewModel: UserViewModel = koinViewModel(),
 ) {
-    val currentProvider = NetProvider.Torbox()
+    var selectedKind by rememberSaveable { mutableStateOf(ProviderKind.TORBOX) }
+    val currentProvider = remember(selectedKind) { NetProvider.of(selectedKind) }
     val context = LocalContext.current
 
     ProviderSetup(
         modifier = modifier,
         provider = currentProvider,
+        onProviderChange = { selectedKind = it },
         loading = uiState.loading,
         error = uiState.error,
         checkValidToken = checkValidToken,
@@ -86,6 +89,7 @@ fun ProviderSetup(
 fun ProviderSetup(
     modifier: Modifier = Modifier,
     provider: NetProvider,
+    onProviderChange: (ProviderKind) -> Unit = {},
     loading: Boolean,
     error: String?,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
@@ -168,11 +172,14 @@ fun ProviderSetup(
     ProviderSetupContent(
         modifier = modifier,
         provider = provider,
+        onProviderChange = onProviderChange,
         loading = loading,
         error = error,
         checkValidToken = checkValidToken,
         onSignUpClick = {
-            if (referralPreference == null) {
+            if (!provider.hasReferral) {
+                openWebPage(context, provider.home)
+            } else if (referralPreference == null) {
                 showReferralDialog = true
             } else {
                 val targetUrl =
@@ -199,6 +206,7 @@ fun ProviderSetup(
 fun ProviderSetupContent(
     modifier: Modifier = Modifier,
     provider: NetProvider,
+    onProviderChange: (ProviderKind) -> Unit = {},
     loading: Boolean,
     error: String?,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
@@ -230,12 +238,14 @@ fun ProviderSetupContent(
             // Card 1: Onboarding & Sign-Up Guidance Card
             ProviderOnboardingCard(
                 provider = provider,
+                onProviderChange = onProviderChange,
                 onSignUpClick = onSignUpClick,
                 enabled = !isRestoringBackup,
             )
 
             // Card 2: API Token Configuration Card
             ProviderTokenConfigCard(
+                provider = provider,
                 token = token,
                 onTokenChange = { token = it },
                 loading = loading,
@@ -282,6 +292,7 @@ fun ProviderSetupContent(
 @Composable
 private fun ProviderOnboardingCard(
     provider: NetProvider,
+    onProviderChange: (ProviderKind) -> Unit,
     onSignUpClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -300,21 +311,27 @@ private fun ProviderOnboardingCard(
             )
 
             Text(
-                text = stringResource(id = R.string.setup_provider_description),
+                text = stringResource(id = R.string.setup_provider_description_generic),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            ProviderKindSelector(
+                selected = provider.kind,
+                onSelect = onProviderChange,
+                enabled = enabled,
             )
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
             Text(
-                text = stringResource(id = R.string.setup_signup_title),
+                text = stringResource(id = R.string.setup_signup_title_provider, provider.name),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
             )
 
             Text(
-                text = stringResource(id = R.string.setup_signup_description),
+                text = stringResource(id = R.string.setup_signup_description_provider, provider.name),
                 style = MaterialTheme.typography.bodyMedium,
             )
 
@@ -329,7 +346,7 @@ private fun ProviderOnboardingCard(
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.setup_signup_button))
+                Text(text = stringResource(id = R.string.setup_signup_button_provider, provider.name))
             }
         }
     }
@@ -338,6 +355,7 @@ private fun ProviderOnboardingCard(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ProviderTokenConfigCard(
+    provider: NetProvider,
     token: String,
     onTokenChange: (String) -> Unit,
     loading: Boolean,
@@ -361,7 +379,7 @@ private fun ProviderTokenConfigCard(
             )
 
             Text(
-                text = stringResource(id = R.string.setup_key_description),
+                text = stringResource(id = R.string.setup_key_description_provider, provider.name),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -377,7 +395,7 @@ private fun ProviderTokenConfigCard(
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(id = R.string.setup_get_key_button))
+                Text(text = stringResource(id = R.string.setup_get_key_button_provider, provider.name))
             }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

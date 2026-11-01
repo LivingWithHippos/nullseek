@@ -10,6 +10,8 @@ import com.github.livingwithhippos.nullseek.core.data.stremio.AddonSearchHelper
 import com.github.livingwithhippos.nullseek.core.data.stremio.ImdbTitleResult
 import com.github.livingwithhippos.nullseek.core.data.stremio.ImdbUtils
 import com.github.livingwithhippos.nullseek.core.data.stremio.SeriesEpisodeItem
+import com.github.livingwithhippos.nullseek.core.domain.DebridResult
+import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
 import com.github.livingwithhippos.nullseek.data.model.Indexer
@@ -23,7 +25,6 @@ import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
-import com.github.livingwithhippos.torbox.network.ApiResult
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -260,6 +261,7 @@ class SearchViewModel(
     private val externalServicesRepository: ExternalServicesRepository,
     private val cacheChecker: CacheChecker,
     private val imdbFavouriteDao: ImdbFavouriteDao,
+    private val debridProvider: DebridServiceProvider,
 ) : ViewModel() {
     /** Starred IMDb titles, newest first. */
     val favourites: StateFlow<List<ImdbTitleResult>> =
@@ -337,8 +339,13 @@ class SearchViewModel(
 
     private val progress = MutableStateFlow(SearchProgress())
 
+    // only providers with a cache lookup (TorBox) can mark the cached results
     private val checkCache: StateFlow<Boolean> =
-        preferencesRepository.searchCheckCache.stateIn(viewModelScope, SharingStarted.Eagerly, true)
+        combine(
+            preferencesRepository.searchCheckCache,
+            debridProvider.active.map { it?.capabilities?.cacheCheck == true },
+        ) { enabled, supported -> enabled && supported }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** Whether the IMDb details card starts expanded. */
     val imdbDetailsExpanded: StateFlow<Boolean> =
@@ -346,6 +353,16 @@ class SearchViewModel(
 
     // Torrent hashes TorBox reported as cached; empty while the check is turned off.
     private val cachedHashes = MutableStateFlow<Set<String>>(emptySet())
+
+    init {
+        // the cached answers belong to the previous provider
+        debridProvider.active
+            .map { it?.kind }
+            .distinctUntilChanged()
+            .onEach { cachedHashes.value = emptySet() }
+            .launchIn(viewModelScope)
+    }
+
     private val visibleCachedHashes =
         combine(cachedHashes, checkCache) { cached, enabled -> if (enabled) cached else emptySet() }
     private val stremioState = MutableStateFlow(StremioSearchState())
@@ -778,9 +795,9 @@ class SearchViewModel(
         if (!_addingDownload.compareAndSet(expect = false, update = true)) return
         viewModelScope.launch {
             val seeding = preferencesRepository.getDefaultSeedingOption().apiValue
-            val result = runCatching { downloadCreator.createFromLink(link, seedingOption = seeding) }.getOrNull()
+            val result = runCatching { downloadCreator.createFromLink(link, seedingOption = seeding, autoSelectAll = true) }.getOrNull()
             _addingDownload.value = false
-            _downloadEvents.tryEmit(result != null && result !is ApiResult.Failure)
+            _downloadEvents.tryEmit(result is DebridResult.Ok)
         }
     }
 

@@ -96,8 +96,8 @@ import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
 import com.github.livingwithhippos.nullseek.utils.wholeDownloadIsZipped
-import com.github.livingwithhippos.torbox.model.WebDownloadDto
-import com.github.livingwithhippos.torbox.model.WebDownloadFileDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
+import com.github.livingwithhippos.nullseek.core.domain.DebridFile
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -106,7 +106,7 @@ fun WebDownloadDetailScreen(
     modifier: Modifier = Modifier,
     contentType: NullContentType,
     navigationType: NullNavigationType,
-    webDownload: WebDownloadDto,
+    webDownload: DebridDownload,
     closeDetails: () -> Unit,
     viewModel: WebDownloadDetailViewModel = koinViewModel(),
 ) {
@@ -122,7 +122,10 @@ fun WebDownloadDetailScreen(
     val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
-    val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
+    val savedZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
+    val capabilities by viewModel.capabilities.collectAsStateWithLifecycle()
+    // providers without zips always give plain links
+    val downloadZipMode = if (capabilities.zipDownloads) savedZipMode else DownloadZipMode.UNCOMPRESSED
     val currentItem = uiState.webDownload ?: webDownload
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -179,7 +182,7 @@ fun WebDownloadDetailScreen(
 private fun WebDownloadDetailScreen(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    item: WebDownloadDto,
+    item: DebridDownload,
     uiState: WebDownloadDetailUiState,
     defaultPlayer: ExternalService?,
     mediaPlayers: List<ExternalService>,
@@ -341,7 +344,7 @@ private fun WebDownloadDetailScreen(
     }
 }
 
-private fun WebDownloadDto.toOverviewInfo() =
+private fun DebridDownload.toOverviewInfo() =
     OverviewInfo(
         titleRes = R.string.web_overview,
         name = name,
@@ -357,7 +360,7 @@ private fun WebDownloadDto.toOverviewInfo() =
 
 @Composable
 private fun WebTransferProgressCard(
-    item: WebDownloadDto,
+    item: DebridDownload,
     modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
@@ -431,8 +434,8 @@ private fun WebTransferProgressCard(
                     text =
                         if (item.downloadFinished || item.progress >= 1.0) {
                             stringResource(R.string.finished)
-                        } else if (item.eta > 0) {
-                            stringResource(R.string.eta_seconds, item.eta)
+                        } else if ((item.eta ?: 0) > 0) {
+                            stringResource(R.string.eta_seconds, item.eta ?: 0)
                         } else {
                             "—"
                         },
@@ -660,7 +663,7 @@ private fun WebDownloadLinkCard(
 
 @Composable
 private fun WebActionsCard(
-    item: WebDownloadDto,
+    item: DebridDownload,
     uiState: WebDownloadDetailUiState,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
@@ -799,15 +802,15 @@ private fun formatFileNameDisplay(fullName: String, shortName: String): String {
     return if (rawName.length > 90) "…${rawName.takeLast(85)}" else rawName
 }
 
-private fun WebDownloadFileDto.isVideo(): Boolean = isVideoFile(name, mimetype)
+private fun DebridFile.isVideo(): Boolean = isVideoFile(name, mimetype)
 
-private fun WebDownloadFileDto.isAudio(): Boolean = isAudioFile(name, mimetype)
+private fun DebridFile.isAudio(): Boolean = isAudioFile(name, mimetype)
 
-private fun WebDownloadFileDto.isSubtitle(): Boolean = isSubtitleFile(name)
+private fun DebridFile.isSubtitle(): Boolean = isSubtitleFile(name)
 
 @Composable
 private fun WebFilesCard(
-    files: List<WebDownloadFileDto>,
+    files: List<DebridFile>,
     isCached: Boolean,
     filterVideo: Boolean,
     onFilterVideoChange: (Boolean) -> Unit,

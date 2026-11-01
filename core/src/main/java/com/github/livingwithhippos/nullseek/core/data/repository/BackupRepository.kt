@@ -16,7 +16,7 @@ import com.github.livingwithhippos.nullseek.core.data.database.model.ImdbFavouri
 import com.github.livingwithhippos.nullseek.core.data.database.model.IndexerEntity
 import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
 import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity
-import com.github.livingwithhippos.torbox.client.TorboxClient
+import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -270,7 +270,7 @@ class BackupRepositoryImpl(
     private val stremioAddonDao: StremioAddonDao,
     private val imdbFavouriteDao: ImdbFavouriteDao,
     private val dataStore: DataStore<Preferences>,
-    private val torboxClient: TorboxClient,
+    private val debridProvider: DebridServiceProvider,
 ) : BackupRepository {
     private val zipModeKey = stringPreferencesKey("download_zip_mode")
     private val defaultSeedingKey = stringPreferencesKey("default_seeding_option")
@@ -363,8 +363,7 @@ class BackupRepositoryImpl(
 
             restorePreferences(backup.preferences)
 
-            val activeProvider = providerDao.getActive()
-            torboxClient.updateBearerToken(activeProvider?.token.orEmpty())
+            debridProvider.activate()
         }
 
     private suspend fun exportPreferences(): PreferencesBackup {

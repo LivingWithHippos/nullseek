@@ -64,9 +64,7 @@ import com.github.livingwithhippos.nullseek.utils.multiFileVideos
 import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
-import com.github.livingwithhippos.torbox.model.TorrentFileDto
-import com.github.livingwithhippos.torbox.model.UsenetDownloadFileDto
-import com.github.livingwithhippos.torbox.model.WebDownloadFileDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridFile
 
 /** A file of a torrent, web or usenet download, so a single file list works for all of them. */
 data class DetailFile(
@@ -96,11 +94,7 @@ data class DetailFile(
     val isSubtitle: Boolean get() = isSubtitleFile(name)
 }
 
-fun TorrentFileDto.toDetailFile() = DetailFile(id, name, shortName, size, mimetype)
-
-fun WebDownloadFileDto.toDetailFile() = DetailFile(id, name, shortName, size, mimetype)
-
-fun UsenetDownloadFileDto.toDetailFile() = DetailFile(id, name, shortName, size, mimetype)
+fun DebridFile.toDetailFile() = DetailFile(id, name, shortName, size, mimetype)
 
 /** Common fields shown at the top of a detail pane. */
 data class DetailOverview(
@@ -114,7 +108,7 @@ data class DetailOverview(
     val progress: Double,
     val downloadSpeed: Long,
     val uploadSpeed: Long? = null,
-    val eta: Int,
+    val eta: Int?,
     val seeds: Int? = null,
     val peers: Int? = null,
     val ratio: Double? = null,
@@ -348,7 +342,7 @@ private fun OverviewSection(overview: DetailOverview) {
             )
             InfoRow(stringResource(R.string.download_speed), formatSpeed(overview.downloadSpeed))
             overview.uploadSpeed?.let { InfoRow(stringResource(R.string.upload_speed), formatSpeed(it)) }
-            if (overview.eta > 0) InfoRow(stringResource(R.string.eta), formatEta(overview.eta))
+            overview.eta?.takeIf { it > 0 }?.let { InfoRow(stringResource(R.string.eta), formatEta(it)) }
         }
         if (overview.seeds != null && overview.peers != null) {
             InfoRow(stringResource(R.string.torrent_seeds_peers), "${overview.seeds} / ${overview.peers}")

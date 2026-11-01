@@ -1,5 +1,7 @@
 package com.github.livingwithhippos.nullseek.ui.newdownload
 
+import android.widget.Toast
+import com.github.livingwithhippos.nullseek.ui.utils.FileSelectionDialog
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -117,6 +119,7 @@ fun NewDownloadScreen(
     var allowZipped by rememberSaveable { mutableStateOf(true) }
 
     val uploadState by viewModel.uploadState.collectAsState()
+    val capabilities by viewModel.capabilities.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -124,6 +127,13 @@ fun NewDownloadScreen(
     LaunchedEffect(uploadState) {
         if (uploadState is UploadState.Finished) {
             val state = uploadState as UploadState.Finished
+            if (state.awaitingSelection > 0) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.uploads_awaiting_selection, state.awaitingSelection),
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
             if (state.failed == 0) {
                 viewModel.resetState()
                 onQueued(state.successful)
@@ -133,6 +143,18 @@ fun NewDownloadScreen(
                 snackbarHostState.showSnackbar(context.getString(R.string.queued_partial, state.successful, state.failed))
             }
         }
+    }
+
+    (uploadState as? UploadState.AwaitingSelection)?.let { state ->
+        FileSelectionDialog(
+            name = state.selection.name,
+            files = state.selection.files,
+            remaining = state.remaining,
+            onConfirm = viewModel::confirmSelection,
+            onLater = viewModel::skipSelection,
+            onSelectAllRemaining = viewModel::selectAllRemaining,
+            onDelete = viewModel::deleteSelection,
+        )
     }
 
     if (uploadState is UploadState.Finished && (uploadState as UploadState.Finished).failed > 0) {
@@ -212,9 +234,9 @@ fun NewDownloadScreen(
                                 )
                             }
                         },
-                        enabled = totalDownloads > 0 && uploadState !is UploadState.Uploading
+                        enabled = totalDownloads > 0 && !uploadState.isBusy
                     ) {
-                        if (uploadState is UploadState.Uploading) {
+                        if (uploadState.isBusy) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
                                 color = MaterialTheme.colorScheme.onPrimary,
@@ -290,10 +312,19 @@ fun NewDownloadScreen(
                 )
             }
 
+            if (uploadState is UploadState.ResolvingFiles) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.file_selection_resolving))
+                }
+            }
+
             HorizontalDivider()
 
-            // Advanced Settings Section
-            Column(modifier = Modifier.fillMaxWidth()) {
+            // Advanced Settings Section, only for providers with options
+            val hasOptions = capabilities.seedingOptions || capabilities.usenet || capabilities.allowZipOption
+            if (hasOptions) Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -322,7 +353,7 @@ fun NewDownloadScreen(
                         verticalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
                         // Seeding Settings
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (capabilities.seedingOptions) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 text = stringResource(id = R.string.seeding_settings),
                                 style = MaterialTheme.typography.titleSmall,
@@ -345,7 +376,7 @@ fun NewDownloadScreen(
                         }
 
                         // Usenet Post-Processing
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (capabilities.usenet) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 text = stringResource(id = R.string.usenet_post_processing),
                                 style = MaterialTheme.typography.titleSmall,
@@ -368,7 +399,7 @@ fun NewDownloadScreen(
                         }
 
                         // Allow Zipped Toggle
-                        Row(
+                        if (capabilities.allowZipOption) Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically

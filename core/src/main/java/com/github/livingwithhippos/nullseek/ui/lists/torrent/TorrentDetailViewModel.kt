@@ -3,7 +3,15 @@ package com.github.livingwithhippos.nullseek.ui.lists.torrent
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
+import com.github.livingwithhippos.nullseek.core.domain.DebridCapabilities
+import com.github.livingwithhippos.nullseek.core.domain.DebridError
+import com.github.livingwithhippos.nullseek.core.domain.DebridResult
+import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
+import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
+import com.github.livingwithhippos.nullseek.core.domain.ExportPayload
+import com.github.livingwithhippos.nullseek.core.domain.TorrentFullInfo
+import com.github.livingwithhippos.nullseek.core.domain.describe
+import com.github.livingwithhippos.nullseek.core.domain.selectionToRequest
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
@@ -14,17 +22,13 @@ import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
 import com.github.livingwithhippos.nullseek.utils.saveFileToPublicDownloads
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
-import com.github.livingwithhippos.torbox.client.TorboxClient
-import com.github.livingwithhippos.torbox.model.ExportResultDto
-import com.github.livingwithhippos.torbox.model.TorrentDto
-import com.github.livingwithhippos.torbox.model.TorrentInfoDto
-import com.github.livingwithhippos.torbox.network.ApiResult
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
@@ -52,14 +56,18 @@ sealed interface TorrentDetailEvent {
 }
 
 data class TorrentDetailUiState(
-    val torrent: TorrentDto? = null,
+    val torrent: DebridTorrent? = null,
+    /** the account the torrent belongs to, results for other accounts are dropped */
+    val accountId: Long? = null,
+    val isSelectingFiles: Boolean = false,
+    val isCopyingLinks: Boolean = false,
     val isRefreshing: Boolean = false,
     val isDownloading: Boolean = false,
     val isDeleting: Boolean = false,
     val downloadLinkResult: DownloadLinkResult? = null,
     val isExporting: Boolean = false,
     val isLoadingFullInfo: Boolean = false,
-    val fullInfo: TorrentInfoDto? = null,
+    val fullInfo: TorrentFullInfo? = null,
     val isFullInfoExpanded: Boolean = false,
     val showExportDialog: Boolean = false,
     val showDeleteConfirmDialog: Boolean = false,
@@ -68,8 +76,7 @@ data class TorrentDetailUiState(
 
 @KoinViewModel
 class TorrentDetailViewModel(
-    private val client: TorboxClient,
-    private val providerRepository: NullProviderRepository,
+    private val debridProvider: DebridServiceProvider,
     private val preferencesRepository: PreferencesRepository,
     private val externalServicesRepository: ExternalServicesRepository,
 ) : ViewModel() {
@@ -78,6 +85,22 @@ class TorrentDetailViewModel(
 
     private val _events = MutableSharedFlow<TorrentDetailEvent>()
     val events = _events.asSharedFlow()
+
+    private val service get() = debridProvider.current
+
+    val capabilities: StateFlow<DebridCapabilities> =
+        debridProvider.active
+            .map { it?.capabilities ?: debridProvider.capabilities }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, debridProvider.capabilities)
+
+    // unrestricted links are slow to make on Real-Debrid and count against the rate limit
+    private val linkCache = HashMap<Pair<String, Int?>, String>()
+
+    private fun isCurrentAccount(accountId: Long?): Boolean =
+        accountId ==
+            debridProvider.active.value
+                ?.provider
+                ?.id
 
     val defaultMediaPlayer: StateFlow<ExternalService?> =
         externalServicesRepository.defaultMediaPlayer.stateIn(
@@ -133,28 +156,38 @@ class TorrentDetailViewModel(
         }
     }
 
-    fun init(item: TorrentDto) {
-        if (_uiState.value.torrent?.id != item.id) {
+    fun init(item: DebridTorrent) {
+        if (_uiState.value.torrent?.id != item.id || _uiState.value.torrent?.provider != item.provider) {
+            linkCache.clear()
             _uiState.value =
                 TorrentDetailUiState(
                     torrent = item,
+                    accountId =
+                        debridProvider.active.value
+                            ?.provider
+                            ?.id,
                 )
+            // the Real-Debrid list has no files
+            if (!item.filesLoaded) refreshTorrent(silent = true)
         }
     }
 
-    fun refreshTorrent() {
+    fun refreshTorrent(silent: Boolean = false) {
         val current = _uiState.value.torrent ?: return
+        val accountId = _uiState.value.accountId
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRefreshing = true)
-            val response = client.torrent.get(bypassCache = true, id = current.id)
-            if (response is ApiResult.Success && response.value.data != null) {
-                val updated = response.value.data!!
+            val response = service.torrent(current.id)
+            if (!isCurrentAccount(accountId)) return@launch
+            if (response is DebridResult.Ok) {
+                val updated = response.value
+                if (updated.hosterLinks != current.hosterLinks) linkCache.clear()
                 _uiState.value =
                     _uiState.value.copy(
                         torrent = updated,
                         isRefreshing = false,
                     )
-                _events.emit(TorrentDetailEvent.ShowMessage("Torrent info refreshed"))
+                if (!silent) _events.emit(TorrentDetailEvent.ShowMessage("Torrent info refreshed"))
             } else {
                 _uiState.value = _uiState.value.copy(isRefreshing = false)
                 _events.emit(TorrentDetailEvent.ShowMessage("Failed to refresh torrent info"))
@@ -169,12 +202,16 @@ class TorrentDetailViewModel(
         val torrent = _uiState.value.torrent ?: return
         if (!torrent.cached) {
             viewModelScope.launch {
-                _events.emit(TorrentDetailEvent.ShowMessage("Download is only available for cached torrents"))
+                _events.emit(TorrentDetailEvent.ShowMessage("Download is only available for ready torrents"))
             }
             return
         }
 
         viewModelScope.launch {
+            if (!service.capabilities.zipDownloads) {
+                requestDownloadLink(fileId = fileId, fileName = fileName, zipLink = false)
+                return@launch
+            }
             when (val mode = preferencesRepository.getDownloadZipMode()) {
                 DownloadZipMode.ASK -> {
                     _uiState.value =
@@ -269,35 +306,29 @@ class TorrentDetailViewModel(
         val torrent = _uiState.value.torrent ?: return
         if (!torrent.cached) {
             viewModelScope.launch {
-                _events.emit(TorrentDetailEvent.ShowMessage("Download is only available for cached torrents"))
+                _events.emit(TorrentDetailEvent.ShowMessage("Download is only available for ready torrents"))
             }
             return
         }
 
+        val accountId = _uiState.value.accountId
+        val zip = zipLink && service.capabilities.zipDownloads
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isDownloading = true)
-            val activeProvider = providerRepository.getActive()
-            val token = activeProvider?.token
-            if (token.isNullOrBlank()) {
-                _uiState.value = _uiState.value.copy(isDownloading = false)
-                _events.emit(TorrentDetailEvent.ShowMessage("No active provider token found"))
-                return@launch
-            }
-
+            val cacheKey = torrent.id to fileId
             val response =
-                client.torrent.downloadLink(
-                    token = token,
-                    torrentId = torrent.id,
-                    fileId = fileId,
-                    zipLink = zipLink,
-                )
+                linkCache[cacheKey]?.takeIf { !zip }?.let { DebridResult.Ok(it) }
+                    ?: service.torrentDownloadLink(torrent = torrent, fileId = fileId, zip = zip)
             _uiState.value = _uiState.value.copy(isDownloading = false)
+            if (!isCurrentAccount(accountId)) return@launch
 
-            if (response is ApiResult.Success && response.value.data != null) {
-                val url = response.value.data!!
+            if (response is DebridResult.Ok) {
+                val url = response.value
+                if (!zip) linkCache[cacheKey] = url
                 val baseName = fileName ?: torrent.name
-                val files = torrent.files.orEmpty()
-                val isZipped = zipLink || (fileId == null && files.size > 1)
+                val files = torrent.files.filter { it.selected }
+                // without zip support a whole multi file download is a single archive made by the provider
+                val isZipped = zip || (fileId == null && files.size > 1 && service.capabilities.zipDownloads)
                 val target =
                     when {
                         fileId != null -> files.firstOrNull { it.id == fileId }
@@ -326,9 +357,90 @@ class TorrentDetailViewModel(
                         downloadLinkResult =
                             DownloadLinkResult(url = url, title = title, isZipped = isZipped, fileType = fileType),
                     )
-            } else {
-                _events.emit(TorrentDetailEvent.ShowMessage("Failed to generate download link"))
+            } else if (response is DebridResult.Err) {
+                _events.emit(
+                    TorrentDetailEvent.ShowMessage(
+                        if (response.error == DebridError.Unsupported) {
+                            "Pick a single file, this provider can't zip the whole download"
+                        } else {
+                            response.error.describe("Failed to generate download link")
+                        },
+                    ),
+                )
             }
+        }
+    }
+
+    /**
+     * Picks the files to download on providers that need it (Real-Debrid).
+     * @param fileIds the chosen files, every file when null
+     */
+    fun selectFiles(fileIds: Set<Int>?) {
+        val torrent = _uiState.value.torrent ?: return
+        val request = fileIds?.let { selectionToRequest(torrent.files.map { it.id }, it) }
+        if (fileIds != null && fileIds.isEmpty()) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSelectingFiles = true)
+            val result = service.selectFiles(torrent.id, request)
+            _uiState.value = _uiState.value.copy(isSelectingFiles = false)
+            when (result) {
+                is DebridResult.Ok -> {
+                    _events.emit(TorrentDetailEvent.ShowMessage("Files selected, the download is starting"))
+                    refreshTorrent(silent = true)
+                }
+
+                is DebridResult.Err -> {
+                    _events.emit(TorrentDetailEvent.ShowMessage(result.error.describe("Failed to select the files")))
+                }
+            }
+        }
+    }
+
+    /** Unrestricts the link of every selected file, one at a time, and copies them to the clipboard. */
+    fun copyAllLinks(context: Context) {
+        val torrent = _uiState.value.torrent ?: return
+        if (!torrent.cached) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isCopyingLinks = true)
+            val loaded =
+                if (torrent.filesLoaded) {
+                    torrent
+                } else {
+                    (service.torrent(torrent.id) as? DebridResult.Ok)?.value ?: torrent
+                }
+            val targets = loaded.files.filter { it.selected }
+            val links = mutableListOf<String>()
+            var failures = 0
+            val ids: List<Int?> = if (loaded.hosterLinks.size == 1) listOf(null) else targets.map { it.id }
+            for (id in ids) {
+                val key = loaded.id to id
+                val result =
+                    linkCache[key]?.let { DebridResult.Ok(it) }
+                        ?: service.torrentDownloadLink(loaded, id, zip = false)
+                when (result) {
+                    is DebridResult.Ok -> {
+                        linkCache[key] = result.value
+                        links.add(result.value)
+                    }
+
+                    is DebridResult.Err -> {
+                        failures++
+                    }
+                }
+            }
+            _uiState.value = _uiState.value.copy(isCopyingLinks = false)
+            if (links.isNotEmpty()) {
+                setClipboardText(context, links.joinToString("\n"))
+            }
+            _events.emit(
+                TorrentDetailEvent.ShowMessage(
+                    when {
+                        links.isEmpty() -> "Failed to generate the links"
+                        failures > 0 -> "Copied ${links.size} links, $failures failed"
+                        else -> "Copied ${links.size} links to the clipboard"
+                    },
+                ),
+            )
         }
     }
 
@@ -344,17 +456,17 @@ class TorrentDetailViewModel(
         val torrent = _uiState.value.torrent ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isExporting = true, showExportDialog = false)
-            val response = client.torrent.export(torrentId = torrent.id, type = "magnet")
+            val response = service.exportTorrent(torrent.id, asMagnet = true)
             _uiState.value = _uiState.value.copy(isExporting = false)
 
-            if (response is ApiResult.Success) {
+            if (response is DebridResult.Ok) {
                 when (val result = response.value) {
-                    is ExportResultDto.Magnet -> {
+                    is ExportPayload.Magnet -> {
                         setClipboardText(context, result.magnet)
                         _events.emit(TorrentDetailEvent.ShowMessage("Magnet link copied to clipboard"))
                     }
 
-                    is ExportResultDto.Torrent -> {
+                    is ExportPayload.TorrentFile -> {
                         _events.emit(TorrentDetailEvent.ShowMessage("Unexpected export response"))
                     }
                 }
@@ -368,12 +480,12 @@ class TorrentDetailViewModel(
         val torrent = _uiState.value.torrent ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isExporting = true, showExportDialog = false)
-            val response = client.torrent.export(torrentId = torrent.id, type = "file")
+            val response = service.exportTorrent(torrent.id, asMagnet = false)
             _uiState.value = _uiState.value.copy(isExporting = false)
 
-            if (response is ApiResult.Success) {
+            if (response is DebridResult.Ok) {
                 when (val result = response.value) {
-                    is ExportResultDto.Torrent -> {
+                    is ExportPayload.TorrentFile -> {
                         val fileName =
                             if (torrent.name.endsWith(".torrent", ignoreCase = true)) {
                                 torrent.name
@@ -393,7 +505,7 @@ class TorrentDetailViewModel(
                         }
                     }
 
-                    is ExportResultDto.Magnet -> {
+                    is ExportPayload.Magnet -> {
                         _events.emit(TorrentDetailEvent.ShowMessage("Unexpected export response"))
                     }
                 }
@@ -415,28 +527,17 @@ class TorrentDetailViewModel(
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoadingFullInfo = true)
-            val response = client.torrent.fullInfo(hash = torrent.hash, cacheLookup = true)
-            if (response is ApiResult.Success && response.value.data != null) {
+            val response = service.torrentFullInfo(torrent.hash)
+            if (response is DebridResult.Ok) {
                 _uiState.value =
                     _uiState.value.copy(
                         isLoadingFullInfo = false,
-                        fullInfo = response.value.data,
+                        fullInfo = response.value,
                         isFullInfoExpanded = true,
                     )
             } else {
-                // Fallback to info(hash)
-                val fallbackResponse = client.torrent.info(hash = torrent.hash, cacheLookup = true)
-                if (fallbackResponse is ApiResult.Success && fallbackResponse.value.data != null) {
-                    _uiState.value =
-                        _uiState.value.copy(
-                            isLoadingFullInfo = false,
-                            fullInfo = fallbackResponse.value.data,
-                            isFullInfoExpanded = true,
-                        )
-                } else {
-                    _uiState.value = _uiState.value.copy(isLoadingFullInfo = false)
-                    _events.emit(TorrentDetailEvent.ShowMessage("Failed to load full info"))
-                }
+                _uiState.value = _uiState.value.copy(isLoadingFullInfo = false)
+                _events.emit(TorrentDetailEvent.ShowMessage("Failed to load full info"))
             }
         }
     }
@@ -456,8 +557,8 @@ class TorrentDetailViewModel(
         val torrent = _uiState.value.torrent ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isDeleting = true, showDeleteConfirmDialog = false)
-            val response = client.torrent.control(torrentId = torrent.id, operation = "Delete")
-            if (response is ApiResult.Success) {
+            val response = service.deleteTorrent(torrent.id)
+            if (response is DebridResult.Ok) {
                 _events.emit(TorrentDetailEvent.ShowMessage("Torrent deleted"))
                 _events.emit(TorrentDetailEvent.Deleted)
             } else {

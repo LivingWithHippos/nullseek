@@ -1,5 +1,10 @@
 package com.github.livingwithhippos.nullseek.core.utils
 
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
+import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
+import com.github.livingwithhippos.nullseek.core.domain.UserProfile
+import com.github.livingwithhippos.nullseek.core.domain.torbox.toDomain
+import com.github.livingwithhippos.nullseek.core.domain.torbox.toProfile
 import com.github.livingwithhippos.torbox.model.TorrentDto
 import com.github.livingwithhippos.torbox.model.TorrentFileDto
 import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
@@ -8,7 +13,7 @@ import com.github.livingwithhippos.torbox.model.UserDataDto
 import com.github.livingwithhippos.torbox.model.WebDownloadDto
 import com.github.livingwithhippos.torbox.model.WebDownloadFileDto
 
-val mockUser = UserDataDto(
+private val mockUserDto = UserDataDto(
     id = 1,
     authId = "123",
     createdAt = "2026-05-22T10:53:44Z",
@@ -35,7 +40,7 @@ val mockUser = UserDataDto(
     purchasesReferred = 2,
 )
 
-val mockTorrents = listOf(
+private val mockTorrentDtos = listOf(
     TorrentDto(
         id = 75418987,
         authId = "123-456-789",
@@ -178,7 +183,7 @@ val mockTorrents = listOf(
     )
 )
 
-val mockWebDownload: WebDownloadDto = WebDownloadDto(
+private val mockWebDownloadDto: WebDownloadDto = WebDownloadDto(
     id = 101,
     createdAt = "2026-05-22T14:19:46Z",
     updatedAt = "2026-07-29T01:08:18Z",
@@ -224,7 +229,7 @@ val mockWebDownload: WebDownloadDto = WebDownloadDto(
     tags = listOf("test")
 )
 
-val mockUsenetDownload = UsenetDownloadDto(
+private val mockUsenetDownloadDto = UsenetDownloadDto(
     id = 123,
     createdAt = "2026-08-17T10:00:00Z",
     updatedAt = "2026-08-17T10:05:00Z",
@@ -285,3 +290,10 @@ val mockUsenetDownload = UsenetDownloadDto(
         "test",
     ),
 )
+val mockUser: UserProfile = mockUserDto.toProfile()
+
+val mockTorrents: List<DebridTorrent> = mockTorrentDtos.map { it.toDomain() }
+
+val mockWebDownload: DebridDownload = mockWebDownloadDto.toDomain()
+
+val mockUsenetDownload: DebridDownload = mockUsenetDownloadDto.toDomain()

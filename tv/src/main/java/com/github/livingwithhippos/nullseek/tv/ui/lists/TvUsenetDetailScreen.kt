@@ -16,12 +16,12 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.TvActionButton
 import com.github.livingwithhippos.nullseek.ui.lists.usenet.UsenetDetailEvent
 import com.github.livingwithhippos.nullseek.ui.lists.usenet.UsenetDetailViewModel
 import com.github.livingwithhippos.nullseek.utils.wholeDownloadIsZipped
-import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun TvUsenetDetailScreen(
-    item: UsenetDownloadDto,
+    item: DebridDownload,
     onClose: () -> Unit,
     isFullScreen: Boolean,
     onToggleFullScreen: () -> Unit,

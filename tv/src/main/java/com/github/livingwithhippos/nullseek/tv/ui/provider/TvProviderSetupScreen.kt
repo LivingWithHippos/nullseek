@@ -1,5 +1,7 @@
 package com.github.livingwithhippos.nullseek.tv.ui.provider
 
+import com.github.livingwithhippos.nullseek.core.domain.ProviderKind
+import com.github.livingwithhippos.nullseek.tv.ui.components.TvProviderKindChips
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -50,7 +53,8 @@ fun TvProviderSetupScreen(
     modifier: Modifier = Modifier,
     viewModel: UserViewModel = koinViewModel(),
 ) {
-    val provider = remember { NetProvider.Torbox() }
+    var kind by rememberSaveable { mutableStateOf(ProviderKind.TORBOX) }
+    val provider = remember(kind) { NetProvider.of(kind) }
     val context = LocalContext.current
     val messenger = LocalMessenger.current
     val scope = rememberCoroutineScope()
@@ -87,12 +91,13 @@ fun TvProviderSetupScreen(
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenHeader(
             title = stringResource(R.string.setup_title),
-            subtitle = stringResource(R.string.setup_provider_description),
+            subtitle = stringResource(R.string.setup_provider_description_generic),
         )
+        TvProviderKindChips(selected = kind, onSelect = { kind = it }, modifier = Modifier.padding(bottom = 24.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(24.dp), modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(24.dp)) {
                 SectionCard(title = stringResource(R.string.setup_key_title), icon = R.drawable.ic_settings) {
-                    Text(stringResource(R.string.setup_key_description), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.setup_key_description_provider, provider.name), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     TvTextField(
                         value = token,
                         onValueChange = { token = it },
@@ -119,7 +124,7 @@ fun TvProviderSetupScreen(
                         )
                     }
                     TvActionButton(
-                        text = stringResource(R.string.setup_get_key_button),
+                        text = stringResource(R.string.setup_get_key_button_provider, provider.name),
                         icon = R.drawable.ic_open_in_new,
                         enabled = !isRestoring,
                         onClick = { safeOpenUrl(context, provider.tokenLink) },
@@ -130,14 +135,14 @@ fun TvProviderSetupScreen(
             }
 
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                SectionCard(title = stringResource(R.string.setup_signup_title), icon = R.drawable.ic_contact_page) {
-                    Text(stringResource(R.string.setup_signup_description), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                SectionCard(title = stringResource(R.string.setup_signup_title_provider, provider.name), icon = R.drawable.ic_contact_page) {
+                    Text(stringResource(R.string.setup_signup_description_provider, provider.name), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     TvActionButton(
-                        text = stringResource(R.string.setup_signup_button),
+                        text = stringResource(R.string.setup_signup_button_provider, provider.name),
                         icon = R.drawable.ic_open_in_new,
                         enabled = !isRestoring,
                         onClick = {
-                            when (referralPreference) {
+                            when (referralPreference.takeIf { provider.hasReferral } ?: if (provider.hasReferral) null else false) {
                                 null -> showReferralDialog = true
                                 true -> safeOpenUrl(context, provider.referralLink)
                                 false -> safeOpenUrl(context, provider.home)

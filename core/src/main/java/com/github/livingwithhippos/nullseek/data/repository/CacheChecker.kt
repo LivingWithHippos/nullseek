@@ -1,9 +1,8 @@
 package com.github.livingwithhippos.nullseek.data.repository
 
-import com.github.livingwithhippos.torbox.client.TorboxClient
-import com.github.livingwithhippos.torbox.model.ApiResponseListDto
-import com.github.livingwithhippos.torbox.model.CacheDto
-import com.github.livingwithhippos.torbox.network.ApiResult
+import com.github.livingwithhippos.nullseek.core.domain.DebridResult
+import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
+import com.github.livingwithhippos.nullseek.core.domain.ProviderKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -12,11 +11,11 @@ import logcat.logcat
 import java.util.Locale
 
 /**
- * Asks TorBox which torrent hashes are cached, through the POST batch endpoint.
+ * Asks the active provider which torrent hashes are cached (TorBox only, through the POST batch endpoint).
  * Answers are kept for an hour, like TorBox does, so repeated searches don't ask again.
  */
 class CacheChecker(
-    private val client: TorboxClient,
+    private val debridProvider: DebridServiceProvider,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     private class Entry(
@@ -29,17 +28,24 @@ class CacheChecker(
         val mutex = Mutex()
     }
 
-    private val torrentStore = Store()
+    // one per provider, so answers don't leak across an account switch
+    private val torrentStores = ProviderKind.entries.associateWith { Store() }
 
-    /** The subset of [hashes] (lowercase hex info hashes) that is cached on TorBox. */
-    suspend fun cachedTorrents(hashes: Collection<String>): Set<String> =
-        cachedAmong(hashes, torrentStore, "torrent") { client.torrent.listAvailabilityBatch(it) }
+    /** true when the active provider can check the cache */
+    val isSupported: Boolean get() = debridProvider.capabilities.cacheCheck
+
+    /** The subset of [hashes] (lowercase hex info hashes) that is cached on the active provider. */
+    suspend fun cachedTorrents(hashes: Collection<String>): Set<String> {
+        val service = debridProvider.current
+        if (!service.capabilities.cacheCheck) return emptySet()
+        return cachedAmong(hashes, torrentStores.getValue(service.kind), "torrent") { service.cachedHashes(it) }
+    }
 
     private suspend fun cachedAmong(
         hashes: Collection<String>,
         store: Store,
         label: String,
-        request: suspend (List<String>) -> ApiResult<ApiResponseListDto<CacheDto>>,
+        request: suspend (List<String>) -> DebridResult<Set<String>>,
     ): Set<String> {
         val wanted = hashes.map { it.lowercase(Locale.ROOT) }.toSet()
         if (wanted.isEmpty()) return emptySet()
@@ -50,12 +56,8 @@ class CacheChecker(
             val missing = wanted.filter { hash -> cache[hash]?.let { time - it.checkedAt < CACHE_TTL_MS } != true }
             missing.chunked(BATCH_SIZE).forEach { chunk ->
                 when (val result = withContext(Dispatchers.IO) { request(chunk) }) {
-                    is ApiResult.Success -> {
-                        val cached =
-                            result.value.data
-                                .orEmpty()
-                                .map { it.hash.lowercase(Locale.ROOT) }
-                                .toSet()
+                    is DebridResult.Ok -> {
+                        val cached = result.value.map { it.lowercase(Locale.ROOT) }.toSet()
                         chunk.forEach { cache[it] = Entry(it in cached, time) }
                         logcat { "$label cache: ${chunk.count { it in cached }} of ${chunk.size} cached" }
                     }

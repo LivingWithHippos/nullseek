@@ -2,7 +2,11 @@ package com.github.livingwithhippos.nullseek.ui.lists.usenet
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
+import com.github.livingwithhippos.nullseek.core.domain.DebridCapabilities
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
+import com.github.livingwithhippos.nullseek.core.domain.DebridResult
+import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
+import com.github.livingwithhippos.nullseek.core.domain.describe
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
@@ -11,15 +15,13 @@ import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepositor
 import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
-import com.github.livingwithhippos.torbox.client.TorboxClient
-import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
-import com.github.livingwithhippos.torbox.network.ApiResult
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.KoinViewModel
@@ -47,7 +49,8 @@ sealed interface UsenetDetailEvent {
 }
 
 data class UsenetDetailUiState(
-    val usenet: UsenetDownloadDto? = null,
+    val usenet: DebridDownload? = null,
+    val accountId: Long? = null,
     val isRefreshing: Boolean = false,
     val isDownloading: Boolean = false,
     val isDeleting: Boolean = false,
@@ -58,8 +61,7 @@ data class UsenetDetailUiState(
 
 @KoinViewModel
 class UsenetDetailViewModel(
-    private val client: TorboxClient,
-    private val providerRepository: NullProviderRepository,
+    private val debridProvider: DebridServiceProvider,
     private val preferencesRepository: PreferencesRepository,
     private val externalServicesRepository: ExternalServicesRepository,
 ) : ViewModel() {
@@ -68,6 +70,19 @@ class UsenetDetailViewModel(
 
     private val _events = MutableSharedFlow<UsenetDetailEvent>()
     val events = _events.asSharedFlow()
+
+    private val service get() = debridProvider.current
+
+    val capabilities: StateFlow<DebridCapabilities> =
+        debridProvider.active
+            .map { it?.capabilities ?: debridProvider.capabilities }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, debridProvider.capabilities)
+
+    private fun isCurrentAccount(accountId: Long?): Boolean =
+        accountId ==
+            debridProvider.active.value
+                ?.provider
+                ?.id
 
     val defaultMediaPlayer: StateFlow<ExternalService?> =
         externalServicesRepository.defaultMediaPlayer.stateIn(
@@ -123,11 +138,15 @@ class UsenetDetailViewModel(
         }
     }
 
-    fun init(item: UsenetDownloadDto) {
+    fun init(item: DebridDownload) {
         if (_uiState.value.usenet?.id != item.id) {
             _uiState.value =
                 UsenetDetailUiState(
                     usenet = item,
+                    accountId =
+                        debridProvider.active.value
+                            ?.provider
+                            ?.id,
                 )
         }
     }
@@ -136,9 +155,9 @@ class UsenetDetailViewModel(
         val current = _uiState.value.usenet ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRefreshing = true)
-            val response = client.usenet.get(bypassCache = true, id = current.id)
-            if (response is ApiResult.Success && response.value.data != null) {
-                val updated = response.value.data!!
+            val response = service.usenet(current.id)
+            if (response is DebridResult.Ok) {
+                val updated = response.value
                 _uiState.value =
                     _uiState.value.copy(
                         usenet = updated,
@@ -165,6 +184,10 @@ class UsenetDetailViewModel(
         }
 
         viewModelScope.launch {
+            if (!service.capabilities.zipDownloads) {
+                requestDownloadLink(fileId = fileId, fileName = fileName, zipLink = false)
+                return@launch
+            }
             when (val mode = preferencesRepository.getDownloadZipMode()) {
                 DownloadZipMode.ASK -> {
                     _uiState.value =
@@ -264,30 +287,19 @@ class UsenetDetailViewModel(
             return
         }
 
+        val accountId = _uiState.value.accountId
+        val zip = zipLink && service.capabilities.zipDownloads
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isDownloading = true)
-            val activeProvider = providerRepository.getActive()
-            val token = activeProvider?.token
-            if (token.isNullOrBlank()) {
-                _uiState.value = _uiState.value.copy(isDownloading = false)
-                _events.emit(UsenetDetailEvent.ShowMessage("No active provider token found"))
-                return@launch
-            }
-
-            val response =
-                client.usenet.downloadLink(
-                    token = token,
-                    usenetId = item.id,
-                    fileId = fileId,
-                    zipLink = zipLink,
-                )
+            val response = service.usenetDownloadLink(download = item, fileId = fileId, zip = zip)
             _uiState.value = _uiState.value.copy(isDownloading = false)
+            if (!isCurrentAccount(accountId)) return@launch
 
-            if (response is ApiResult.Success && response.value.data != null) {
-                val url = response.value.data!!
+            if (response is DebridResult.Ok) {
+                val url = response.value
                 val baseName = fileName ?: item.name
-                val files = item.files.orEmpty()
-                val isZipped = zipLink || (fileId == null && files.size > 1)
+                val files = item.files
+                val isZipped = zip || (fileId == null && files.size > 1 && service.capabilities.zipDownloads)
                 val target =
                     when {
                         fileId != null -> files.firstOrNull { it.id == fileId }
@@ -316,8 +328,8 @@ class UsenetDetailViewModel(
                         downloadLinkResult =
                             DownloadLinkResult(url = url, title = title, isZipped = isZipped, fileType = fileType),
                     )
-            } else {
-                _events.emit(UsenetDetailEvent.ShowMessage("Failed to generate download link"))
+            } else if (response is DebridResult.Err) {
+                _events.emit(UsenetDetailEvent.ShowMessage(response.error.describe("Failed to generate download link")))
             }
         }
     }
@@ -334,8 +346,8 @@ class UsenetDetailViewModel(
         val item = _uiState.value.usenet ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isDeleting = true, showDeleteConfirmDialog = false)
-            val response = client.usenet.control(usenetId = item.id, operation = "Delete")
-            if (response is ApiResult.Success) {
+            val response = service.deleteUsenet(item.id)
+            if (response is DebridResult.Ok) {
                 _events.emit(UsenetDetailEvent.ShowMessage("Usenet download deleted"))
                 _events.emit(UsenetDetailEvent.Deleted)
             } else {

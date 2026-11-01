@@ -96,8 +96,8 @@ import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
 import com.github.livingwithhippos.nullseek.utils.wholeDownloadIsZipped
-import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
-import com.github.livingwithhippos.torbox.model.UsenetDownloadFileDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
+import com.github.livingwithhippos.nullseek.core.domain.DebridFile
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -106,7 +106,7 @@ fun UsenetDetailScreen(
     modifier: Modifier = Modifier,
     contentType: NullContentType,
     navigationType: NullNavigationType,
-    item: UsenetDownloadDto,
+    item: DebridDownload,
     closeDetails: () -> Unit,
     viewModel: UsenetDetailViewModel = koinViewModel(),
 ) {
@@ -179,7 +179,7 @@ fun UsenetDetailScreen(
 private fun UsenetDetailScreen(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    item: UsenetDownloadDto,
+    item: DebridDownload,
     uiState: UsenetDetailUiState,
     defaultPlayer: ExternalService? = null,
     mediaPlayers: List<ExternalService> = emptyList(),
@@ -341,7 +341,7 @@ private fun UsenetDetailScreen(
     }
 }
 
-private fun UsenetDownloadDto.toOverviewInfo() =
+private fun DebridDownload.toOverviewInfo() =
     OverviewInfo(
         titleRes = R.string.usenet_overview,
         name = name,
@@ -357,7 +357,7 @@ private fun UsenetDownloadDto.toOverviewInfo() =
 
 @Composable
 private fun UsenetTransferProgressCard(
-    item: UsenetDownloadDto,
+    item: DebridDownload,
     modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
@@ -431,8 +431,8 @@ private fun UsenetTransferProgressCard(
                     text =
                         if (item.downloadFinished || item.progress >= 1.0) {
                             stringResource(R.string.finished)
-                        } else if (item.eta > 0) {
-                            stringResource(R.string.eta_seconds, item.eta)
+                        } else if ((item.eta ?: 0) > 0) {
+                            stringResource(R.string.eta_seconds, item.eta ?: 0)
                         } else {
                             "—"
                         },
@@ -660,7 +660,7 @@ private fun UsenetDownloadLinkCard(
 
 @Composable
 private fun UsenetActionsCard(
-    item: UsenetDownloadDto,
+    item: DebridDownload,
     uiState: UsenetDetailUiState,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
@@ -799,15 +799,15 @@ private fun formatFileNameDisplay(fullName: String, shortName: String): String {
     return if (rawName.length > 90) "…${rawName.takeLast(85)}" else rawName
 }
 
-private fun UsenetDownloadFileDto.isVideo(): Boolean = isVideoFile(name, mimetype)
+private fun DebridFile.isVideo(): Boolean = isVideoFile(name, mimetype)
 
-private fun UsenetDownloadFileDto.isAudio(): Boolean = isAudioFile(name, mimetype)
+private fun DebridFile.isAudio(): Boolean = isAudioFile(name, mimetype)
 
-private fun UsenetDownloadFileDto.isSubtitle(): Boolean = isSubtitleFile(name)
+private fun DebridFile.isSubtitle(): Boolean = isSubtitleFile(name)
 
 @Composable
 private fun UsenetFilesCard(
-    files: List<UsenetDownloadFileDto>,
+    files: List<DebridFile>,
     isCached: Boolean,
     filterVideo: Boolean,
     onFilterVideoChange: (Boolean) -> Unit,

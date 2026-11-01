@@ -1,5 +1,7 @@
 package com.github.livingwithhippos.nullseek.tv.ui.providers
 
+import com.github.livingwithhippos.nullseek.core.domain.ProviderKind
+import com.github.livingwithhippos.nullseek.tv.ui.components.TvProviderKindChips
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -110,7 +112,8 @@ fun TvProvidersScreen(
     when (val current = dialog) {
         null -> {}
         ProviderDialog.Add -> {
-            var name by remember { mutableStateOf("") }
+            var kind by remember { mutableStateOf(ProviderKind.TORBOX) }
+            var name by remember { mutableStateOf(ProviderKind.TORBOX.displayName) }
             var token by remember { mutableStateOf("") }
             TvDialog(
                 title = stringResource(R.string.providers_add_title),
@@ -120,9 +123,16 @@ fun TvProvidersScreen(
                 },
                 confirmText = if (uiState.validating) stringResource(R.string.providers_validating) else stringResource(R.string.add),
                 confirmEnabled = name.isNotBlank() && token.isNotBlank() && !uiState.validating,
-                onConfirm = { viewModel.add(name, token) { added -> if (added) dialog = null } },
+                onConfirm = { viewModel.add(kind, name, token) { added -> if (added) dialog = null } },
                 dismissText = stringResource(R.string.cancel),
             ) {
+                TvProviderKindChips(
+                    selected = kind,
+                    onSelect = { newKind ->
+                        if (name.isBlank() || ProviderKind.entries.any { it.displayName == name }) name = newKind.displayName
+                        kind = newKind
+                    },
+                )
                 TvTextField(name, { name = it }, label = stringResource(R.string.providers_name_label))
                 TvTextField(
                     token,

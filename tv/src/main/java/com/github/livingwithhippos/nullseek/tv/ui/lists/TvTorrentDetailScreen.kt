@@ -1,5 +1,7 @@
 package com.github.livingwithhippos.nullseek.tv.ui.lists
 
+import com.github.livingwithhippos.nullseek.core.domain.needsFileSelection
+import com.github.livingwithhippos.nullseek.tv.ui.components.TvFileSelectionSection
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,12 +23,12 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.TvDialog
 import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentDetailEvent
 import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentDetailViewModel
 import com.github.livingwithhippos.nullseek.utils.wholeDownloadIsZipped
-import com.github.livingwithhippos.torbox.model.TorrentDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun TvTorrentDetailScreen(
-    item: TorrentDto,
+    item: DebridTorrent,
     onClose: () -> Unit,
     isFullScreen: Boolean,
     onToggleFullScreen: () -> Unit,
@@ -44,6 +46,7 @@ fun TvTorrentDetailScreen(
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
+    val capabilities by viewModel.capabilities.collectAsStateWithLifecycle()
     val torrent = uiState.torrent?.takeIf { it.id == item.id } ?: item
 
     LaunchedEffect(viewModel) {
@@ -85,35 +88,56 @@ fun TvTorrentDetailScreen(
         defaultPlayer = defaultPlayer,
         mediaPlayers = mediaPlayers,
         onPlayMedia = viewModel::playOnMedia,
-        files = torrent.files.map { it.toDetailFile() },
+        // only the picked files can be downloaded on Real-Debrid
+        files = if (torrent.needsFileSelection) emptyList() else torrent.files.filter { it.selected }.map { it.toDetailFile() },
         filterFilesFullPath = filterFilesFullPath,
         onDownloadFile = if (torrent.cached && !uiState.isDeleting) { file -> viewModel.startDownload(file.id, file.name) } else null,
         onDownloadDirect = if (torrent.cached && !uiState.isDeleting) { file -> viewModel.downloadDirect(file.id, file.name) } else null,
         isDownloading = uiState.isDownloading,
         actions = {
-            val isZip = wholeDownloadIsZipped(downloadZipMode, torrent.files, { it.name }, { it.mimetype })
-            TvActionButton(
-                text = stringResource(if (isZip) R.string.action_generate_zip else R.string.action_download),
-                icon = R.drawable.ic_download,
-                primary = true,
-                enabled = torrent.cached && !uiState.isDeleting,
-                loading = uiState.isDownloading,
-                onClick = { viewModel.startDownload() },
-            )
-            TvActionButton(
-                text = stringResource(R.string.action_export),
-                icon = R.drawable.ic_magnet,
-                loading = uiState.isExporting,
-                enabled = !uiState.isDeleting,
-                onClick = { viewModel.showExportDialog(true) },
-            )
-            TvActionButton(
-                text = stringResource(R.string.action_full_info),
-                icon = R.drawable.ic_info,
-                loading = uiState.isLoadingFullInfo,
-                enabled = !uiState.isDeleting,
-                onClick = viewModel::loadFullInfo,
-            )
+            val selectedFiles = torrent.files.filter { it.selected }
+            // without zips a whole download works only with a single link, otherwise copy every link
+            val wholeAsLinks = !capabilities.zipDownloads && selectedFiles.size > 1 && torrent.hosterLinks.size != 1
+            if (wholeAsLinks) {
+                TvActionButton(
+                    text = stringResource(R.string.copy_all_links),
+                    icon = R.drawable.ic_copy,
+                    primary = true,
+                    enabled = torrent.cached && !uiState.isDeleting,
+                    loading = uiState.isCopyingLinks,
+                    onClick = { viewModel.copyAllLinks(context) },
+                )
+            } else {
+                val isZip =
+                    capabilities.zipDownloads &&
+                        wholeDownloadIsZipped(downloadZipMode, torrent.files, { it.name }, { it.mimetype })
+                TvActionButton(
+                    text = stringResource(if (isZip) R.string.action_generate_zip else R.string.action_download),
+                    icon = R.drawable.ic_download,
+                    primary = true,
+                    enabled = torrent.cached && !uiState.isDeleting,
+                    loading = uiState.isDownloading,
+                    onClick = { viewModel.startDownload() },
+                )
+            }
+            if (capabilities.exportTorrent) {
+                TvActionButton(
+                    text = stringResource(R.string.action_export),
+                    icon = R.drawable.ic_magnet,
+                    loading = uiState.isExporting,
+                    enabled = !uiState.isDeleting,
+                    onClick = { viewModel.showExportDialog(true) },
+                )
+            }
+            if (capabilities.fullTorrentInfo) {
+                TvActionButton(
+                    text = stringResource(R.string.action_full_info),
+                    icon = R.drawable.ic_info,
+                    loading = uiState.isLoadingFullInfo,
+                    enabled = !uiState.isDeleting,
+                    onClick = viewModel::loadFullInfo,
+                )
+            }
             // nothing to refresh once the item is cached or fully downloaded
             if (!(torrent.cached || torrent.downloadFinished || torrent.progress >= 1.0)) {
                 TvActionButton(
@@ -121,7 +145,7 @@ fun TvTorrentDetailScreen(
                     icon = R.drawable.ic_refresh,
                     loading = uiState.isRefreshing,
                     enabled = !uiState.isDeleting,
-                    onClick = viewModel::refreshTorrent,
+                    onClick = { viewModel.refreshTorrent() },
                 )
             }
             TvActionButton(
@@ -132,7 +156,15 @@ fun TvTorrentDetailScreen(
             )
         },
         extraSections = {
-            if (!torrent.cached) {
+            if (torrent.needsFileSelection && torrent.files.isNotEmpty()) {
+                item {
+                    TvFileSelectionSection(
+                        files = torrent.files,
+                        isSelecting = uiState.isSelectingFiles,
+                        onConfirm = { viewModel.selectFiles(it) },
+                    )
+                }
+            } else if (!torrent.cached) {
                 item {
                     Text(
                         stringResource(R.string.download_not_cached_warning),
