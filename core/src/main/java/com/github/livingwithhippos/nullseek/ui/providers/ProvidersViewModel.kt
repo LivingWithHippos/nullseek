@@ -138,6 +138,40 @@ class ProvidersViewModel(
         }
     }
 
+    /**
+     * Renames an account and, when [token] is not blank, replaces its token after checking it.
+     * @param onDone called with true when the changes were saved
+     */
+    fun edit(
+        provider: NullProvider,
+        name: String,
+        token: String?,
+        onDone: (Boolean) -> Unit,
+    ) {
+        val cleanName = name.trim()
+        val cleanToken = token?.trim()?.takeIf { it.isNotEmpty() }
+        if (cleanName.isEmpty()) return
+        viewModelScope.launch {
+            if (cleanToken != null && !isTokenValid(ProviderKind.fromDbType(provider.type), cleanToken)) {
+                onDone(false)
+                return@launch
+            }
+            if (cleanName != provider.name) {
+                repository.updateName(provider.id, cleanName)
+            }
+            if (cleanToken != null) {
+                repository.updateToken(provider.id, cleanToken)
+                if (provider.active) {
+                    refreshActive()
+                }
+                _events.emit(ProvidersEvent.ShowMessage(R.string.providers_token_replaced))
+            } else {
+                _events.emit(ProvidersEvent.ShowMessage(R.string.providers_renamed, cleanName))
+            }
+            onDone(true)
+        }
+    }
+
     fun setDefault(provider: NullProvider) {
         viewModelScope.launch {
             repository.setActive(provider.id)

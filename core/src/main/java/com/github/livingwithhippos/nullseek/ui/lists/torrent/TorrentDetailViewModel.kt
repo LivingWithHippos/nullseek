@@ -3,6 +3,7 @@ package com.github.livingwithhippos.nullseek.ui.lists.torrent
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.livingwithhippos.nullseek.core.domain.ConversionOutcome
 import com.github.livingwithhippos.nullseek.core.domain.DebridCapabilities
 import com.github.livingwithhippos.nullseek.core.domain.DebridError
 import com.github.livingwithhippos.nullseek.core.domain.DebridResult
@@ -10,7 +11,10 @@ import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
 import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
 import com.github.livingwithhippos.nullseek.core.domain.ExportPayload
 import com.github.livingwithhippos.nullseek.core.domain.TorrentFullInfo
+import com.github.livingwithhippos.nullseek.core.domain.awaitConversion
 import com.github.livingwithhippos.nullseek.core.domain.describe
+import com.github.livingwithhippos.nullseek.core.domain.magnetFromHash
+import com.github.livingwithhippos.nullseek.core.domain.requeuePreselection
 import com.github.livingwithhippos.nullseek.core.domain.selectionToRequest
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
@@ -53,6 +57,23 @@ sealed interface TorrentDetailEvent {
     ) : TorrentDetailEvent
 
     data object Deleted : TorrentDetailEvent
+
+    /** a new torrent replaced this one in the details pane */
+    data class OpenTorrent(
+        val torrent: DebridTorrent,
+    ) : TorrentDetailEvent
+}
+
+/** Adding a torrent again to pick other files (Real-Debrid). */
+sealed interface RequeueState {
+    data object Converting : RequeueState
+
+    data class Picking(
+        val newTorrent: DebridTorrent,
+        val preselected: Set<Int>,
+    ) : RequeueState
+
+    data object Selecting : RequeueState
 }
 
 data class TorrentDetailUiState(
@@ -60,6 +81,7 @@ data class TorrentDetailUiState(
     /** the account the torrent belongs to, results for other accounts are dropped */
     val accountId: Long? = null,
     val isSelectingFiles: Boolean = false,
+    val requeue: RequeueState? = null,
     val isCopyingLinks: Boolean = false,
     val isRefreshing: Boolean = false,
     val isDownloading: Boolean = false,
@@ -551,6 +573,82 @@ class TorrentDetailViewModel(
 
     fun showDeleteConfirmDialog(show: Boolean) {
         _uiState.value = _uiState.value.copy(showDeleteConfirmDialog = show)
+    }
+
+    /** Adds the torrent again from its hash, to pick other files. The original torrent is kept. */
+    fun startRequeue() {
+        val torrent = _uiState.value.torrent ?: return
+        if (_uiState.value.requeue != null) return
+        val accountId = _uiState.value.accountId
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(requeue = RequeueState.Converting)
+            val added = service.addMagnet(magnetFromHash(torrent.hash))
+            if (!isCurrentAccount(accountId)) return@launch
+            if (added is DebridResult.Err) {
+                _uiState.value = _uiState.value.copy(requeue = null)
+                _events.emit(TorrentDetailEvent.ShowMessage(added.error.describe("Could not add the torrent again")))
+                return@launch
+            }
+            val newId = (added as DebridResult.Ok).value.id
+            when (val outcome = service.awaitConversion(newId)) {
+                is ConversionOutcome.NeedsSelection -> {
+                    _uiState.value =
+                        _uiState.value.copy(
+                            requeue = RequeueState.Picking(outcome.torrent, requeuePreselection(torrent, outcome.torrent)),
+                        )
+                }
+
+                is ConversionOutcome.Started -> {
+                    _uiState.value = _uiState.value.copy(requeue = null)
+                    _events.emit(TorrentDetailEvent.OpenTorrent(outcome.torrent))
+                }
+
+                is ConversionOutcome.Failed -> {
+                    _uiState.value = _uiState.value.copy(requeue = null)
+                    _events.emit(TorrentDetailEvent.ShowMessage("Could not add the torrent again: ${outcome.reason}"))
+                }
+
+                ConversionOutcome.TimedOut -> {
+                    _uiState.value = _uiState.value.copy(requeue = null)
+                    _events.emit(
+                        TorrentDetailEvent.ShowMessage("The torrent is still being read, pick its files from its page later"),
+                    )
+                }
+            }
+        }
+    }
+
+    fun confirmRequeue(fileIds: Set<Int>) {
+        val picking = _uiState.value.requeue as? RequeueState.Picking ?: return
+        if (fileIds.isEmpty()) return
+        val newTorrent = picking.newTorrent
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(requeue = RequeueState.Selecting)
+            val result = service.selectFiles(newTorrent.id, selectionToRequest(newTorrent.files.map { it.id }, fileIds))
+            when (result) {
+                is DebridResult.Ok -> {
+                    val refreshed = (service.torrent(newTorrent.id) as? DebridResult.Ok)?.value ?: newTorrent
+                    _uiState.value = _uiState.value.copy(requeue = null)
+                    _events.emit(TorrentDetailEvent.ShowMessage("New torrent added, the original one was kept"))
+                    _events.emit(TorrentDetailEvent.OpenTorrent(refreshed))
+                }
+
+                is DebridResult.Err -> {
+                    // let the user try again with the picker
+                    _uiState.value = _uiState.value.copy(requeue = picking)
+                    _events.emit(TorrentDetailEvent.ShowMessage(result.error.describe("Failed to select the files")))
+                }
+            }
+        }
+    }
+
+    /** Drops the torrent added for the new selection, so nothing is left waiting. */
+    fun cancelRequeue() {
+        val picking = _uiState.value.requeue as? RequeueState.Picking
+        _uiState.value = _uiState.value.copy(requeue = null)
+        if (picking != null) {
+            viewModelScope.launch { service.deleteTorrent(picking.newTorrent.id) }
+        }
     }
 
     fun deleteTorrent() {

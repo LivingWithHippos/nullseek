@@ -100,6 +100,7 @@ import com.github.livingwithhippos.nullseek.core.domain.DebridCapabilities
 import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
 import com.github.livingwithhippos.nullseek.core.domain.needsFileSelection
 import com.github.livingwithhippos.nullseek.ui.utils.FileSelectionCard
+import com.github.livingwithhippos.nullseek.ui.utils.FileSelectionDialog
 import com.github.livingwithhippos.nullseek.core.domain.DebridFile
 import com.github.livingwithhippos.nullseek.core.domain.TorrentFullInfo
 import java.util.Locale
@@ -113,6 +114,8 @@ fun TorrentDetailScreen(
     navigationType: NullNavigationType,
     item: DebridTorrent,
     closeDetails: () -> Unit,
+    // shows another torrent in this pane, e.g. the one added again with other files
+    onOpenTorrent: (DebridTorrent) -> Unit = {},
     viewModel: TorrentDetailViewModel = koinViewModel(),
 ) {
     BackHandler {
@@ -143,6 +146,10 @@ fun TorrentDetailScreen(
                 TorrentDetailEvent.Deleted -> {
                     closeDetails()
                 }
+
+                is TorrentDetailEvent.OpenTorrent -> {
+                    onOpenTorrent(event.torrent)
+                }
             }
         }
     }
@@ -160,6 +167,9 @@ fun TorrentDetailScreen(
                 capabilities = capabilities,
                 onSelectFiles = { viewModel.selectFiles(it) },
                 onCopyAllLinks = { context -> viewModel.copyAllLinks(context) },
+                onRequeue = { viewModel.startRequeue() },
+                onConfirmRequeue = { viewModel.confirmRequeue(it) },
+                onCancelRequeue = { viewModel.cancelRequeue() },
                 defaultPlayer = defaultPlayer,
                 mediaPlayers = mediaPlayers,
                 filterFilesFullPath = filterFilesFullPath,
@@ -201,6 +211,9 @@ private fun TorrentDetailScreen(
     capabilities: DebridCapabilities = DebridCapabilities.Torbox,
     onSelectFiles: (Set<Int>) -> Unit = {},
     onCopyAllLinks: (Context) -> Unit = {},
+    onRequeue: () -> Unit = {},
+    onConfirmRequeue: (Set<Int>) -> Unit = {},
+    onCancelRequeue: () -> Unit = {},
     defaultPlayer: ExternalService?,
     mediaPlayers: List<ExternalService>,
     filterFilesFullPath: Boolean = false,
@@ -302,6 +315,7 @@ private fun TorrentDetailScreen(
                 uiState = uiState,
                 capabilities = capabilities,
                 onCopyAllLinks = { onCopyAllLinks(context) },
+                onRequeue = onRequeue,
                 onRefresh = onRefresh,
                 onDownloadZip = onDownloadZip,
                 onDownloadDirect = onDownloadDirect,
@@ -326,7 +340,8 @@ private fun TorrentDetailScreen(
             if (downloadableFiles.isNotEmpty() && !item.needsFileSelection) {
                 TorrentFilesCard(
                     files = downloadableFiles,
-                    isCached = item.cached,
+                    // on Real-Debrid the files come together, the list is read-only
+                    isCached = item.cached && capabilities.perFileLinks,
                     filterVideo = filterVideo,
                     onFilterVideoChange = { filterVideo = it },
                     modifier = Modifier.bringIntoViewRequester(filesRequester),
@@ -338,6 +353,20 @@ private fun TorrentDetailScreen(
             // Bottom spacer for FAB
             Spacer(modifier = Modifier.height(88.dp))
         }
+    }
+
+    (uiState.requeue as? RequeueState.Picking)?.let { picking ->
+        FileSelectionDialog(
+            name = picking.newTorrent.name,
+            files = picking.newTorrent.files,
+            remaining = 0,
+            onConfirm = onConfirmRequeue,
+            onLater = onCancelRequeue,
+            onSelectAllRemaining = {},
+            onDelete = {},
+            initialSelected = picking.preselected,
+            showDelete = false,
+        )
     }
 
     uiState.pendingDownload?.let { pending ->
@@ -774,6 +803,7 @@ private fun TorrentActionsCard(
     uiState: TorrentDetailUiState,
     capabilities: DebridCapabilities,
     onCopyAllLinks: () -> Unit,
+    onRequeue: () -> Unit,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
     modifier: Modifier = Modifier,
@@ -851,7 +881,10 @@ private fun TorrentActionsCard(
             }
 
             // a full download with several files is zipped: offer the only video directly, or point to the file list
-            when (val videos = if (item.cached) multiFileVideos(selectedFiles, { it.name }, { it.mimetype }) else null) {
+            when (
+                val videos =
+                    if (item.cached && capabilities.perFileLinks) multiFileVideos(selectedFiles, { it.name }, { it.mimetype }) else null
+            ) {
                 is MultiFileVideos.Single -> {
                     val video = videos.file
                     SingleVideoShortcut(
@@ -934,6 +967,31 @@ private fun TorrentActionsCard(
                             stringResource(R.string.show_full_info)
                         },
                     )
+                }
+            }
+
+            // Real-Debrid can't change the files of a torrent, it is added again instead
+            if (capabilities.reselectFiles && !item.needsFileSelection) {
+                val requeueing = uiState.requeue != null
+                OutlinedButton(
+                    onClick = onRequeue,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !requeueing && !uiState.isDeleting,
+                ) {
+                    if (requeueing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_edit),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(id = R.string.requeue_choose_files))
                 }
             }
 

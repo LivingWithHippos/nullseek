@@ -235,6 +235,7 @@ fun TvListsScreen(
                                         closeDetail()
                                         torrents.refresh()
                                     },
+                                    onOpenTorrent = loadTorrentDetails,
                                 )
                             }
 

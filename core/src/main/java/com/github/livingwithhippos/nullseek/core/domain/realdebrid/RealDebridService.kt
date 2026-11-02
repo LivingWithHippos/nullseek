@@ -21,8 +21,20 @@ import com.github.livingwithhippos.realdebrid.model.UserDto
 import com.github.livingwithhippos.realdebrid.model.TorrentDto as RdTorrentDto
 import com.github.livingwithhippos.realdebrid.network.ApiResult as RdApiResult
 
-// Real-Debrid caps the page size at 100 when paging
-private const val MAX_PAGE_SIZE = 100
+// Real-Debrid accepts up to 5000 entries per page
+internal const val MAX_PAGE_SIZE = 5000
+
+/** The page size sent to Real-Debrid for the requested [limit]. */
+internal fun realDebridLimit(limit: Int): Int = limit.coerceIn(1, MAX_PAGE_SIZE)
+
+/**
+ * The Real-Debrid page (starting at 1) holding a 0-based app [offset].
+ * The app pages in steps of [limit], so the offset is always a multiple of it.
+ */
+internal fun realDebridPage(
+    offset: Int,
+    limit: Int,
+): Int = offset.coerceAtLeast(0) / realDebridLimit(limit) + 1
 
 class RealDebridService(
     private val client: RealDebridClient,
@@ -55,7 +67,7 @@ class RealDebridService(
         limit: Int,
         bypassCache: Boolean,
     ): DebridResult<Page<DebridTorrent>> =
-        call { client.torrents.list(offset = offset, limit = limit.coerceAtMost(MAX_PAGE_SIZE)) }
+        call { client.torrents.list(page = realDebridPage(offset, limit), limit = realDebridLimit(limit)) }
             .mapOk { page -> Page(page.items.map { it.toDomain(filesLoaded = false) }, page.totalCount) }
 
     override suspend fun torrent(id: String): DebridResult<DebridTorrent> =
@@ -115,7 +127,7 @@ class RealDebridService(
         limit: Int,
         bypassCache: Boolean,
     ): DebridResult<Page<DebridDownload>> =
-        call { client.downloads.list(offset = offset, limit = limit.coerceAtMost(MAX_PAGE_SIZE)) }
+        call { client.downloads.list(page = realDebridPage(offset, limit), limit = realDebridLimit(limit)) }
             .mapOk { page ->
                 val items = page.items.map { it.toDomain() }
                 synchronized(webCache) { items.forEach { webCache[it.id] = it } }
@@ -285,7 +297,8 @@ internal fun RdTorrentDto.toDomain(filesLoaded: Boolean): DebridTorrent {
         provider = ProviderKind.REAL_DEBRID,
         name = filename.ifBlank { originalFilename.orEmpty() },
         hash = hash,
-        size = if (bytes > 0) bytes else originalBytes ?: 0,
+        // the size of the selected files only
+        size = bytes,
         progress = (progress / 100.0).coerceIn(0.0, 1.0),
         status = domainStatus,
         downloadState = status.replace('_', ' '),

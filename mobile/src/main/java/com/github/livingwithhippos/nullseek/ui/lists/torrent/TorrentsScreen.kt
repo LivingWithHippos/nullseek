@@ -80,6 +80,7 @@ fun TorrentsScreen(
             navigationType = navigationType,
             item = torrent,
             closeDetails = closeDetails,
+            onOpenTorrent = loadDetails,
         )
     } else {
         TorrentsScreen(

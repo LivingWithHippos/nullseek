@@ -56,7 +56,7 @@ class ListsViewModel(
     ): Flow<PagingData<T>> =
         pagingKeys
             .flatMapLatest { (requestedSize, service) ->
-                val pageSize = requestedSize.coerceAtMost(service.capabilities.maxPageSize)
+                val pageSize = service.capabilities.maxPageSize?.let { requestedSize.coerceAtMost(it) } ?: requestedSize
                 Pager(
                     config =
                         PagingConfig(

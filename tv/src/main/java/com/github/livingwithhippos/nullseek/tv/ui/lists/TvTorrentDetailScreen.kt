@@ -20,6 +20,8 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.LocalMessenger
 import com.github.livingwithhippos.nullseek.tv.ui.components.SectionCard
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvActionButton
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvDialog
+import com.github.livingwithhippos.nullseek.tv.ui.components.TvFileSelectionDialog
+import com.github.livingwithhippos.nullseek.ui.lists.torrent.RequeueState
 import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentDetailEvent
 import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentDetailViewModel
 import com.github.livingwithhippos.nullseek.utils.wholeDownloadIsZipped
@@ -34,6 +36,8 @@ fun TvTorrentDetailScreen(
     onToggleFullScreen: () -> Unit,
     modifier: Modifier = Modifier,
     onDeleted: () -> Unit = onClose,
+    // shows another torrent in this pane, e.g. the one added again with other files
+    onOpenTorrent: (DebridTorrent) -> Unit = {},
     viewModel: TorrentDetailViewModel = koinViewModel(),
 ) {
     BackHandler(onBack = onClose)
@@ -54,6 +58,7 @@ fun TvTorrentDetailScreen(
             when (event) {
                 is TorrentDetailEvent.ShowMessage -> messenger.show(event.message)
                 TorrentDetailEvent.Deleted -> onDeleted()
+                is TorrentDetailEvent.OpenTorrent -> onOpenTorrent(event.torrent)
             }
         }
     }
@@ -91,8 +96,9 @@ fun TvTorrentDetailScreen(
         // only the picked files can be downloaded on Real-Debrid
         files = if (torrent.needsFileSelection) emptyList() else torrent.files.filter { it.selected }.map { it.toDetailFile() },
         filterFilesFullPath = filterFilesFullPath,
-        onDownloadFile = if (torrent.cached && !uiState.isDeleting) { file -> viewModel.startDownload(file.id, file.name) } else null,
-        onDownloadDirect = if (torrent.cached && !uiState.isDeleting) { file -> viewModel.downloadDirect(file.id, file.name) } else null,
+        // on Real-Debrid the files come together, the list is read-only
+        onDownloadFile = if (torrent.cached && capabilities.perFileLinks && !uiState.isDeleting) { file -> viewModel.startDownload(file.id, file.name) } else null,
+        onDownloadDirect = if (torrent.cached && capabilities.perFileLinks && !uiState.isDeleting) { file -> viewModel.downloadDirect(file.id, file.name) } else null,
         isDownloading = uiState.isDownloading,
         actions = {
             val selectedFiles = torrent.files.filter { it.selected }
@@ -139,6 +145,16 @@ fun TvTorrentDetailScreen(
                 )
             }
             // nothing to refresh once the item is cached or fully downloaded
+            // Real-Debrid can't change the files of a torrent, it is added again instead
+            if (capabilities.reselectFiles && !torrent.needsFileSelection) {
+                TvActionButton(
+                    text = stringResource(R.string.requeue_choose_files),
+                    icon = R.drawable.ic_edit,
+                    loading = uiState.requeue != null,
+                    enabled = uiState.requeue == null && !uiState.isDeleting,
+                    onClick = viewModel::startRequeue,
+                )
+            }
             if (!(torrent.cached || torrent.downloadFinished || torrent.progress >= 1.0)) {
                 TvActionButton(
                     text = stringResource(R.string.action_refresh),
@@ -187,6 +203,18 @@ fun TvTorrentDetailScreen(
             }
         },
     )
+
+    (uiState.requeue as? RequeueState.Picking)?.let { picking ->
+        TvFileSelectionDialog(
+            name = picking.newTorrent.name,
+            files = picking.newTorrent.files,
+            remaining = 0,
+            onConfirm = viewModel::confirmRequeue,
+            onLater = viewModel::cancelRequeue,
+            onSelectAllRemaining = {},
+            initialSelected = picking.preselected,
+        )
+    }
 
     uiState.pendingDownload?.let { pending ->
         DownloadZipDialog(

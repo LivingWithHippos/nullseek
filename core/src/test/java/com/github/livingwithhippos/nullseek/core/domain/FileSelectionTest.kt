@@ -61,6 +61,17 @@ class FileSelectionTest {
     )
 
     @Test
+    fun requeueKeepsThePreviousSelection() {
+        val old = torrentWith(DownloadStatus.READY).copy(files = listOf(file(1), file(2).copy(selected = false), file(3)))
+        val new = torrentWith(DownloadStatus.AWAITING_FILE_SELECTION).copy(files = listOf(file(1), file(2), file(3)))
+        assertEquals(setOf(1, 3), requeuePreselection(old, new))
+        // nothing in common: check everything
+        val other = new.copy(files = listOf(file(7), file(8)))
+        assertEquals(setOf(7, 8), requeuePreselection(old, other))
+        assertEquals("magnet:?xt=urn:btih:abc", magnetFromHash("abc"))
+    }
+
+    @Test
     fun selectionRequestUsesAllShortcut() {
         assertNull(selectionToRequest(listOf(1, 2, 3), setOf(3, 2, 1)))
         assertEquals(listOf(1, 3), selectionToRequest(listOf(1, 2, 3), setOf(3, 1)))

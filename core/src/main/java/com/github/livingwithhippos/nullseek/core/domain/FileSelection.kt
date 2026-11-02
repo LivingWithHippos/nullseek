@@ -82,3 +82,24 @@ fun selectionToRequest(
     allFileIds: Collection<Int>,
     selected: Collection<Int>,
 ): List<Int>? = if (selected.toSet().containsAll(allFileIds)) null else selected.sorted()
+
+/** a magnet link for a torrent hash, to add it again */
+fun magnetFromHash(hash: String): String = "magnet:?xt=urn:btih:$hash"
+
+/**
+ * The files of [newTorrent] to check in the picker when re-adding [oldTorrent]:
+ * the ones selected before, every file when none of them exist anymore.
+ */
+fun requeuePreselection(
+    oldTorrent: DebridTorrent,
+    newTorrent: DebridTorrent,
+): Set<Int> {
+    val newIds = newTorrent.files.map { it.id }.toSet()
+    val kept =
+        oldTorrent.files
+            .filter { it.selected }
+            .map { it.id }
+            .filter { it in newIds }
+            .toSet()
+    return kept.ifEmpty { newIds }
+}

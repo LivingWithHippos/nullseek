@@ -2,6 +2,7 @@ package com.github.livingwithhippos.nullseek.tv.ui.providers
 
 import com.github.livingwithhippos.nullseek.core.domain.ProviderKind
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvProviderKindChips
+import com.github.livingwithhippos.nullseek.tv.ui.components.TvTokenHelpers
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -145,6 +146,10 @@ fun TvProvidersScreen(
                     isError = uiState.tokenError,
                     supportingText = if (uiState.tokenError) stringResource(R.string.providers_invalid_token) else null,
                 )
+                TvTokenHelpers(kind = kind, onPaste = {
+                    token = it
+                    viewModel.clearError()
+                })
             }
         }
 
@@ -189,6 +194,10 @@ fun TvProvidersScreen(
                     isError = uiState.tokenError,
                     supportingText = if (uiState.tokenError) stringResource(R.string.providers_invalid_token) else null,
                 )
+                TvTokenHelpers(kind = ProviderKind.fromDbType(current.provider.type), onPaste = {
+                    token = it
+                    viewModel.clearError()
+                })
             }
         }
 

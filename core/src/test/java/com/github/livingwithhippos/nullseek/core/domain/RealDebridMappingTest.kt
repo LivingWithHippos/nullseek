@@ -1,6 +1,8 @@
 package com.github.livingwithhippos.nullseek.core.domain
 
 import com.github.livingwithhippos.nullseek.core.domain.realdebrid.hosterLinkFor
+import com.github.livingwithhippos.nullseek.core.domain.realdebrid.realDebridLimit
+import com.github.livingwithhippos.nullseek.core.domain.realdebrid.realDebridPage
 import com.github.livingwithhippos.nullseek.core.domain.realdebrid.realDebridStatus
 import com.github.livingwithhippos.nullseek.core.domain.realdebrid.toDebridError
 import com.github.livingwithhippos.nullseek.core.domain.realdebrid.toDomain
@@ -32,6 +34,23 @@ class RealDebridMappingTest {
         files = files,
         links = links,
     )
+
+    @Test
+    fun sizeIsTheSelectedBytes() {
+        val partial = torrent().copy(bytes = 40, originalBytes = 100)
+        assertEquals(40L, partial.toDomain(filesLoaded = true).size)
+    }
+
+    @Test
+    fun listPagesStartAtOne() {
+        assertEquals(1, realDebridPage(offset = 0, limit = 50))
+        assertEquals(2, realDebridPage(offset = 50, limit = 50))
+        assertEquals(4, realDebridPage(offset = 300, limit = 100))
+        assertEquals(2, realDebridPage(offset = 500, limit = 500))
+        // the page size is capped at 5000, the page follows the capped size
+        assertEquals(5000, realDebridLimit(8000))
+        assertEquals(3, realDebridPage(offset = 10_000, limit = 8000))
+    }
 
     @Test
     fun statusesAreMapped() {

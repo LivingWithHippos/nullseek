@@ -16,6 +16,7 @@ interface DebridService {
 
     // torrents
 
+    /** [offset] is 0-based, the adapters translate it for their API */
     suspend fun listTorrents(
         offset: Int,
         limit: Int,
@@ -53,6 +54,7 @@ interface DebridService {
 
     // web / hoster downloads
 
+    /** [offset] is 0-based, the adapters translate it for their API */
     suspend fun listWeb(
         offset: Int,
         limit: Int,
@@ -76,6 +78,7 @@ interface DebridService {
 
     // usenet
 
+    /** [offset] is 0-based, the adapters translate it for their API */
     suspend fun listUsenet(
         offset: Int,
         limit: Int,

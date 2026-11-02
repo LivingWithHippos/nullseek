@@ -537,4 +537,40 @@
     <string name="stats_ratio">Ratio de seeding</string>
     <string name="stats_bandwidth_title">Téléchargé ces 30 derniers jours</string>
     <string name="stats_bandwidth_empty">Aucun téléchargement ces 30 derniers jours</string>
+
+    <!-- multiple providers -->
+    <string name="provider_service">Service</string>
+    <string name="open_provider_web">Ouvrir %1$s Web</string>
+    <string name="user_points">Points de fidélité</string>
+    <string name="user_account_type">Type de compte</string>
+    <string name="user_premium_days_left">%1$d jours restants</string>
+    <string name="file_selection_title">Choisissez les fichiers à télécharger</string>
+    <string name="file_selection_needed">Ce torrent attend que les fichiers à télécharger soient choisis</string>
+    <string name="file_selection_remaining">%1$d autres torrents après celui-ci</string>
+    <string name="file_selection_confirm">Confirmer les fichiers</string>
+    <string name="file_selection_later">Plus tard</string>
+    <string name="file_selection_select_all_rest">Tous les fichiers pour chaque torrent</string>
+    <string name="file_selection_select_all">Tout sélectionner</string>
+    <string name="file_selection_select_none">Ne rien sélectionner</string>
+    <string name="file_selection_selected_count">%1$d fichiers sélectionnés sur %2$d</string>
+    <string name="file_selection_resolving">Lecture des torrents…</string>
+    <string name="file_selection_action_needed">Choisir les fichiers</string>
+    <string name="uploads_awaiting_selection">%1$d torrents attendent encore que leurs fichiers soient choisis, terminez depuis leur page</string>
+    <string name="copy_all_links">Copier tous les liens</string>
+    <string name="no_zip_hint">Ce service ne peut pas compresser les téléchargements, choisissez des fichiers individuels</string>
+    <string name="web_history_hint">Real-Debrid conserve ici les liens débridés, ils expirent au bout d\'un moment</string>
+    <string name="setup_provider_description_generic">NullSeek se connecte à votre compte debrid pour diffuser, télécharger et gérer vos fichiers et torrents dans le cloud. Choisissez votre service ci-dessous.</string>
+    <string name="setup_signup_title_provider">Nouveau sur %1$s ?</string>
+    <string name="setup_signup_description_provider">Créez un compte sur %1$s pour commencer.</string>
+    <string name="setup_signup_button_provider">Créer un compte %1$s</string>
+    <string name="setup_key_description_provider">Récupérez votre jeton API depuis votre compte %1$s et collez-le ci-dessous pour lier votre compte.</string>
+    <string name="setup_get_key_button_provider">Obtenir le jeton API sur %1$s</string>
+    <string name="widget_setup_needed_title_generic">Compte requis</string>
+    <string name="widget_setup_needed_message_generic">Touchez pour configurer votre compte dans NullSeek</string>
+    <string name="providers_filter_all">Tous</string>
+    <string name="providers_empty_filter">Aucun compte %1$s</string>
+    <string name="providers_edit">Modifier</string>
+    <string name="providers_token_keep_hint">Laissez vide pour garder le jeton actuel</string>
+    <string name="file_selection_no_match">Aucun fichier ne correspond au filtre</string>
+    <string name="requeue_choose_files">Choisir d\'autres fichiers</string>
 </resources>

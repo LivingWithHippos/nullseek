@@ -15,7 +15,12 @@ data class DebridCapabilities(
     val detailedStats: Boolean,
     /** the files to download must be picked after adding a torrent */
     val fileSelectionAfterAdd: Boolean,
-    val maxPageSize: Int,
+    /** a single file of a torrent can be downloaded on its own */
+    val perFileLinks: Boolean,
+    /** a torrent can be added again to pick other files */
+    val reselectFiles: Boolean,
+    /** the largest page the list endpoints accept, null when there is no limit */
+    val maxPageSize: Int?,
     val accountUrl: String,
     val tokenLink: String,
     val subscriptionUrl: String,
@@ -36,7 +41,9 @@ data class DebridCapabilities(
                 fullTorrentInfo = true,
                 detailedStats = true,
                 fileSelectionAfterAdd = false,
-                maxPageSize = 1000,
+                perFileLinks = true,
+                reselectFiles = false,
+                maxPageSize = null,
                 accountUrl = "https://torbox.app/settings",
                 tokenLink = "https://torbox.app/settings?section=account",
                 subscriptionUrl = "https://torbox.app/subscription",
@@ -56,7 +63,9 @@ data class DebridCapabilities(
                 fullTorrentInfo = false,
                 detailedStats = false,
                 fileSelectionAfterAdd = true,
-                maxPageSize = 100,
+                perFileLinks = false,
+                reselectFiles = true,
+                maxPageSize = 5000,
                 accountUrl = "https://real-debrid.com/account",
                 tokenLink = "https://real-debrid.com/apitoken",
                 subscriptionUrl = "https://real-debrid.com/premium",
