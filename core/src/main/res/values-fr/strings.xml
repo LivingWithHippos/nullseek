@@ -467,6 +467,7 @@
     <string name="state">État</string>
     <string name="inactive">Inactif</string>
     <string name="status_ready">Prêt</string>
+    <string name="streaming">Streaming</string>
     <string name="status_error">Erreur</string>
     <string name="expires">Expire</string>
     <string name="finished">Terminé</string>

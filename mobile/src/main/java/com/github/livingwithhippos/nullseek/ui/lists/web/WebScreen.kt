@@ -208,6 +208,7 @@ private fun WebDownloadRow(
                 val badgeText =
                     when {
                         hasError -> stringResource(R.string.status_error)
+                        isDone && item.streamable == true -> stringResource(R.string.streaming)
                         isDone -> stringResource(R.string.status_ready)
                         item.cached -> stringResource(R.string.cached)
                         item.downloadState.isNotBlank() -> item.downloadState.replaceFirstChar { it.uppercase() }

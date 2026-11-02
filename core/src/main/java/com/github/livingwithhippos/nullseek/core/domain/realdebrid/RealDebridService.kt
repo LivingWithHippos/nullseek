@@ -325,7 +325,7 @@ internal fun DownloadDto.toDomain(): DebridDownload =
         size = fileSize,
         progress = 1.0,
         status = DownloadStatus.READY,
-        downloadState = "ready",
+        downloadState = if (streamable == 1) "streamable" else "ready",
         cached = true,
         downloadFinished = true,
         active = false,

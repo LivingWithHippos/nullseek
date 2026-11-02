@@ -211,6 +211,7 @@ private fun DebridDownload.toWidgetItem(type: WidgetDownloadType): WidgetDownloa
     val status =
         when {
             error != null -> "Error"
+            finished && streamable == true -> "Streamable"
             finished -> "Ready"
             cached -> "Cached"
             downloadState.isNotBlank() -> downloadState.replaceFirstChar { it.uppercase() }

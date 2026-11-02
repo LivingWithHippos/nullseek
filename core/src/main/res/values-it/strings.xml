@@ -467,6 +467,7 @@
     <string name="state">Stato</string>
     <string name="inactive">Inattivo</string>
     <string name="status_ready">Pronto</string>
+    <string name="streaming">Streaming</string>
     <string name="status_error">Errore</string>
     <string name="expires">Scade</string>
     <string name="finished">Completato</string>
