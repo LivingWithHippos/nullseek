@@ -473,6 +473,8 @@
     <string name="finished">Completato</string>
     <string name="seeds_count">%1$d seed</string>
     <string name="seeds_peers_count">%1$d seed • %2$d peer</string>
+    <string name="eta_hours_minutes">%1$do %2$02dm</string>
+    <string name="eta_minutes_seconds">%1$dm %2$02ds</string>
     <string name="show_full_info">Mostra info complete</string>
     <string name="hide_full_info">Nascondi info complete</string>
     <string name="expand">Espandi</string>

@@ -24,13 +24,23 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.delay
+import com.github.livingwithhippos.nullseek.core.utils.NetworkMonitor
+import com.github.livingwithhippos.nullseek.core.domain.DebridService
 import org.koin.core.annotation.KoinViewModel
+
+// waits before trying the user call again when the network is unreachable
+private val NETWORK_RETRY_DELAYS_MS = listOf(1_000L, 2_000L)
 
 @KoinViewModel
 class NullRootViewModel(
     private val debridProvider: DebridServiceProvider,
     val providerRepository: NullProviderRepository,
     preferencesRepository: PreferencesRepository,
+    networkMonitor: NetworkMonitor,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(NullRootUiState(loading = true))
     val uiState: StateFlow<NullRootUiState> = _uiState
@@ -65,6 +75,22 @@ class NullRootViewModel(
     init {
         // check if there's an active token and enable it
         loadActiveToken()
+        // the network often comes back a moment after the app starts or resumes: load again then
+        networkMonitor.isOnline
+            .filter { online -> online && _uiState.value.networkError && !_uiState.value.loading }
+            .onEach { loadActiveToken() }
+            .launchIn(viewModelScope)
+    }
+
+    /** Asks for the user, trying again a couple of times while the network is unreachable. */
+    private suspend fun userWithRetry(service: DebridService): DebridResult<UserProfile> {
+        var result = service.user()
+        for (wait in NETWORK_RETRY_DELAYS_MS) {
+            if (result !is DebridResult.Err || result.error !is DebridError.Network) break
+            delay(wait)
+            result = service.user()
+        }
+        return result
     }
 
     fun loadActiveToken() {
@@ -81,7 +107,7 @@ class NullRootViewModel(
             }
             _uiState.value = _uiState.value.copy(loading = true, provider = active.kind)
             // refresh user data on app start to cache it
-            when (val response = active.service.user()) {
+            when (val response = userWithRetry(active.service)) {
                 is DebridResult.Ok -> {
                     activeTokenLoaded(response.value)
                 }
@@ -95,6 +121,7 @@ class NullRootViewModel(
                                     setup = false,
                                     user = null,
                                     tokenInvalid = true,
+                                    networkError = false,
                                     error = "The ${active.kind.displayName} token for ${active.provider.name} is invalid or expired, replace it from Settings > Accounts",
                                 )
                         }
@@ -105,6 +132,7 @@ class NullRootViewModel(
                                     loading = false,
                                     setup = false,
                                     isOnline = false,
+                                    networkError = true,
                                     error = "Unable to reach ${active.kind.displayName}, check your connection",
                                 )
                         }
@@ -114,6 +142,7 @@ class NullRootViewModel(
                                 _uiState.value.copy(
                                     loading = false,
                                     setup = false,
+                                    networkError = false,
                                     error = error.describe("Loading the ${active.kind.displayName} account"),
                                 )
                         }
@@ -261,6 +290,7 @@ class NullRootViewModel(
                 error = null,
                 tokenInvalid = false,
                 isOnline = true,
+                networkError = false,
             )
     }
 
@@ -318,4 +348,6 @@ data class NullRootUiState(
     val provider: ProviderKind? = null,
     /** the active account token was rejected */
     val tokenInvalid: Boolean = false,
+    /** the last account load failed because the provider could not be reached */
+    val networkError: Boolean = false,
 )

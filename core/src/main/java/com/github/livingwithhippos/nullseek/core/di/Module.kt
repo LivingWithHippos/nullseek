@@ -31,6 +31,7 @@ import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
 import com.github.livingwithhippos.nullseek.core.domain.ProviderKind
 import com.github.livingwithhippos.nullseek.core.domain.realdebrid.RealDebridService
 import com.github.livingwithhippos.nullseek.core.domain.torbox.TorboxService
+import com.github.livingwithhippos.nullseek.core.utils.NetworkMonitor
 import com.github.livingwithhippos.nullseek.data.remote.IndexerRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.KodiRemoteClient
 import com.github.livingwithhippos.nullseek.data.remote.VlcRemoteClient
@@ -201,6 +202,7 @@ private val repositoryModule =
                 .readTimeout(15, TimeUnit.SECONDS)
                 .build()
         }
+        single { NetworkMonitor(get()) }
         single { KodiRemoteClient(get()) }
         single { VlcRemoteClient(get()) }
         single { ExternalServicesRepository(get(), get(), get()) }

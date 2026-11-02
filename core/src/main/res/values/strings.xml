@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name" translatable="false">NullSeek</string>
-    <string name="compose">Compose</string>
     <string name="close_drawer">Close Drawer</string>
     <string name="navigation_drawer">Navigation Drawer</string>
     <string name="user">User</string>

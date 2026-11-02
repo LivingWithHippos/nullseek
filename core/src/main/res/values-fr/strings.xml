@@ -473,6 +473,8 @@
     <string name="finished">Terminé</string>
     <string name="seeds_count">%1$d seeds</string>
     <string name="seeds_peers_count">%1$d seeds • %2$d peers</string>
+    <string name="eta_hours_minutes">%1$dh %2$02dm</string>
+    <string name="eta_minutes_seconds">%1$dm %2$02ds</string>
     <string name="show_full_info">Afficher les infos complètes</string>
     <string name="hide_full_info">Masquer les infos complètes</string>
     <string name="expand">Développer</string>
@@ -502,6 +504,7 @@
     <string name="upload_report_title">Rapport d\'envoi</string>
     <string name="upload_report_successful">Ajoutés à la file : %1$d</string>
     <string name="upload_report_failed">Non ajoutés : %1$d</string>
+    <string name="ok">OK</string>
     <string name="valid_links_count">%1$d valides</string>
     <string name="links_label_torrent">Liens magnet ou info hash</string>
     <string name="links_label_web">Liens web (https://…)</string>
