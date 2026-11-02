@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
@@ -171,6 +172,18 @@ data class SearchUiState(
 }
 
 fun List<Indexer>.activeOnly(): List<Indexer> = filter { it.active }
+
+/** The mode to switch to when [current] has nothing to search with, null to keep it. */
+fun autoSearchMode(
+    current: SearchMode,
+    enabledIndexers: Int,
+    enabledAddons: Int,
+): SearchMode? =
+    when {
+        current == SearchMode.INDEXERS && enabledIndexers == 0 && enabledAddons > 0 -> SearchMode.STREMIO_ADDONS
+        current == SearchMode.STREMIO_ADDONS && enabledAddons == 0 && enabledIndexers > 0 -> SearchMode.INDEXERS
+        else -> null
+    }
 
 /** Relevance keeps the indexers order, the direction only applies to the other options. */
 fun List<SearchResult>.applySort(sort: SearchSort): List<SearchResult> {
@@ -353,6 +366,24 @@ class SearchViewModel(
 
     // Torrent hashes TorBox reported as cached; empty while the check is turned off.
     private val cachedHashes = MutableStateFlow<Set<String>>(emptySet())
+
+    init {
+        // use the mode that has something to search with. Only a change in the enabled sources
+        // triggers it, so switching mode by hand is never undone.
+        combine(
+            indexersRepository.indexers.map { it.activeOnly().size },
+            addonSearchHelper.getEnabledAddons().map { it.size },
+        ) { indexers, addons -> indexers to addons }
+            .distinctUntilChanged()
+            .onEach { (indexers, addons) ->
+                // the saved value, not the StateFlow default
+                val current =
+                    preferencesRepository.searchMode.first().let { name ->
+                        SearchMode.entries.firstOrNull { it.name == name } ?: SearchMode.INDEXERS
+                    }
+                autoSearchMode(current, indexers, addons)?.let { setSearchMode(it) }
+            }.launchIn(viewModelScope)
+    }
 
     init {
         // the cached answers belong to the previous provider
