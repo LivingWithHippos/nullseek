@@ -13,9 +13,11 @@ import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
 import com.github.livingwithhippos.nullseek.core.domain.ExportPayload
 import com.github.livingwithhippos.nullseek.core.domain.TorrentFullInfo
 import com.github.livingwithhippos.nullseek.core.domain.awaitConversion
+import com.github.livingwithhippos.nullseek.core.domain.awaitSelectionApplied
 import com.github.livingwithhippos.nullseek.core.domain.describe
 import com.github.livingwithhippos.nullseek.core.domain.magnetFromHash
 import com.github.livingwithhippos.nullseek.core.domain.requeuePreselection
+import com.github.livingwithhippos.nullseek.core.domain.selectionMismatch
 import com.github.livingwithhippos.nullseek.core.domain.selectionToRequest
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
@@ -432,14 +434,24 @@ class TorrentDetailViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSelectingFiles = true)
             val result = service.selectFiles(torrent.id, request)
-            _uiState.value = _uiState.value.copy(isSelectingFiles = false)
             when (result) {
                 is DebridResult.Ok -> {
-                    _events.emit(TorrentDetailEvent.ShowMessage("Files selected, the download is starting"))
-                    refreshTorrent(silent = true)
+                    // wait for the provider to apply it, or the old selection is shown again
+                    val applied = service.awaitSelectionApplied(torrent.id)
+                    _uiState.value =
+                        _uiState.value.copy(
+                            isSelectingFiles = false,
+                            torrent = applied?.takeIf { _uiState.value.torrent?.id == it.id } ?: _uiState.value.torrent,
+                        )
+                    _events.emit(
+                        TorrentDetailEvent.ShowMessage(
+                            selectionMismatch(request, applied) ?: "Files selected, the download is starting",
+                        ),
+                    )
                 }
 
                 is DebridResult.Err -> {
+                    _uiState.value = _uiState.value.copy(isSelectingFiles = false)
                     _events.emit(TorrentDetailEvent.ShowMessage(result.error.describe("Failed to select the files")))
                 }
             }
@@ -708,6 +720,13 @@ class TorrentDetailViewModel(
         val accountId = _uiState.value.accountId
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(requeue = RequeueState.Converting)
+            // the previous selection is needed to check the same files in the picker
+            val oldTorrent =
+                if (torrent.filesLoaded && torrent.files.isNotEmpty()) {
+                    torrent
+                } else {
+                    (service.torrent(torrent.id) as? DebridResult.Ok)?.value ?: torrent
+                }
             val added = service.addMagnet(magnetFromHash(torrent.hash))
             if (!isCurrentAccount(accountId)) return@launch
             if (added is DebridResult.Err) {
@@ -720,7 +739,7 @@ class TorrentDetailViewModel(
                 is ConversionOutcome.NeedsSelection -> {
                     _uiState.value =
                         _uiState.value.copy(
-                            requeue = RequeueState.Picking(outcome.torrent, requeuePreselection(torrent, outcome.torrent)),
+                            requeue = RequeueState.Picking(outcome.torrent, requeuePreselection(oldTorrent, outcome.torrent)),
                         )
                 }
 
@@ -750,13 +769,19 @@ class TorrentDetailViewModel(
         val newTorrent = picking.newTorrent
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(requeue = RequeueState.Selecting)
-            val result = service.selectFiles(newTorrent.id, selectionToRequest(newTorrent.files.map { it.id }, fileIds))
+            val request = selectionToRequest(newTorrent.files.map { it.id }, fileIds)
+            val result = service.selectFiles(newTorrent.id, request)
             when (result) {
                 is DebridResult.Ok -> {
-                    val refreshed = (service.torrent(newTorrent.id) as? DebridResult.Ok)?.value ?: newTorrent
+                    // the provider applies the selection a moment later, reading it back at once shows every file
+                    val applied = service.awaitSelectionApplied(newTorrent.id)
                     _uiState.value = _uiState.value.copy(requeue = null)
-                    _events.emit(TorrentDetailEvent.ShowMessage("New torrent added, the original one was kept"))
-                    _events.emit(TorrentDetailEvent.OpenTorrent(refreshed))
+                    _events.emit(
+                        TorrentDetailEvent.ShowMessage(
+                            selectionMismatch(request, applied) ?: "New torrent added, the original one was kept",
+                        ),
+                    )
+                    _events.emit(TorrentDetailEvent.OpenTorrent(applied ?: newTorrent))
                 }
 
                 is DebridResult.Err -> {

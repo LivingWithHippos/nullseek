@@ -83,6 +83,7 @@ fun TvTorrentDetailScreen(
         overview =
             DetailOverview(
                 name = torrent.name,
+                itemId = torrent.id,
                 sizeBytes = torrent.size,
                 state = torrent.downloadState,
                 cached = torrent.cached,
@@ -109,7 +110,8 @@ fun TvTorrentDetailScreen(
         mediaPlayers = mediaPlayers,
         onPlayMedia = viewModel::playOnMedia,
         // only the picked files can be downloaded on Real-Debrid
-        files = if (torrent.needsFileSelection) emptyList() else torrent.files.filter { it.selected }.map { it.toDetailFile() },
+        // every file, the ones not picked on Real-Debrid are marked as such
+        files = if (torrent.needsFileSelection) emptyList() else torrent.files.map { it.toDetailFile() },
         filterFilesFullPath = filterFilesFullPath,
         // on Real-Debrid the files come together, the list is read-only
         onDownloadFile = if (torrent.cached && capabilities.perFileLinks && !uiState.isDeleting) { file -> viewModel.startDownload(file.id, file.name) } else null,

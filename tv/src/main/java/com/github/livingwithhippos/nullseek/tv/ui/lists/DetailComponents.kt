@@ -74,6 +74,8 @@ data class DetailFile(
     val shortName: String,
     val size: Long,
     val mimetype: String?,
+    /** false for files not picked on Real-Debrid */
+    val selected: Boolean = true,
 ) {
     val displayName: String
         get() = shortName.ifBlank { name.replace('\\', '/').substringAfterLast('/') }
@@ -95,11 +97,13 @@ data class DetailFile(
     val isSubtitle: Boolean get() = isSubtitleFile(name)
 }
 
-fun DebridFile.toDetailFile() = DetailFile(id, name, shortName, size, mimetype)
+fun DebridFile.toDetailFile() = DetailFile(id, name, shortName, size, mimetype, selected)
 
 /** Common fields shown at the top of a detail pane. */
 data class DetailOverview(
     val name: String,
+    // the provider id of the item, shown in the details
+    val itemId: String? = null,
     val sizeBytes: Long,
     val state: String,
     val cached: Boolean,
@@ -296,6 +300,14 @@ fun TvDetailPane(
                         text = stringResource(R.string.torrent_files_title) + " (${filteredFiles.size}/${files.size})",
                         style = MaterialTheme.typography.titleLarge,
                     )
+                    // Real-Debrid downloads only the picked files
+                    val selectedCount = files.count { it.selected }
+                    if (selectedCount < files.size) {
+                        Text(
+                            text = stringResource(R.string.file_selection_selected_count, selectedCount, files.size),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     TvTextField(
                         value = query,
                         onValueChange = { query = it },
@@ -325,14 +337,14 @@ fun TvDetailPane(
                 item { Text(stringResource(R.string.no_files_found), color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             items(filteredFiles, key = { it.id }) { file ->
-                if (fileSelection?.active == true) {
+                if (fileSelection?.active == true && file.selected) {
                     FileRow(
                         file = file,
                         onClick = { fileSelection.onToggle(file.id) },
                         checked = file.id in fileSelection.selected,
                     )
                 } else {
-                    FileRow(file = file, onClick = onDownloadFile?.let { { it(file) } })
+                    FileRow(file = file, onClick = onDownloadFile?.takeIf { file.selected }?.let { { it(file) } })
                 }
             }
         }
@@ -377,6 +389,7 @@ private fun OverviewSection(overview: DetailOverview) {
             onClick = { expanded = !expanded },
         )
         if (!expanded) return@SectionCard
+        overview.itemId?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.torrent_id), it, maxLines = 1) }
         overview.createdAt?.let { InfoRow(stringResource(R.string.added_on), formatToLocalDate(it)) }
         overview.expiresAt?.let { InfoRow(stringResource(R.string.expires), formatToLocalDate(it)) }
         overview.hash?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.hash), it, maxLines = 1) }
@@ -438,7 +451,7 @@ private fun FileSelectionControls(
         if (selection.active) {
             TvActionButton(
                 text = stringResource(R.string.select_shown),
-                onClick = { selection.onSelect(shownFiles.map { it.id }) },
+                onClick = { selection.onSelect(shownFiles.filter { it.selected }.map { it.id }) },
             )
             TvActionButton(
                 text = stringResource(R.string.clear_selection),
@@ -484,7 +497,9 @@ private fun FileRow(
         leadingContent = { Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(24.dp)) },
         supportingContent = {
             Text(
-                text = file.directory + " · " + convertToSize(file.size),
+                text =
+                    file.directory + " · " + convertToSize(file.size) +
+                        if (file.selected) "" else " · " + stringResource(R.string.file_not_selected),
                 maxLines = 5,
                 overflow = TextOverflow.Ellipsis,
             )

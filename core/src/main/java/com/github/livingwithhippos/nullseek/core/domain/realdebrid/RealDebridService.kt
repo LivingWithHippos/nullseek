@@ -19,6 +19,7 @@ import com.github.livingwithhippos.realdebrid.client.RealDebridClient
 import com.github.livingwithhippos.realdebrid.model.DownloadDto
 import com.github.livingwithhippos.realdebrid.model.RealDebridErrorCode
 import com.github.livingwithhippos.realdebrid.model.UserDto
+import logcat.logcat
 import com.github.livingwithhippos.realdebrid.model.TorrentDto as RdTorrentDto
 import com.github.livingwithhippos.realdebrid.network.ApiResult as RdApiResult
 
@@ -93,7 +94,8 @@ class RealDebridService(
         fileIds: List<Int>?,
     ): DebridResult<Unit> {
         if (fileIds != null && fileIds.isEmpty()) return DebridResult.Err(DebridError.Server(null, "No files selected"))
-        return call { client.torrents.selectFiles(torrentId, fileIds) }
+        logcat { "Selecting files of torrent $torrentId: ${fileIds?.joinToString(",") ?: "all"}" }
+        return call { client.torrents.selectFiles(torrentId, fileIds) }.also { logcat { "Select files of $torrentId: $it" } }
     }
 
     override suspend fun deleteTorrent(id: String): DebridResult<Unit> = call { client.torrents.delete(id) }

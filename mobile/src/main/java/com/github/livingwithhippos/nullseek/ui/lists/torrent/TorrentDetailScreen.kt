@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -355,7 +356,8 @@ private fun TorrentDetailScreen(
             }
 
             // Card 5: Files List (with per-file download buttons), only the picked ones on Real-Debrid
-            val downloadableFiles = item.files.filter { it.selected }
+            // every file, the ones not picked on Real-Debrid are marked as such
+            val downloadableFiles = item.files
             if (downloadableFiles.isNotEmpty() && !item.needsFileSelection) {
                 TorrentFilesCard(
                     files = downloadableFiles,
@@ -459,6 +461,7 @@ private fun DebridTorrent.toOverviewInfo() =
         linkLabelRes = R.string.magnet_link,
         copyLinkDescriptionRes = R.string.copy_magnet,
         showLinkText = false,
+        itemId = id,
     )
 
 @Composable
@@ -1363,12 +1366,22 @@ private fun TorrentFilesCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = "${stringResource(id = R.string.torrent_files_title)} ($countText)",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "${stringResource(id = R.string.torrent_files_title)} ($countText)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    // Real-Debrid downloads only the picked files
+                    val selectedCount = files.count { it.selected }
+                    if (selectedCount < files.size) {
+                        Text(
+                            text = stringResource(id = R.string.file_selection_selected_count, selectedCount, files.size),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
                 if (canSelect) {
                     TextButton(
                         onClick = {
@@ -1473,7 +1486,7 @@ private fun TorrentFilesCard(
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.weight(1f),
                     )
-                    TextButton(onClick = { selected = selected + filteredFiles.map { it.id } }) {
+                    TextButton(onClick = { selected = selected + filteredFiles.filter { it.selected }.map { it.id } }) {
                         Text(text = stringResource(id = R.string.select_shown))
                     }
                     TextButton(onClick = { selected = emptySet() }, enabled = selected.isNotEmpty()) {
@@ -1525,12 +1538,13 @@ private fun TorrentFilesCard(
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
 
-                    val inSelection = canSelect && selectionMode
+                    val inSelection = canSelect && selectionMode && file.selected
                     val isChecked = file.id in selected
                     Row(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
+                                .alpha(if (file.selected) 1f else 0.5f)
                                 .then(
                                     if (inSelection) {
                                         Modifier.clickable {
@@ -1567,6 +1581,14 @@ private fun TorrentFilesCard(
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                if (!file.selected) {
+                                    Text(
+                                        text = stringResource(id = R.string.file_not_selected),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
                                 detectFileTypeCategory(file.name, file.mimetype)?.let { category ->
                                     FileTypeBadge(category = category)
                                 }
@@ -1580,7 +1602,7 @@ private fun TorrentFilesCard(
                             )
                         }
 
-                        if (isCached && !inSelection) {
+                        if (isCached && !inSelection && file.selected) {
                             Spacer(modifier = Modifier.width(8.dp))
                             IconButton(
                                 onClick = {

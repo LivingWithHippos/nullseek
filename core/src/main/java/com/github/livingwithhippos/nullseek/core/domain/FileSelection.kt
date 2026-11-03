@@ -77,6 +77,48 @@ suspend fun DebridService.awaitConversion(
     }
 }
 
+/**
+ * Polls a torrent after its files were picked, until the provider has applied the selection.
+ * @return the last torrent read, null when every read failed
+ */
+suspend fun DebridService.awaitSelectionApplied(
+    torrentId: String,
+    timeoutMs: Long = 15_000,
+    initialDelayMs: Long = 1_500,
+    maxDelayMs: Long = 3_000,
+    clock: () -> Long = System::currentTimeMillis,
+): DebridTorrent? {
+    val start = clock()
+    var wait = initialDelayMs
+    var last: DebridTorrent? = null
+    while (true) {
+        (torrent(torrentId) as? DebridResult.Ok)?.value?.let { torrent ->
+            last = torrent
+            if (torrent.status != DownloadStatus.AWAITING_FILE_SELECTION && torrent.status != DownloadStatus.CONVERTING) {
+                return torrent
+            }
+        }
+        if (clock() - start + wait > timeoutMs) return last
+        delay(wait)
+        wait = (wait * 2).coerceAtMost(maxDelayMs)
+    }
+}
+
+/** A message when the provider selected other files than the requested ones, null when they match. */
+fun selectionMismatch(
+    requested: Collection<Int>?,
+    applied: DebridTorrent?,
+): String? {
+    if (requested == null || applied == null || applied.files.isEmpty()) return null
+    val selected =
+        applied.files
+            .filter { it.selected }
+            .map { it.id }
+            .toSet()
+    if (selected == requested.toSet()) return null
+    return "${applied.provider.displayName} selected ${selected.size} files instead of ${requested.size}"
+}
+
 /** null when every file is picked, so the provider can use its "all" shortcut */
 fun selectionToRequest(
     allFileIds: Collection<Int>,

@@ -59,6 +59,9 @@ data class OverviewInfo(
     @StringRes val copyLinkDescriptionRes: Int = R.string.copy_source_link,
     // false for magnets, which are long and unreadable
     val showLinkText: Boolean = true,
+    // the provider id of the item, shown in the details with a copy button
+    val itemId: String? = null,
+    @StringRes val itemIdLabelRes: Int = R.string.torrent_id,
 )
 
 /** Overview of a torrent, web or usenet download. Secondary rows start collapsed. */
@@ -172,6 +175,37 @@ fun DetailOverviewCard(
 
             OverviewDivider()
             CollapsibleDetails {
+                if (!info.itemId.isNullOrBlank()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(id = info.itemIdLabelRes),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f, fill = false),
+                        ) {
+                            Text(
+                                text = info.itemId,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            CopyButton(
+                                text = info.itemId,
+                                description = stringResource(id = info.itemIdLabelRes),
+                                context = context,
+                            )
+                        }
+                    }
+                    OverviewDivider()
+                }
                 OverviewRow(label = stringResource(id = R.string.added_on), value = formatToLocalDate(info.createdAt))
 
                 if (info.expiresAt != null) {

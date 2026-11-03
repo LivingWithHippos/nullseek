@@ -597,4 +597,6 @@
     <string name="select_shown">Select shown</string>
     <string name="clear_selection">Clear</string>
     <string name="unlock_selected">Unlock selected (%1$d)</string>
+    <string name="torrent_id">Torrent ID</string>
+    <string name="file_not_selected">Not selected</string>
 </resources>

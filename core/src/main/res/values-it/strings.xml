@@ -585,4 +585,6 @@
     <string name="select_shown">Seleziona visibili</string>
     <string name="clear_selection">Pulisci</string>
     <string name="unlock_selected">Sblocca selezionati (%1$d)</string>
+    <string name="torrent_id">ID torrent</string>
+    <string name="file_not_selected">Non selezionato</string>
 </resources>

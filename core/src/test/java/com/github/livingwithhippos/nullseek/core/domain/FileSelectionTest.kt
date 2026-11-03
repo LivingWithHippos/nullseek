@@ -153,6 +153,43 @@ class FileSelectionTest {
         }
 
     @Test
+    fun selectionWaitPollsUntilApplied() =
+        runBlocking {
+            val statuses =
+                ArrayDeque(
+                    listOf(DownloadStatus.AWAITING_FILE_SELECTION, DownloadStatus.AWAITING_FILE_SELECTION, DownloadStatus.DOWNLOADING),
+                )
+            val service = FakeTorrentService { torrentWith(statuses.removeFirst()) }
+            val applied = service.awaitSelectionApplied("T", initialDelayMs = 1, maxDelayMs = 1)
+            assertEquals(DownloadStatus.DOWNLOADING, applied?.status)
+            assertTrue(statuses.isEmpty())
+        }
+
+    @Test
+    fun selectionWaitReturnsTheLastTorrentOnTimeout() =
+        runBlocking {
+            var time = 0L
+            val service = FakeTorrentService { torrentWith(DownloadStatus.AWAITING_FILE_SELECTION) }
+            val applied =
+                service.awaitSelectionApplied(
+                    "T",
+                    timeoutMs = 10,
+                    initialDelayMs = 1,
+                    maxDelayMs = 1,
+                    clock = { time.also { time += 5 } },
+                )
+            assertEquals(DownloadStatus.AWAITING_FILE_SELECTION, applied?.status)
+        }
+
+    @Test
+    fun selectionMismatchIsReported() {
+        val applied = torrentWith(DownloadStatus.READY).copy(files = listOf(file(1), file(2), file(3).copy(selected = false)))
+        assertNull(selectionMismatch(listOf(1, 2), applied))
+        assertNull(selectionMismatch(null, applied))
+        assertEquals("Real-Debrid selected 2 files instead of 1", selectionMismatch(listOf(1), applied))
+    }
+
+    @Test
     fun conversionTimesOut() =
         runBlocking {
             var time = 0L
