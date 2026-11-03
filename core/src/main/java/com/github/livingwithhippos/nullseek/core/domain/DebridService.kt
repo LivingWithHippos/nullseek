@@ -76,6 +76,9 @@ interface DebridService {
         zip: Boolean,
     ): DebridResult<DebridLink>
 
+    /** Unlocks a single hoster link of a torrent (Real-Debrid). */
+    suspend fun unlockLink(link: String): DebridResult<DebridLink> = DebridResult.Err(DebridError.Unsupported)
+
     // usenet
 
     /** [offset] is 0-based, the adapters translate it for their API */

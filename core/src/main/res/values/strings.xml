@@ -588,4 +588,8 @@
     <string name="file_selection_no_match">No files match the filter</string>
     <string name="requeue_choose_files">Choose different files</string>
     <string name="action_stream_browser">Stream in browser</string>
+    <string name="unlock_all_files">Unlock all files</string>
+    <string name="unlock_again">Unlock again</string>
+    <string name="unlocking_progress">Unlocking %1$d of %2$d…</string>
+    <string name="unlocked_files_title">Unlocked files (%1$d)</string>
 </resources>

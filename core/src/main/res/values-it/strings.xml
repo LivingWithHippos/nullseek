@@ -576,4 +576,8 @@
     <string name="file_selection_no_match">Nessun file corrisponde al filtro</string>
     <string name="requeue_choose_files">Scegli altri files</string>
     <string name="action_stream_browser">Guarda nel browser</string>
+    <string name="unlock_all_files">Sblocca tutti i files</string>
+    <string name="unlock_again">Sblocca di nuovo</string>
+    <string name="unlocking_progress">Sblocco %1$d di %2$d…</string>
+    <string name="unlocked_files_title">Files sbloccati (%1$d)</string>
 </resources>

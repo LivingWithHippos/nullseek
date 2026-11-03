@@ -180,6 +180,10 @@ data class DebridLink(
     val url: String,
     /** a web page that streams the file in the browser, when the provider has one */
     val streamingPageUrl: String? = null,
+    // details of the linked file, when the provider sends them
+    val fileName: String? = null,
+    val size: Long? = null,
+    val mimeType: String? = null,
 )
 
 data class Page<T>(

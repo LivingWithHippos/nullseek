@@ -126,8 +126,16 @@ class RealDebridService(
         password: String? = null,
     ): DebridResult<DebridLink> =
         call { client.unrestrict.link(link, password) }.mapOk { dto ->
-            DebridLink(dto.download, streamingPageUrl = dto.id.takeIf { dto.streamable == 1 }?.let(::realDebridStreamingPage))
+            DebridLink(
+                url = dto.download,
+                streamingPageUrl = dto.id.takeIf { dto.streamable == 1 }?.let(::realDebridStreamingPage),
+                fileName = dto.filename,
+                size = dto.fileSize,
+                mimeType = dto.mimeType,
+            )
         }
+
+    override suspend fun unlockLink(link: String): DebridResult<DebridLink> = unrestrict(link)
 
     override suspend fun listWeb(
         offset: Int,

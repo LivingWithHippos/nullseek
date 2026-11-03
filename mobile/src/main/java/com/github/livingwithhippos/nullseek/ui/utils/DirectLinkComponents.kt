@@ -1,5 +1,15 @@
 package com.github.livingwithhippos.nullseek.ui.utils
 
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
+import com.github.livingwithhippos.nullseek.data.model.ExternalService
+import com.github.livingwithhippos.nullseek.ui.theme.Button
+import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
+import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
+import com.github.livingwithhippos.nullseek.utils.openWebPage
+import com.github.livingwithhippos.nullseek.utils.openWith
+import com.github.livingwithhippos.nullseek.utils.setClipboardText
+import com.github.livingwithhippos.nullseek.utils.shareText
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -162,6 +172,148 @@ fun MultipleVideosNotice(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = stringResource(id = R.string.download_show_videos))
+        }
+    }
+}
+
+/**
+ * The actions for a generated link: play on a media player, stream in the browser,
+ * open, open with, copy and share.
+ */
+@Composable
+fun DownloadLinkActions(
+    url: String,
+    title: String,
+    defaultPlayer: ExternalService?,
+    onPlay: () -> Unit,
+    modifier: Modifier = Modifier,
+    streamingPageUrl: String? = null,
+    context: Context = LocalContext.current,
+) {
+    // Real-Debrid marks streamable links even when the title has no media extension
+    val isMedia = isStreamableOrSubtitle(title) || streamingPageUrl != null
+
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (isMedia) {
+            Button(
+                onClick = onPlay,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_play_arrow),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                val playText = defaultPlayer?.let {
+                    stringResource(id = R.string.action_play_on, it.name)
+                } ?: stringResource(id = R.string.action_play_external)
+                Text(text = playText)
+            }
+        }
+        // Real-Debrid can stream the file in the browser
+        streamingPageUrl?.let { streamingPage ->
+            OutlinedButton(
+                onClick = { openWebPage(context, streamingPage) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_play_arrow),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = stringResource(id = R.string.action_stream_browser))
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (isMedia) {
+                FilledTonalButton(
+                    onClick = { openWebPage(context, url) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_open_in_new),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = stringResource(id = R.string.action_open_link))
+                }
+            } else {
+                Button(
+                    onClick = { openWebPage(context, url) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_open_in_new),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = stringResource(id = R.string.action_open_link))
+                }
+            }
+
+            val chooserTitle = stringResource(id = R.string.action_open_with)
+            FilledTonalButton(
+                onClick = {
+                    openWith(
+                        context = context,
+                        url = url,
+                        fileName = title,
+                        chooserTitle = chooserTitle,
+                    )
+                },
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_apps),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = stringResource(id = R.string.action_open_with))
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedButton(
+                onClick = {
+                    setClipboardText(context, url)
+                },
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_copy),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = stringResource(id = R.string.copy_link))
+            }
+
+            OutlinedButton(
+                onClick = {
+                    shareText(context, url, title = title)
+                },
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_share),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = stringResource(id = R.string.action_share))
+            }
         }
     }
 }

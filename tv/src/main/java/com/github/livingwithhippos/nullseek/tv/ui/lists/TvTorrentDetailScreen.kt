@@ -6,6 +6,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import com.github.livingwithhippos.nullseek.tv.ui.components.TvTextField
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -28,6 +33,9 @@ import com.github.livingwithhippos.nullseek.utils.wholeDownloadIsZipped
 import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
 import org.koin.androidx.compose.koinViewModel
 
+// small lists don't need a search field
+private const val UNLOCKED_SEARCH_MIN_FILES = 5
+
 @Composable
 fun TvTorrentDetailScreen(
     item: DebridTorrent,
@@ -47,6 +55,7 @@ fun TvTorrentDetailScreen(
     val messenger = LocalMessenger.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
+    var unlockedQuery by rememberSaveable(item.id) { mutableStateOf("") }
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
@@ -102,17 +111,30 @@ fun TvTorrentDetailScreen(
         isDownloading = uiState.isDownloading,
         actions = {
             val selectedFiles = torrent.files.filter { it.selected }
-            // without zips a whole download works only with a single link, otherwise copy every link
+            // without zips a whole download works only with a single link, otherwise each file gets its own
             val wholeAsLinks = !capabilities.zipDownloads && selectedFiles.size > 1 && torrent.hosterLinks.size != 1
             if (wholeAsLinks) {
+                val progress = uiState.unlockProgress
                 TvActionButton(
-                    text = stringResource(R.string.copy_all_links),
-                    icon = R.drawable.ic_copy,
+                    text =
+                        when {
+                            progress != null -> stringResource(R.string.unlocking_progress, progress.first, progress.second)
+                            uiState.unlockedFiles.isNotEmpty() -> stringResource(R.string.unlock_again)
+                            else -> stringResource(R.string.unlock_all_files)
+                        },
+                    icon = R.drawable.ic_download,
                     primary = true,
-                    enabled = torrent.cached && !uiState.isDeleting,
-                    loading = uiState.isCopyingLinks,
-                    onClick = { viewModel.copyAllLinks(context) },
+                    enabled = torrent.cached && progress == null && !uiState.isDeleting,
+                    loading = progress != null,
+                    onClick = viewModel::unlockAllFiles,
                 )
+                if (uiState.unlockedFiles.isNotEmpty()) {
+                    TvActionButton(
+                        text = stringResource(R.string.copy_all_links),
+                        icon = R.drawable.ic_copy,
+                        onClick = { viewModel.copyUnlockedLinks(context) },
+                    )
+                }
             } else {
                 val isZip =
                     capabilities.zipDownloads &&
@@ -172,6 +194,43 @@ fun TvTorrentDetailScreen(
             )
         },
         extraSections = {
+            // Real-Debrid torrents with a link for each file
+            val unlocked = uiState.unlockedFiles
+            if (unlocked.isNotEmpty()) {
+                item {
+                    Text(
+                        stringResource(R.string.unlocked_files_title, unlocked.size),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+                if (unlocked.size > UNLOCKED_SEARCH_MIN_FILES) {
+                    item {
+                        TvTextField(
+                            value = unlockedQuery,
+                            onValueChange = { unlockedQuery = it },
+                            label = stringResource(R.string.search_files_hint),
+                        )
+                    }
+                }
+                val clean = unlockedQuery.trim()
+                val shown = if (clean.isEmpty()) unlocked else unlocked.filter { it.name.contains(clean, ignoreCase = true) }
+                items(shown, key = { it.url }) { file ->
+                    DownloadLinkSection(
+                        result =
+                            LinkResult(
+                                title = file.name,
+                                url = file.url,
+                                fileType = file.fileType,
+                                streamingPageUrl = file.streamingPageUrl,
+                                containsToken = false,
+                            ),
+                        defaultPlayer = defaultPlayer,
+                        mediaPlayers = mediaPlayers,
+                        onPlayMedia = viewModel::playOnMedia,
+                        onDismiss = null,
+                    )
+                }
+            }
             if (torrent.needsFileSelection && torrent.files.isNotEmpty()) {
                 item {
                     TvFileSelectionSection(

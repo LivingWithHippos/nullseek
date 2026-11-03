@@ -81,13 +81,25 @@ sealed interface RequeueState {
     data object Selecting : RequeueState
 }
 
+/** A file of a multi-link torrent, unlocked with its own link. */
+data class UnlockedFile(
+    val name: String,
+    val size: Long?,
+    val url: String,
+    val streamingPageUrl: String?,
+    val fileType: FileTypeCategory?,
+)
+
 data class TorrentDetailUiState(
     val torrent: DebridTorrent? = null,
     /** the account the torrent belongs to, results for other accounts are dropped */
     val accountId: Long? = null,
     val isSelectingFiles: Boolean = false,
     val requeue: RequeueState? = null,
-    val isCopyingLinks: Boolean = false,
+    /** files of a multi-link torrent unlocked so far (Real-Debrid) */
+    val unlockedFiles: List<UnlockedFile> = emptyList(),
+    /** done and total links while unlocking, null when idle */
+    val unlockProgress: Pair<Int, Int>? = null,
     val isRefreshing: Boolean = false,
     val isDownloading: Boolean = false,
     val isDeleting: Boolean = false,
@@ -186,6 +198,7 @@ class TorrentDetailViewModel(
     fun init(item: DebridTorrent) {
         if (_uiState.value.torrent?.id != item.id || _uiState.value.torrent?.provider != item.provider) {
             linkCache.clear()
+            unlockedLinks.clear()
             _uiState.value =
                 TorrentDetailUiState(
                     torrent = item,
@@ -431,52 +444,78 @@ class TorrentDetailViewModel(
         }
     }
 
-    /** Unrestricts the link of every selected file, one at a time, and copies them to the clipboard. */
-    fun copyAllLinks(context: Context) {
+    // unlocked hoster links, so unlocking again doesn't use the rate limit
+    private val unlockedLinks = HashMap<String, DebridLink>()
+
+    /** Unlocks every hoster link of the torrent, one at a time, showing each file as soon as it's ready. */
+    fun unlockAllFiles() {
         val torrent = _uiState.value.torrent ?: return
-        if (!torrent.cached) return
+        if (!torrent.cached || _uiState.value.unlockProgress != null) return
+        val accountId = _uiState.value.accountId
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isCopyingLinks = true)
             val loaded =
-                if (torrent.filesLoaded) {
+                if (torrent.filesLoaded && torrent.hosterLinks.isNotEmpty()) {
                     torrent
                 } else {
                     (service.torrent(torrent.id) as? DebridResult.Ok)?.value ?: torrent
                 }
-            val targets = loaded.files.filter { it.selected }
-            val links = mutableListOf<String>()
+            val links = loaded.hosterLinks
+            if (links.isEmpty()) {
+                _events.emit(TorrentDetailEvent.ShowMessage("No links to unlock yet"))
+                return@launch
+            }
+            _uiState.value = _uiState.value.copy(unlockedFiles = emptyList(), unlockProgress = 0 to links.size)
             var failures = 0
-            val ids: List<Int?> = if (loaded.hosterLinks.size == 1) listOf(null) else targets.map { it.id }
-            for (id in ids) {
-                val key = loaded.id to id
+            links.forEachIndexed { index, hosterLink ->
                 val result =
-                    linkCache[key]?.let { DebridResult.Ok(it) }
-                        ?: service.torrentDownloadLink(loaded, id, zip = false)
+                    unlockedLinks[hosterLink]?.let { DebridResult.Ok(it) }
+                        ?: service.unlockLink(hosterLink)
+                if (!isCurrentAccount(accountId) || _uiState.value.torrent?.id != loaded.id) return@launch
                 when (result) {
                     is DebridResult.Ok -> {
-                        linkCache[key] = result.value
-                        links.add(result.value.url)
+                        val link = result.value
+                        unlockedLinks[hosterLink] = link
+                        val name = link.fileName ?: hosterLink.substringAfterLast('/')
+                        _uiState.value =
+                            _uiState.value.copy(
+                                unlockedFiles =
+                                    _uiState.value.unlockedFiles +
+                                        UnlockedFile(
+                                            name = name,
+                                            size = link.size,
+                                            url = link.url,
+                                            streamingPageUrl = link.streamingPageUrl,
+                                            fileType = detectFileTypeCategory(name, link.mimeType),
+                                        ),
+                            )
                     }
 
                     is DebridResult.Err -> {
                         failures++
                     }
                 }
+                _uiState.value = _uiState.value.copy(unlockProgress = index + 1 to links.size)
             }
-            _uiState.value = _uiState.value.copy(isCopyingLinks = false)
-            if (links.isNotEmpty()) {
-                setClipboardText(context, links.joinToString("\n"))
-            }
+            _uiState.value = _uiState.value.copy(unlockProgress = null)
+            val unlocked = _uiState.value.unlockedFiles.size
             _events.emit(
                 TorrentDetailEvent.ShowMessage(
                     when {
-                        links.isEmpty() -> "Failed to generate the links"
-                        failures > 0 -> "Copied ${links.size} links, $failures failed"
-                        else -> "Copied ${links.size} links to the clipboard"
+                        unlocked == 0 -> "Failed to unlock the files"
+                        failures > 0 -> "Unlocked $unlocked files, $failures failed"
+                        else -> "Unlocked $unlocked files"
                     },
                 ),
             )
         }
+    }
+
+    /** Copies the links of the unlocked files, one per line. */
+    fun copyUnlockedLinks(context: Context) {
+        val links = _uiState.value.unlockedFiles.map { it.url }
+        if (links.isEmpty()) return
+        setClipboardText(context, links.joinToString("\n"))
+        viewModelScope.launch { _events.emit(TorrentDetailEvent.ShowMessage("Copied ${links.size} links to the clipboard")) }
     }
 
     fun dismissDownloadLink() {
