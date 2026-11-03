@@ -123,6 +123,10 @@ data class LinkResult(
     val url: String,
     val isZipped: Boolean = false,
     val fileType: FileTypeCategory? = null,
+    // a page that streams the file in the browser (Real-Debrid)
+    val streamingPageUrl: String? = null,
+    // the link includes the API token and must not be shared (TorBox)
+    val containsToken: Boolean = true,
 )
 
 private fun FileTypeCategory.labelRes(): Int =
@@ -493,7 +497,7 @@ fun DownloadLinkSection(
     onPlayMedia: (ExternalService, String, Boolean) -> Unit,
     onDismiss: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    isMedia: Boolean = isStreamableOrSubtitle(result.title),
+    isMedia: Boolean = isStreamableOrSubtitle(result.title) || result.streamingPageUrl != null,
 ) {
     val context = LocalContext.current
     val messenger = LocalMessenger.current
@@ -517,11 +521,13 @@ fun DownloadLinkSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Text(
-            text = stringResource(R.string.download_link_api_key_warning),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error,
-        )
+        if (result.containsToken) {
+            Text(
+                text = stringResource(R.string.download_link_api_key_warning),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         Text(result.url, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (isMedia) {
@@ -534,6 +540,13 @@ fun DownloadLinkSection(
                     onClick = {
                         if (defaultPlayer != null) onPlayMedia(defaultPlayer, result.url, false) else showPlayChoice = true
                     },
+                )
+            }
+            result.streamingPageUrl?.let { streamingPage ->
+                TvActionButton(
+                    text = stringResource(R.string.action_stream_browser),
+                    icon = R.drawable.ic_play_arrow,
+                    onClick = { safeOpenUrl(context, streamingPage) },
                 )
             }
             TvActionButton(

@@ -88,7 +88,7 @@ fun TvTorrentDetailScreen(
         onClose = onClose,
         isFullScreen = isFullScreen,
         onToggleFullScreen = onToggleFullScreen,
-        linkResult = uiState.downloadLinkResult?.let { LinkResult(it.title, it.url, it.isZipped, it.fileType) },
+        linkResult = uiState.downloadLinkResult?.let { LinkResult(it.title, it.url, it.isZipped, it.fileType, it.streamingPageUrl, it.containsToken) },
         onDismissLink = viewModel::dismissDownloadLink,
         defaultPlayer = defaultPlayer,
         mediaPlayers = mediaPlayers,

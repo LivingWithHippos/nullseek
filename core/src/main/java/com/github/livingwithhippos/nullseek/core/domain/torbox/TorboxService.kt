@@ -5,6 +5,7 @@ import com.github.livingwithhippos.nullseek.core.domain.AddedItem
 import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
 import com.github.livingwithhippos.nullseek.core.domain.DebridError
 import com.github.livingwithhippos.nullseek.core.domain.DebridFile
+import com.github.livingwithhippos.nullseek.core.domain.DebridLink
 import com.github.livingwithhippos.nullseek.core.domain.DebridResult
 import com.github.livingwithhippos.nullseek.core.domain.DebridService
 import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
@@ -102,12 +103,13 @@ class TorboxService(
         torrent: DebridTorrent,
         fileId: Int?,
         zip: Boolean,
-    ): DebridResult<String> {
+    ): DebridResult<DebridLink> {
         val intId = torrent.id.toIntOrNull() ?: return DebridResult.Err(DebridError.NotFound)
         if (token.isBlank()) return DebridResult.Err(DebridError.InvalidToken)
         return client.torrent
             .downloadLink(token = token, torrentId = intId, fileId = fileId, zipLink = zip)
             .data()
+            .mapOk { DebridLink(it) }
     }
 
     override suspend fun listWeb(
@@ -146,12 +148,13 @@ class TorboxService(
         download: DebridDownload,
         fileId: Int?,
         zip: Boolean,
-    ): DebridResult<String> {
+    ): DebridResult<DebridLink> {
         val intId = download.id.toIntOrNull() ?: return DebridResult.Err(DebridError.NotFound)
         if (token.isBlank()) return DebridResult.Err(DebridError.InvalidToken)
         return client.web
             .downloadLink(token = token, webId = intId, fileId = fileId, zipLink = zip)
             .data()
+            .mapOk { DebridLink(it) }
     }
 
     override suspend fun listUsenet(
@@ -204,12 +207,13 @@ class TorboxService(
         download: DebridDownload,
         fileId: Int?,
         zip: Boolean,
-    ): DebridResult<String> {
+    ): DebridResult<DebridLink> {
         val intId = download.id.toIntOrNull() ?: return DebridResult.Err(DebridError.NotFound)
         if (token.isBlank()) return DebridResult.Err(DebridError.InvalidToken)
         return client.usenet
             .downloadLink(token = token, usenetId = intId, fileId = fileId, zipLink = zip)
             .data()
+            .mapOk { DebridLink(it) }
     }
 
     override suspend fun cachedHashes(hashes: List<String>): DebridResult<Set<String>> =

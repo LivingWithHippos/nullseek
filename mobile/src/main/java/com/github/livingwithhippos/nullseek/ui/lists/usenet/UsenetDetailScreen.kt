@@ -504,29 +504,31 @@ private fun UsenetDownloadLinkCard(
 
             DownloadLinkTypeRow(isZipped = result.isZipped, fileType = result.fileType)
 
-            // Security Warning Banner
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier = Modifier.padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+            // Security Warning Banner, the link includes the API token
+            if (result.containsToken) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_warning),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Text(
-                        text = stringResource(id = R.string.download_link_api_key_warning),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontWeight = FontWeight.Medium,
-                    )
+                    Row(
+                        modifier = Modifier.padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_warning),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Text(
+                            text = stringResource(id = R.string.download_link_api_key_warning),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
                 }
             }
 
@@ -544,7 +546,8 @@ private fun UsenetDownloadLinkCard(
                 )
             }
 
-            val isMedia = isStreamableOrSubtitle(displayTitle)
+            // Real-Debrid marks streamable links even when the title has no media extension
+            val isMedia = isStreamableOrSubtitle(displayTitle) || result.streamingPageUrl != null
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (isMedia) {
@@ -562,6 +565,21 @@ private fun UsenetDownloadLinkCard(
                             stringResource(id = R.string.action_play_on, it.name)
                         } ?: stringResource(id = R.string.action_play_external)
                         Text(text = playText)
+                    }
+                }
+                // Real-Debrid can stream the file in the browser
+                result.streamingPageUrl?.let { streamingPage ->
+                    OutlinedButton(
+                        onClick = { openWebPage(context, streamingPage) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_play_arrow),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = stringResource(id = R.string.action_stream_browser))
                     }
                 }
 

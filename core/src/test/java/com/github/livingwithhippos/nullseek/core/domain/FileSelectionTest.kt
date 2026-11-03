@@ -215,7 +215,7 @@ private class FakeTorrentService(
         torrent: DebridTorrent,
         fileId: Int?,
         zip: Boolean,
-    ): DebridResult<String> = unsupported()
+    ): DebridResult<DebridLink> = unsupported()
 
     override suspend fun listWeb(
         offset: Int,
@@ -236,5 +236,5 @@ private class FakeTorrentService(
         download: DebridDownload,
         fileId: Int?,
         zip: Boolean,
-    ): DebridResult<String> = unsupported()
+    ): DebridResult<DebridLink> = unsupported()
 }

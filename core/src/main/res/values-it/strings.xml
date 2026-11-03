@@ -575,4 +575,5 @@
     <string name="providers_token_keep_hint">Lascia vuoto per mantenere il token attuale</string>
     <string name="file_selection_no_match">Nessun file corrisponde al filtro</string>
     <string name="requeue_choose_files">Scegli altri files</string>
+    <string name="action_stream_browser">Guarda nel browser</string>
 </resources>

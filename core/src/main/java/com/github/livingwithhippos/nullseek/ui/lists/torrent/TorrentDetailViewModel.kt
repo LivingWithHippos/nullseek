@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.domain.ConversionOutcome
 import com.github.livingwithhippos.nullseek.core.domain.DebridCapabilities
 import com.github.livingwithhippos.nullseek.core.domain.DebridError
+import com.github.livingwithhippos.nullseek.core.domain.DebridLink
 import com.github.livingwithhippos.nullseek.core.domain.DebridResult
 import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
 import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
@@ -44,6 +45,10 @@ data class DownloadLinkResult(
     val isZipped: Boolean = false,
     // set only for direct (non-zipped) links
     val fileType: FileTypeCategory? = null,
+    // a page that streams the file in the browser (Real-Debrid)
+    val streamingPageUrl: String? = null,
+    // the link includes the API token and must not be shared (TorBox)
+    val containsToken: Boolean = true,
 )
 
 data class PendingDownload(
@@ -116,7 +121,7 @@ class TorrentDetailViewModel(
             .stateIn(viewModelScope, SharingStarted.Eagerly, debridProvider.capabilities)
 
     // unrestricted links are slow to make on Real-Debrid and count against the rate limit
-    private val linkCache = HashMap<Pair<String, Int?>, String>()
+    private val linkCache = HashMap<Pair<String, Int?>, DebridLink>()
 
     private fun isCurrentAccount(accountId: Long?): Boolean =
         accountId ==
@@ -345,8 +350,9 @@ class TorrentDetailViewModel(
             if (!isCurrentAccount(accountId)) return@launch
 
             if (response is DebridResult.Ok) {
-                val url = response.value
-                if (!zip) linkCache[cacheKey] = url
+                val link = response.value
+                val url = link.url
+                if (!zip) linkCache[cacheKey] = link
                 val baseName = fileName ?: torrent.name
                 val files = torrent.files.filter { it.selected }
                 // without zip support a whole multi file download is a single archive made by the provider
@@ -377,7 +383,14 @@ class TorrentDetailViewModel(
                 _uiState.value =
                     _uiState.value.copy(
                         downloadLinkResult =
-                            DownloadLinkResult(url = url, title = title, isZipped = isZipped, fileType = fileType),
+                            DownloadLinkResult(
+                                url = url,
+                                title = title,
+                                isZipped = isZipped,
+                                fileType = fileType,
+                                streamingPageUrl = link.streamingPageUrl,
+                                containsToken = service.capabilities.linksContainToken,
+                            ),
                     )
             } else if (response is DebridResult.Err) {
                 _events.emit(
@@ -442,7 +455,7 @@ class TorrentDetailViewModel(
                 when (result) {
                     is DebridResult.Ok -> {
                         linkCache[key] = result.value
-                        links.add(result.value)
+                        links.add(result.value.url)
                     }
 
                     is DebridResult.Err -> {

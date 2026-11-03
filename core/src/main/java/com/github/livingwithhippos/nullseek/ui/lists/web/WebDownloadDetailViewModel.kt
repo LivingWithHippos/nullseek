@@ -33,6 +33,10 @@ data class DownloadLinkResult(
     val isZipped: Boolean = false,
     // set only for direct (non-zipped) links
     val fileType: FileTypeCategory? = null,
+    // a page that streams the file in the browser (Real-Debrid)
+    val streamingPageUrl: String? = null,
+    // the link includes the API token and must not be shared (TorBox)
+    val containsToken: Boolean = true,
 )
 
 data class PendingDownload(
@@ -296,7 +300,8 @@ class WebDownloadDetailViewModel(
             if (!isCurrentAccount(accountId)) return@launch
 
             if (response is DebridResult.Ok) {
-                val url = response.value
+                val link = response.value
+                val url = link.url
                 val baseName = fileName ?: item.name
                 val files = item.files
                 val isZipped = zip || (fileId == null && files.size > 1 && service.capabilities.zipDownloads)
@@ -326,7 +331,14 @@ class WebDownloadDetailViewModel(
                 _uiState.value =
                     _uiState.value.copy(
                         downloadLinkResult =
-                            DownloadLinkResult(url = url, title = title, isZipped = isZipped, fileType = fileType),
+                            DownloadLinkResult(
+                                url = url,
+                                title = title,
+                                isZipped = isZipped,
+                                fileType = fileType,
+                                streamingPageUrl = link.streamingPageUrl,
+                                containsToken = service.capabilities.linksContainToken,
+                            ),
                     )
             } else if (response is DebridResult.Err) {
                 _events.emit(WebDownloadDetailEvent.ShowMessage(response.error.describe("Failed to generate download link")))

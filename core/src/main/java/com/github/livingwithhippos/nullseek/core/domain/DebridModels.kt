@@ -175,6 +175,13 @@ sealed interface ExportPayload {
     ) : ExportPayload
 }
 
+/** A generated download link. */
+data class DebridLink(
+    val url: String,
+    /** a web page that streams the file in the browser, when the provider has one */
+    val streamingPageUrl: String? = null,
+)
+
 data class Page<T>(
     val items: List<T>,
     val totalCount: Int? = null,

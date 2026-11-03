@@ -4,6 +4,7 @@ import com.github.livingwithhippos.nullseek.core.domain.realdebrid.hosterLinkFor
 import com.github.livingwithhippos.nullseek.core.domain.realdebrid.realDebridLimit
 import com.github.livingwithhippos.nullseek.core.domain.realdebrid.realDebridPage
 import com.github.livingwithhippos.nullseek.core.domain.realdebrid.realDebridStatus
+import com.github.livingwithhippos.nullseek.core.domain.realdebrid.realDebridStreamingPage
 import com.github.livingwithhippos.nullseek.core.domain.realdebrid.toDebridError
 import com.github.livingwithhippos.nullseek.core.domain.realdebrid.toDomain
 import com.github.livingwithhippos.realdebrid.model.RealDebridErrorDto
@@ -50,6 +51,11 @@ class RealDebridMappingTest {
         // the page size is capped at 5000, the page follows the capped size
         assertEquals(5000, realDebridLimit(8000))
         assertEquals(3, realDebridPage(offset = 10_000, limit = 8000))
+    }
+
+    @Test
+    fun streamingPageUsesTheDownloadId() {
+        assertEquals("https://real-debrid.com/streaming-ABC", realDebridStreamingPage("ABC"))
     }
 
     @Test

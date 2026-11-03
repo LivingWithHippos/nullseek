@@ -5,6 +5,7 @@ import com.github.livingwithhippos.nullseek.core.domain.AddedItem
 import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
 import com.github.livingwithhippos.nullseek.core.domain.DebridError
 import com.github.livingwithhippos.nullseek.core.domain.DebridFile
+import com.github.livingwithhippos.nullseek.core.domain.DebridLink
 import com.github.livingwithhippos.nullseek.core.domain.DebridResult
 import com.github.livingwithhippos.nullseek.core.domain.DebridService
 import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
@@ -23,6 +24,9 @@ import com.github.livingwithhippos.realdebrid.network.ApiResult as RdApiResult
 
 // Real-Debrid accepts up to 5000 entries per page
 internal const val MAX_PAGE_SIZE = 5000
+
+/** The Real-Debrid page that streams a generated download in the browser. */
+internal fun realDebridStreamingPage(downloadId: String): String = "https://real-debrid.com/streaming-$downloadId"
 
 /** The page size sent to Real-Debrid for the requested [limit]. */
 internal fun realDebridLimit(limit: Int): Int = limit.coerceIn(1, MAX_PAGE_SIZE)
@@ -98,7 +102,7 @@ class RealDebridService(
         torrent: DebridTorrent,
         fileId: Int?,
         zip: Boolean,
-    ): DebridResult<String> {
+    ): DebridResult<DebridLink> {
         // the list endpoint has no files, links may also be missing until the download ends
         val loaded =
             if (torrent.filesLoaded && torrent.hosterLinks.isNotEmpty()) {
@@ -120,7 +124,10 @@ class RealDebridService(
     private suspend fun unrestrict(
         link: String,
         password: String? = null,
-    ): DebridResult<String> = call { client.unrestrict.link(link, password) }.mapOk { it.download }
+    ): DebridResult<DebridLink> =
+        call { client.unrestrict.link(link, password) }.mapOk { dto ->
+            DebridLink(dto.download, streamingPageUrl = dto.id.takeIf { dto.streamable == 1 }?.let(::realDebridStreamingPage))
+        }
 
     override suspend fun listWeb(
         offset: Int,
@@ -157,8 +164,11 @@ class RealDebridService(
         download: DebridDownload,
         fileId: Int?,
         zip: Boolean,
-    ): DebridResult<String> {
-        download.directUrl?.let { return DebridResult.Ok(it) }
+    ): DebridResult<DebridLink> {
+        download.directUrl?.let { url ->
+            val streamingPage = download.id.takeIf { download.streamable == true }?.let(::realDebridStreamingPage)
+            return DebridResult.Ok(DebridLink(url, streamingPage))
+        }
         return unrestrict(download.originalUrl)
     }
 }

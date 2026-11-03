@@ -50,7 +50,7 @@ interface DebridService {
         torrent: DebridTorrent,
         fileId: Int?,
         zip: Boolean,
-    ): DebridResult<String>
+    ): DebridResult<DebridLink>
 
     // web / hoster downloads
 
@@ -74,7 +74,7 @@ interface DebridService {
         download: DebridDownload,
         fileId: Int?,
         zip: Boolean,
-    ): DebridResult<String>
+    ): DebridResult<DebridLink>
 
     // usenet
 
@@ -104,7 +104,7 @@ interface DebridService {
         download: DebridDownload,
         fileId: Int?,
         zip: Boolean,
-    ): DebridResult<String> = DebridResult.Err(DebridError.Unsupported)
+    ): DebridResult<DebridLink> = DebridResult.Err(DebridError.Unsupported)
 
     // extras
 

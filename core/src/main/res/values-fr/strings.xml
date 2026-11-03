@@ -577,4 +577,5 @@
     <string name="providers_token_keep_hint">Laissez vide pour garder le jeton actuel</string>
     <string name="file_selection_no_match">Aucun fichier ne correspond au filtre</string>
     <string name="requeue_choose_files">Choisir d\'autres fichiers</string>
+    <string name="action_stream_browser">Regarder dans le navigateur</string>
 </resources>
