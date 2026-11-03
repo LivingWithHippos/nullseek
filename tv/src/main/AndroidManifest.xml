@@ -18,7 +18,7 @@
         android:name=".TvApplication"
         android:localeConfig="@xml/locales_config"
         android:allowBackup="true"
-        android:banner="@mipmap/ic_launcher"
+        android:banner="@mipmap/ic_banner"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
