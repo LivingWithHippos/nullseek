@@ -177,6 +177,7 @@ fun TvNullSeekApp(
                                 onOpenSearch = { navController.navigateTopLevel(Route.Search) },
                                 onNewDownload = { navController.navigateTopLevel(Route.NewDownload()) },
                                 onOpenSettings = { navController.navigateTopLevel(Route.Settings) },
+                                onRetry = reloadProviders,
                             )
                         }
                         composable<Route.Lists> {

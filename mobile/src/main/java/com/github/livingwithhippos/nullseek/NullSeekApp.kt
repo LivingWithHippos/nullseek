@@ -238,6 +238,7 @@ private fun NullNavHost(
                 showSettings = showSettings,
                 onNewDownload = showNewDownload,
                 onBackupRestored = reloadProviders,
+                onRetry = reloadProviders,
             )
         }
         composable<Route.Lists> {

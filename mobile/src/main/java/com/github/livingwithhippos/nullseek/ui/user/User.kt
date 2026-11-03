@@ -75,6 +75,8 @@ fun UserScreen(
     context: Context = LocalContext.current,
     viewModel: UserViewModel = koinViewModel(),
     enabled: Boolean = true,
+    // loads the account again, offered when it failed to load
+    onRetry: () -> Unit = {},
 ) {
     if (loading || user == null) {
         Box(
@@ -83,7 +85,7 @@ fun UserScreen(
         ) {
             if (!loading && error != null) {
                 // e.g. an invalid token, the accounts can be fixed from the settings
-                ErrorNotice(error = error)
+                ErrorNotice(error = error, onRetry = onRetry)
             } else {
                 LoadingIndicator()
             }
@@ -244,6 +246,8 @@ fun UserScreenContent(
 private fun ErrorNotice(
     error: String,
     modifier: Modifier = Modifier,
+    // shows a retry button when set
+    onRetry: (() -> Unit)? = null,
 ) {
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
@@ -258,6 +262,14 @@ private fun ErrorNotice(
             color = MaterialTheme.colorScheme.error,
             modifier = Modifier.padding(16.dp),
         )
+        if (onRetry != null) {
+            TextButton(
+                onClick = onRetry,
+                modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
+            ) {
+                Text(text = stringResource(id = R.string.retry))
+            }
+        }
     }
 }
 

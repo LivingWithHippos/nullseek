@@ -24,17 +24,26 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.delay
 import com.github.livingwithhippos.nullseek.core.utils.NetworkMonitor
 import com.github.livingwithhippos.nullseek.core.domain.DebridService
 import org.koin.core.annotation.KoinViewModel
 
-// waits before trying the user call again when the network is unreachable
+// quick waits before trying the user call again when the network is unreachable
 private val NETWORK_RETRY_DELAYS_MS = listOf(1_000L, 2_000L)
 
+// waits between background reloads while the provider stays unreachable, the last one repeats
+private val BACKGROUND_RETRY_DELAYS_MS = listOf(5_000L, 10_000L, 20_000L, 30_000L)
+
+// network events often come in bursts, wait for them to settle
+private const val NETWORK_EVENT_DEBOUNCE_MS = 2_000L
+
+@OptIn(FlowPreview::class)
 @KoinViewModel
 class NullRootViewModel(
     private val debridProvider: DebridServiceProvider,
@@ -72,14 +81,40 @@ class NullRootViewModel(
             .map { it?.capabilities }
             .stateIn(viewModelScope, SharingStarted.Eagerly, debridProvider.active.value?.capabilities)
 
+    private var loadJob: Job? = null
+    private var retryJob: Job? = null
+    private var retryAttempt = 0
+
     init {
         // check if there's an active token and enable it
         loadActiveToken()
-        // the network often comes back a moment after the app starts or resumes: load again then
-        networkMonitor.isOnline
-            .filter { online -> online && _uiState.value.networkError && !_uiState.value.loading }
-            .onEach { loadActiveToken() }
+        // the network often works again a moment after the app starts or resumes, try again on any change
+        networkMonitor.events
+            .debounce(NETWORK_EVENT_DEBOUNCE_MS)
+            .onEach { retryAfterNetworkError() }
             .launchIn(viewModelScope)
+    }
+
+    /** Loads the account again in the background, only when the last load could not reach the provider. */
+    fun retryAfterNetworkError() {
+        if (_uiState.value.networkError) load(silent = true)
+    }
+
+    private fun scheduleBackgroundRetry() {
+        if (retryJob?.isActive == true) return
+        val wait = BACKGROUND_RETRY_DELAYS_MS[retryAttempt.coerceAtMost(BACKGROUND_RETRY_DELAYS_MS.lastIndex)]
+        retryAttempt++
+        retryJob =
+            viewModelScope.launch {
+                delay(wait)
+                retryAfterNetworkError()
+            }
+    }
+
+    private fun stopBackgroundRetry() {
+        retryJob?.cancel()
+        retryJob = null
+        retryAttempt = 0
     }
 
     /** Asks for the user, trying again a couple of times while the network is unreachable. */
@@ -93,26 +128,45 @@ class NullRootViewModel(
         return result
     }
 
-    fun loadActiveToken() {
-        viewModelScope.launch {
+    fun loadActiveToken() = load(silent = false)
+
+    /**
+     * Loads the active account and its user.
+     * @param silent a background retry: no spinner, and skipped while another load runs
+     */
+    private fun load(silent: Boolean) {
+        if (silent && loadJob?.isActive == true) return
+        if (!silent) stopBackgroundRetry()
+        loadJob?.cancel()
+        loadJob =
+            viewModelScope.launch {
+                loadAccount(silent)
+            }
+    }
+
+    private suspend fun loadAccount(silent: Boolean) {
+        run {
             val previousId = debridProvider.active.value?.provider?.id
             val active = debridProvider.activate()
             if (active == null) {
+                stopBackgroundRetry()
                 setupNeeded()
-                return@launch
+                return
             }
             if (previousId != active.provider.id) {
                 // the lists and details belong to another account
                 closeDetails()
             }
-            _uiState.value = _uiState.value.copy(loading = true, provider = active.kind)
+            _uiState.value = _uiState.value.copy(loading = !silent || _uiState.value.loading, provider = active.kind)
             // refresh user data on app start to cache it
             when (val response = userWithRetry(active.service)) {
                 is DebridResult.Ok -> {
+                    stopBackgroundRetry()
                     activeTokenLoaded(response.value)
                 }
 
                 is DebridResult.Err -> {
+                    if (response.error is DebridError.Network) scheduleBackgroundRetry() else stopBackgroundRetry()
                     when (val error = response.error) {
                         DebridError.InvalidToken -> {
                             _uiState.value =

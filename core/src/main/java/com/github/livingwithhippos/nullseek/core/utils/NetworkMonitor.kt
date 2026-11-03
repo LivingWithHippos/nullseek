@@ -42,4 +42,29 @@ class NetworkMonitor(
             cm.registerDefaultNetworkCallback(callback)
             awaitClose { cm.unregisterNetworkCallback(callback) }
         }.distinctUntilChanged()
+
+    /** Emits when a network becomes available or is validated, even if the device looked online already. */
+    val events: Flow<Unit> =
+        callbackFlow {
+            val cm = getSystemService(context, ConnectivityManager::class.java)
+            if (cm == null) {
+                awaitClose()
+                return@callbackFlow
+            }
+            val callback =
+                object : ConnectivityManager.NetworkCallback() {
+                    override fun onAvailable(network: Network) {
+                        trySend(Unit)
+                    }
+
+                    override fun onCapabilitiesChanged(
+                        network: Network,
+                        networkCapabilities: NetworkCapabilities,
+                    ) {
+                        if (networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) trySend(Unit)
+                    }
+                }
+            cm.registerDefaultNetworkCallback(callback)
+            awaitClose { cm.unregisterNetworkCallback(callback) }
+        }
 }

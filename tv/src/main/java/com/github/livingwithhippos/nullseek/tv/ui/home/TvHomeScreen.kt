@@ -61,6 +61,7 @@ fun TvHomeScreen(
     onNewDownload: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    onRetry: (() -> Unit)? = null,
 ) {
     val user = uiState.user
     when {
@@ -98,7 +99,14 @@ fun TvHomeScreen(
 
         uiState.loading -> LoadingBox(modifier)
 
-        else -> uiState.error?.let { ErrorBanner(it, modifier) } ?: LoadingBox(modifier)
+        else ->
+            uiState.error?.let { error ->
+                Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    ErrorBanner(error)
+                    // loads the account again
+                    onRetry?.let { retry -> TvActionButton(stringResource(R.string.retry), retry, icon = R.drawable.ic_refresh) }
+                }
+            } ?: LoadingBox(modifier)
     }
 }
 
