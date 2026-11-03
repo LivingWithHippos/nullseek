@@ -38,6 +38,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.RadioButton
+import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
@@ -167,6 +168,8 @@ fun TvDetailPane(
     isDownloading: Boolean = false,
     actions: @Composable () -> Unit,
     extraSections: LazyListScope.() -> Unit = {},
+    // set when single files can be picked and unlocked together (TorBox)
+    fileSelection: TvFileSelection? = null,
 ) {
     var query by rememberSaveable(overview.name) { mutableStateOf("") }
     var filterVideo by rememberSaveable { mutableStateOf(false) }
@@ -315,11 +318,22 @@ fun TvDetailPane(
                     }
                 }
             }
+            fileSelection?.let { selection ->
+                item { FileSelectionControls(selection, filteredFiles) }
+            }
             if (filteredFiles.isEmpty()) {
                 item { Text(stringResource(R.string.no_files_found), color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             items(filteredFiles, key = { it.id }) { file ->
-                FileRow(file = file, onClick = onDownloadFile?.let { { it(file) } })
+                if (fileSelection?.active == true) {
+                    FileRow(
+                        file = file,
+                        onClick = { fileSelection.onToggle(file.id) },
+                        checked = file.id in fileSelection.selected,
+                    )
+                } else {
+                    FileRow(file = file, onClick = onDownloadFile?.let { { it(file) } })
+                }
             }
         }
     }
@@ -398,10 +412,63 @@ private fun formatEta(seconds: Int): String {
     return if (h > 0) stringResource(R.string.eta_hours_minutes, h, m) else stringResource(R.string.eta_minutes_seconds, m, s)
 }
 
+/** The state and actions of the file selection mode, to unlock several files separately. */
+class TvFileSelection(
+    val active: Boolean,
+    val selected: Set<Int>,
+    val unlockProgress: Pair<Int, Int>?,
+    val onToggleMode: () -> Unit,
+    val onToggle: (Int) -> Unit,
+    val onSelect: (Collection<Int>) -> Unit,
+    val onClear: () -> Unit,
+    val onUnlock: () -> Unit,
+)
+
+@Composable
+private fun FileSelectionControls(
+    selection: TvFileSelection,
+    shownFiles: List<DetailFile>,
+) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        TvActionButton(
+            text = stringResource(if (selection.active) R.string.cancel else R.string.select_files),
+            icon = if (selection.active) R.drawable.ic_close else R.drawable.ic_check,
+            onClick = selection.onToggleMode,
+        )
+        if (selection.active) {
+            TvActionButton(
+                text = stringResource(R.string.select_shown),
+                onClick = { selection.onSelect(shownFiles.map { it.id }) },
+            )
+            TvActionButton(
+                text = stringResource(R.string.clear_selection),
+                enabled = selection.selected.isNotEmpty(),
+                onClick = selection.onClear,
+            )
+            val progress = selection.unlockProgress
+            TvActionButton(
+                text =
+                    if (progress != null) {
+                        stringResource(R.string.unlocking_progress, progress.first, progress.second)
+                    } else {
+                        stringResource(R.string.unlock_selected, selection.selected.size)
+                    },
+                icon = R.drawable.ic_download,
+                primary = true,
+                loading = progress != null,
+                enabled = selection.selected.isNotEmpty() && progress == null,
+                onClick = selection.onUnlock,
+            )
+        }
+    }
+}
+
 @Composable
 private fun FileRow(
     file: DetailFile,
     onClick: (() -> Unit)?,
+    // non null in the selection mode
+    checked: Boolean? = null,
 ) {
     val icon =
         when {
@@ -423,8 +490,12 @@ private fun FileRow(
             )
         },
         trailingContent =
-            onClick?.let {
-                { Icon(painterResource(R.drawable.ic_download), contentDescription = stringResource(R.string.download)) }
+            if (checked != null) {
+                { Switch(checked = checked, onCheckedChange = null) }
+            } else {
+                onClick?.let {
+                    { Icon(painterResource(R.drawable.ic_download), contentDescription = stringResource(R.string.download)) }
+                }
             },
         headlineContent = { Text(file.displayName, maxLines = 2, overflow = TextOverflow.Ellipsis) },
     )

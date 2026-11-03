@@ -5,6 +5,10 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.TvFileSelectionSect
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvTextField
 import androidx.compose.runtime.setValue
@@ -56,6 +60,8 @@ fun TvTorrentDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
     var unlockedQuery by rememberSaveable(item.id) { mutableStateOf("") }
+    var selectionMode by rememberSaveable(item.id) { mutableStateOf(false) }
+    var selectedFiles by rememberSaveable(item.id) { mutableStateOf(emptySet<Int>()) }
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
@@ -128,13 +134,6 @@ fun TvTorrentDetailScreen(
                     loading = progress != null,
                     onClick = viewModel::unlockAllFiles,
                 )
-                if (uiState.unlockedFiles.isNotEmpty()) {
-                    TvActionButton(
-                        text = stringResource(R.string.copy_all_links),
-                        icon = R.drawable.ic_copy,
-                        onClick = { viewModel.copyUnlockedLinks(context) },
-                    )
-                }
             } else {
                 val isZip =
                     capabilities.zipDownloads &&
@@ -193,15 +192,51 @@ fun TvTorrentDetailScreen(
                 onClick = { viewModel.showDeleteConfirmDialog(true) },
             )
         },
+        // TorBox can unlock single files, pick several to avoid a zip
+        fileSelection =
+            if (capabilities.perFileLinks && torrent.cached && !uiState.isDeleting) {
+                TvFileSelection(
+                    active = selectionMode,
+                    selected = selectedFiles,
+                    unlockProgress = uiState.unlockProgress,
+                    onToggleMode = {
+                        selectionMode = !selectionMode
+                        selectedFiles = emptySet()
+                    },
+                    onToggle = { id -> selectedFiles = if (id in selectedFiles) selectedFiles - id else selectedFiles + id },
+                    onSelect = { ids -> selectedFiles = selectedFiles + ids },
+                    onClear = { selectedFiles = emptySet() },
+                    onUnlock = {
+                        viewModel.unlockFiles(selectedFiles)
+                        selectedFiles = emptySet()
+                        selectionMode = false
+                    },
+                )
+            } else {
+                null
+            },
         extraSections = {
             // Real-Debrid torrents with a link for each file
             val unlocked = uiState.unlockedFiles
             if (unlocked.isNotEmpty()) {
                 item {
-                    Text(
-                        stringResource(R.string.unlocked_files_title, unlocked.size),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            stringResource(R.string.unlocked_files_title, unlocked.size),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        TvActionButton(
+                            text = stringResource(R.string.copy_all_links),
+                            icon = R.drawable.ic_copy,
+                            onClick = { viewModel.copyUnlockedLinks(context) },
+                        )
+                        TvActionButton(
+                            text = stringResource(R.string.clear_selection),
+                            icon = R.drawable.ic_close,
+                            enabled = uiState.unlockProgress == null,
+                            onClick = viewModel::clearUnlockedFiles,
+                        )
+                    }
                 }
                 if (unlocked.size > UNLOCKED_SEARCH_MIN_FILES) {
                     item {
@@ -222,7 +257,7 @@ fun TvTorrentDetailScreen(
                                 url = file.url,
                                 fileType = file.fileType,
                                 streamingPageUrl = file.streamingPageUrl,
-                                containsToken = false,
+                                containsToken = capabilities.linksContainToken,
                             ),
                         defaultPlayer = defaultPlayer,
                         mediaPlayers = mediaPlayers,

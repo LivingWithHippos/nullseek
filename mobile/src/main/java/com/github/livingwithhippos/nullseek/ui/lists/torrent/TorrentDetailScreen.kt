@@ -27,6 +27,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -168,6 +169,8 @@ fun TorrentDetailScreen(
                 capabilities = capabilities,
                 onSelectFiles = { viewModel.selectFiles(it) },
                 onUnlockAll = { viewModel.unlockAllFiles() },
+                onUnlockFiles = { viewModel.unlockFiles(it) },
+                onClearUnlocked = { viewModel.clearUnlockedFiles() },
                 onCopyUnlockedLinks = { context -> viewModel.copyUnlockedLinks(context) },
                 onRequeue = { viewModel.startRequeue() },
                 onConfirmRequeue = { viewModel.confirmRequeue(it) },
@@ -213,6 +216,8 @@ private fun TorrentDetailScreen(
     capabilities: DebridCapabilities = DebridCapabilities.Torbox,
     onSelectFiles: (Set<Int>) -> Unit = {},
     onUnlockAll: () -> Unit = {},
+    onUnlockFiles: (Set<Int>) -> Unit = {},
+    onClearUnlocked: () -> Unit = {},
     onCopyUnlockedLinks: (Context) -> Unit = {},
     onRequeue: () -> Unit = {},
     onConfirmRequeue: (Set<Int>) -> Unit = {},
@@ -300,6 +305,8 @@ private fun TorrentDetailScreen(
                     defaultPlayer = defaultPlayer,
                     onPlay = playUrl,
                     onCopyAll = { onCopyUnlockedLinks(context) },
+                    onClear = onClearUnlocked,
+                    showTokenWarning = capabilities.linksContainToken,
                     context = context,
                 )
             }
@@ -359,6 +366,9 @@ private fun TorrentDetailScreen(
                     modifier = Modifier.bringIntoViewRequester(filesRequester),
                     filterFilesFullPath = filterFilesFullPath,
                     onDownloadFile = onDownloadFile,
+                    // TorBox can unlock single files, pick several to avoid a zip
+                    onUnlockFiles = onUnlockFiles.takeIf { capabilities.perFileLinks && item.cached },
+                    unlockProgress = uiState.unlockProgress,
                 )
             }
 
@@ -720,6 +730,9 @@ private fun UnlockedFilesCard(
     onCopyAll: () -> Unit,
     context: Context,
     modifier: Modifier = Modifier,
+    onClear: (() -> Unit)? = null,
+    // TorBox links include the API token
+    showTokenWarning: Boolean = false,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     // only one file shows its actions, so long lists stay short
@@ -752,6 +765,23 @@ private fun UnlockedFilesCard(
                         modifier = Modifier.size(20.dp),
                     )
                 }
+                onClear?.let { clear ->
+                    IconButton(onClick = clear) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_close),
+                            contentDescription = stringResource(id = R.string.clear_selection),
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+            }
+
+            if (showTokenWarning) {
+                Text(
+                    text = stringResource(id = R.string.download_link_api_key_warning),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
 
             if (files.size > UNLOCKED_SEARCH_MIN_FILES) {
@@ -1283,8 +1313,14 @@ private fun TorrentFilesCard(
     modifier: Modifier = Modifier,
     filterFilesFullPath: Boolean = false,
     onDownloadFile: (Int, String) -> Unit,
+    // set when single files can be unlocked together, enables the selection mode
+    onUnlockFiles: ((Set<Int>) -> Unit)? = null,
+    unlockProgress: Pair<Int, Int>? = null,
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    var selectionMode by rememberSaveable(files) { mutableStateOf(false) }
+    var selected by rememberSaveable(files) { mutableStateOf(emptySet<Int>()) }
+    val canSelect = isCached && onUnlockFiles != null
     var filterAudio by rememberSaveable { mutableStateOf(false) }
     var filterSubtitles by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -1323,11 +1359,35 @@ private fun TorrentFilesCard(
                 searchQuery.isNotBlank() || filterVideo || filterAudio || filterSubtitles
             val countText =
                 if (isFiltered) "${filteredFiles.size}/${files.size}" else "${files.size}"
-            Text(
-                text = "${stringResource(id = R.string.torrent_files_title)} ($countText)",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "${stringResource(id = R.string.torrent_files_title)} ($countText)",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                if (canSelect) {
+                    TextButton(
+                        onClick = {
+                            selectionMode = !selectionMode
+                            if (!selectionMode) selected = emptySet()
+                        },
+                    ) {
+                        if (!selectionMode) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_check),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                        }
+                        Text(text = stringResource(id = if (selectionMode) R.string.cancel else R.string.select_files))
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = searchQuery,
@@ -1403,6 +1463,55 @@ private fun TorrentFilesCard(
                 )
             }
 
+            if (canSelect && selectionMode) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.selection_count, selected.size),
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = { selected = selected + filteredFiles.map { it.id } }) {
+                        Text(text = stringResource(id = R.string.select_shown))
+                    }
+                    TextButton(onClick = { selected = emptySet() }, enabled = selected.isNotEmpty()) {
+                        Text(text = stringResource(id = R.string.clear_selection))
+                    }
+                }
+                FilledTonalButton(
+                    onClick = {
+                        onUnlockFiles?.invoke(selected)
+                        selected = emptySet()
+                        selectionMode = false
+                    },
+                    enabled = selected.isNotEmpty() && unlockProgress == null,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (unlockProgress != null) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text =
+                                stringResource(
+                                    id = R.string.unlocking_progress,
+                                    unlockProgress.first,
+                                    unlockProgress.second,
+                                ),
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_download),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(id = R.string.unlock_selected, selected.size))
+                    }
+                }
+            }
+
             if (filteredFiles.isEmpty()) {
                 Text(
                     text = stringResource(id = R.string.no_files_found),
@@ -1416,11 +1525,28 @@ private fun TorrentFilesCard(
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
 
+                    val inSelection = canSelect && selectionMode
+                    val isChecked = file.id in selected
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .then(
+                                    if (inSelection) {
+                                        Modifier.clickable {
+                                            selected = if (isChecked) selected - file.id else selected + file.id
+                                        }
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        if (inSelection) {
+                            Checkbox(checked = isChecked, onCheckedChange = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
                         Column(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -1454,7 +1580,7 @@ private fun TorrentFilesCard(
                             )
                         }
 
-                        if (isCached) {
+                        if (isCached && !inSelection) {
                             Spacer(modifier = Modifier.width(8.dp))
                             IconButton(
                                 onClick = {

@@ -88,6 +88,8 @@ data class UnlockedFile(
     val url: String,
     val streamingPageUrl: String?,
     val fileType: FileTypeCategory?,
+    /** the torrent file it comes from, when the provider unlocks single files (TorBox) */
+    val fileId: Int? = null,
 )
 
 data class TorrentDetailUiState(
@@ -508,6 +510,78 @@ class TorrentDetailViewModel(
                 ),
             )
         }
+    }
+
+    /**
+     * Unlocks the chosen files one by one, each with its own link instead of a zip (TorBox).
+     * New files are added to the ones already unlocked.
+     */
+    fun unlockFiles(fileIds: Set<Int>) {
+        val torrent = _uiState.value.torrent ?: return
+        if (!torrent.cached || fileIds.isEmpty() || _uiState.value.unlockProgress != null) return
+        val accountId = _uiState.value.accountId
+        val alreadyUnlocked =
+            _uiState.value.unlockedFiles
+                .mapNotNull { it.fileId }
+                .toSet()
+        val targets = torrent.files.filter { it.id in fileIds && it.id !in alreadyUnlocked }
+        if (targets.isEmpty()) {
+            viewModelScope.launch { _events.emit(TorrentDetailEvent.ShowMessage("These files are already unlocked")) }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(unlockProgress = 0 to targets.size)
+            var unlocked = 0
+            var failures = 0
+            targets.forEachIndexed { index, file ->
+                val key = torrent.id to file.id
+                val result =
+                    linkCache[key]?.let { DebridResult.Ok(it) }
+                        ?: service.torrentDownloadLink(torrent, file.id, zip = false)
+                if (!isCurrentAccount(accountId) || _uiState.value.torrent?.id != torrent.id) return@launch
+                when (result) {
+                    is DebridResult.Ok -> {
+                        val link = result.value
+                        linkCache[key] = link
+                        val name = file.shortName.ifBlank { file.name.substringAfterLast('/') }
+                        unlocked++
+                        _uiState.value =
+                            _uiState.value.copy(
+                                unlockedFiles =
+                                    _uiState.value.unlockedFiles +
+                                        UnlockedFile(
+                                            name = name,
+                                            size = file.size,
+                                            url = link.url,
+                                            streamingPageUrl = link.streamingPageUrl,
+                                            fileType = detectFileTypeCategory(file.name, file.mimetype),
+                                            fileId = file.id,
+                                        ),
+                            )
+                    }
+
+                    is DebridResult.Err -> {
+                        failures++
+                    }
+                }
+                _uiState.value = _uiState.value.copy(unlockProgress = index + 1 to targets.size)
+            }
+            _uiState.value = _uiState.value.copy(unlockProgress = null)
+            _events.emit(
+                TorrentDetailEvent.ShowMessage(
+                    when {
+                        unlocked == 0 -> "Failed to unlock the files"
+                        failures > 0 -> "Unlocked $unlocked files, $failures failed"
+                        else -> "Unlocked $unlocked files"
+                    },
+                ),
+            )
+        }
+    }
+
+    fun clearUnlockedFiles() {
+        if (_uiState.value.unlockProgress != null) return
+        _uiState.value = _uiState.value.copy(unlockedFiles = emptyList())
     }
 
     /** Copies the links of the unlocked files, one per line. */

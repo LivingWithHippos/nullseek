@@ -580,4 +580,9 @@
     <string name="unlock_again">Sblocca di nuovo</string>
     <string name="unlocking_progress">Sblocco %1$d di %2$d…</string>
     <string name="unlocked_files_title">Files sbloccati (%1$d)</string>
+    <string name="select_files">Seleziona</string>
+    <string name="selection_count">%1$d selezionati</string>
+    <string name="select_shown">Seleziona visibili</string>
+    <string name="clear_selection">Pulisci</string>
+    <string name="unlock_selected">Sblocca selezionati (%1$d)</string>
 </resources>
