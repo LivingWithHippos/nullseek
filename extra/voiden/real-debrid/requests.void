@@ -68,27 +68,6 @@ content:
 ```
 ```void
 ---
-type: auth
-attrs:
-  uid: 3ea0b29f-ac7a-487d-80c6-946320426bf6
-  authType: bearer
-  importedFrom: ""
-  oauth2Config: ""
-  pluginId: voiden-advanced-auth
-  pluginVersion: 2.0.10
-content:
-  - type: table
-    rows:
-      - attrs:
-          disabled: false
-          omitIfUnresolved: false
-        row:
-          - token
-          - "{{rd_token}}"
----
-```
-```void
----
 type: request-separator
 attrs:
   uid: b53c63cf-8387-449d-9f3e-4a41fddd5925
@@ -148,6 +127,93 @@ content:
         row:
           - remote
           - null
+          - null
+---
+```
+%%EMPTY_LINE%%
+
+```void
+---
+type: request-separator
+attrs:
+  uid: f2f4ceef-a28d-49b7-ab36-947fa4607e82
+  colorIndex: 0
+  label: web list
+---
+```
+```void
+---
+type: request
+attrs:
+  uid: e08abbed-1e51-493b-be4d-6458707249fa
+  pluginId: voiden-rest-api
+  pluginVersion: 1.4.14
+content:
+  - type: method
+    attrs:
+      uid: 4898b179-512a-4030-9bc4-2c248c683bb7
+      method: GET
+      importedFrom: ""
+      visible: true
+    content: GET
+  - type: url
+    attrs:
+      uid: 767190f5-d72e-4276-8145-a49eba77177b
+    content: https://api.real-debrid.com/rest/1.0/downloads
+---
+```
+```void
+---
+type: auth
+attrs:
+  uid: 3ea0b29f-ac7a-487d-80c6-946320426bf6
+  authType: bearer
+  importedFrom: ""
+  oauth2Config: ""
+  pluginId: voiden-advanced-auth
+  pluginVersion: 2.0.10
+content:
+  - type: table
+    rows:
+      - attrs:
+          disabled: false
+          omitIfUnresolved: false
+        row:
+          - token
+          - "{{rd_token}}"
+---
+```
+```void
+---
+type: query-table
+attrs:
+  uid: 179eb019-9c4b-42eb-8cae-544f97b7719b
+  importedFrom: ""
+  pluginId: voiden-rest-api
+  pluginVersion: 1.4.14
+content:
+  - type: table
+    rows:
+      - attrs:
+          disabled: true
+          omitIfUnresolved: true
+        row:
+          - offset
+          - "1"
+          - null
+      - attrs:
+          disabled: false
+          omitIfUnresolved: true
+        row:
+          - page
+          - "1"
+          - null
+      - attrs:
+          disabled: false
+          omitIfUnresolved: false
+        row:
+          - limit
+          - "5"
           - null
 ---
 ```
