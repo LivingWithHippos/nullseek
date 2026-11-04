@@ -546,7 +546,6 @@
     <string name="stats_data_uploaded">Seeded data</string>
     <string name="stats_data_uploaded_hint">Uploaded to other peers</string>
     <string name="stats_items_title">Items downloaded</string>
-    <string name="stats_items_total">Total</string>
     <string name="stats_show_detailed">Show detailed stats</string>
     <string name="stats_ratio">Seeding ratio</string>
     <string name="stats_bandwidth_title">Downloaded in the last 30 days</string>

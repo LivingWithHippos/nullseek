@@ -536,7 +536,6 @@
     <string name="stats_data_uploaded">Dati in seeding</string>
     <string name="stats_data_uploaded_hint">Inviati ad altri peer</string>
     <string name="stats_items_title">Elementi scaricati</string>
-    <string name="stats_items_total">Totale</string>
     <string name="stats_show_detailed">Mostra statistiche dettagliate</string>
     <string name="stats_ratio">Rapporto di seeding</string>
     <string name="stats_bandwidth_title">Scaricato negli ultimi 30 giorni</string>

@@ -258,13 +258,10 @@ private fun UserOverview(
                     InfoRow(stringResource(R.string.stats_data_uploaded), convertToSize(user.totalBytesUploaded))
                     StatsHint(stringResource(R.string.stats_data_uploaded_hint))
                     Text(stringResource(R.string.stats_items_title), style = MaterialTheme.typography.titleSmall)
-                    InfoRow(stringResource(R.string.stats_items_total), user.totalDownloaded.toString())
-                    // the per-type counts are indented under the total so they read as a breakdown
-                    Column(modifier = Modifier.padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        InfoRow(stringResource(R.string.torrents), user.torrentsDownloaded.toString())
-                        InfoRow(stringResource(R.string.web_downloads), user.webDownloadsDownloaded.toString())
-                        InfoRow(stringResource(R.string.usenet_downloads), user.usenetDownloadsDownloaded.toString())
-                    }
+                    // TorBox's total isn't the sum of these, so only the per-type counts are shown
+                    InfoRow(stringResource(R.string.torrents), user.torrentsDownloaded.toString())
+                    InfoRow(stringResource(R.string.web_downloads), user.webDownloadsDownloaded.toString())
+                    InfoRow(stringResource(R.string.usenet_downloads), user.usenetDownloadsDownloaded.toString())
                     TvDetailedStats(detailedStats, onLoad = viewModel::loadDetailedStats)
                 }
 

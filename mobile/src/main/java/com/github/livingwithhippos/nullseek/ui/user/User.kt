@@ -759,16 +759,10 @@ private fun UserStatsCard(
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
             )
-            // the per-type counts are indented under the total so they read as a breakdown
-            StatsRow(label = stringResource(id = R.string.stats_items_total), value = user.totalDownloaded.toString())
-            Column(
-                modifier = Modifier.padding(start = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                StatsRow(label = stringResource(id = R.string.torrents), value = user.torrentsDownloaded.toString(), small = true)
-                StatsRow(label = stringResource(id = R.string.web_downloads), value = user.webDownloadsDownloaded.toString(), small = true)
-                StatsRow(label = stringResource(id = R.string.usenet_downloads), value = user.usenetDownloadsDownloaded.toString(), small = true)
-            }
+            // TorBox's total isn't the sum of these, so only the per-type counts are shown
+            StatsRow(label = stringResource(id = R.string.torrents), value = user.torrentsDownloaded.toString())
+            StatsRow(label = stringResource(id = R.string.web_downloads), value = user.webDownloadsDownloaded.toString())
+            StatsRow(label = stringResource(id = R.string.usenet_downloads), value = user.usenetDownloadsDownloaded.toString())
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
