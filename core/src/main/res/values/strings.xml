@@ -36,7 +36,7 @@
     <string name="open_torbox_web">Open TorBox Web</string>
     <string name="open_torbox_subscription">Open Subscription Page</string>
     <string name="referral_dialog_title">Support NullSeek?</string>
-    <string name="referral_dialog_message">Would you like to include our referral code when opening TorBox in your browser? Your choice will be saved for next runs.</string>
+    <string name="referral_dialog_message">Would you like to support us including a referral code? Your choice will be saved for next runs, you can change it in Settings.</string>
     <string name="referral_dialog_positive">Yes, Include Referral</string>
     <string name="referral_dialog_negative">No, Open Directly</string>
     <string name="account_overview">Account Overview</string>
@@ -70,7 +70,7 @@
     <string name="setup_connect_button">Connect Account</string>
     <string name="paste_from_clipboard">Paste from Clipboard</string>
     <string name="clear_links">Clear links</string>
-    <string name="setup_dialog_message">Would you like to include our referral code when signing up on TorBox? Your choice will be saved for future runs.</string>
+    <string name="setup_dialog_message">Would you like to support us including a referral code? Your choice will be saved for next runs.</string>
     <string name="copy_referral">Copy Referral Code</string>
     <string name="torrent_overview">Torrent Overview</string>
     <string name="hash">Hash</string>
