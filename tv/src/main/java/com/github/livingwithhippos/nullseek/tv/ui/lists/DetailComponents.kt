@@ -40,6 +40,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.RadioButton
 import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
+import com.github.livingwithhippos.nullseek.ui.lists.UnlockedFile
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.core.utils.formatSpeed
@@ -771,4 +772,107 @@ fun DownloadZipDialog(
             onCheckedChange = { rememberChoice = it },
         )
     }
+}
+
+// small lists don't need a search field
+private const val UNLOCKED_SEARCH_MIN_FILES = 5
+
+/** The files unlocked one by one: title with counts, copy and clear, a search above 5 files, then each link. */
+fun LazyListScope.unlockedFilesSection(
+    files: List<UnlockedFile>,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    unlocking: Boolean,
+    containsToken: Boolean,
+    defaultPlayer: ExternalService?,
+    mediaPlayers: List<ExternalService>,
+    onPlayMedia: (ExternalService, String, Boolean) -> Unit,
+    onCopyAll: () -> Unit,
+    onClear: () -> Unit,
+) {
+    if (files.isEmpty()) return
+    item {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.unlocked_files_title, files.count { !it.failed }),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            val failedCount = files.count { it.failed }
+            if (failedCount > 0) {
+                Text(
+                    stringResource(R.string.unlock_failed_count, failedCount),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            TvActionButton(
+                text = stringResource(R.string.copy_all_links),
+                icon = R.drawable.ic_copy,
+                onClick = onCopyAll,
+            )
+            TvActionButton(
+                text = stringResource(R.string.clear_selection),
+                icon = R.drawable.ic_close,
+                enabled = !unlocking,
+                onClick = onClear,
+            )
+        }
+    }
+    if (files.size > UNLOCKED_SEARCH_MIN_FILES) {
+        item {
+            TvTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                label = stringResource(R.string.search_files_hint),
+            )
+        }
+    }
+    val clean = query.trim()
+    val shown = if (clean.isEmpty()) files else files.filter { it.name.contains(clean, ignoreCase = true) }
+    items(shown) { file ->
+        val fileError = file.error
+        if (fileError != null) {
+            // the provider refused this file, show why
+            SectionCard(title = file.name, icon = R.drawable.ic_warning) {
+                Text(fileError, color = MaterialTheme.colorScheme.error)
+            }
+            return@items
+        }
+        DownloadLinkSection(
+            result =
+                LinkResult(
+                    title = file.name,
+                    url = file.url,
+                    fileType = file.fileType,
+                    streamingPageUrl = file.streamingPageUrl,
+                    containsToken = containsToken,
+                ),
+            defaultPlayer = defaultPlayer,
+            mediaPlayers = mediaPlayers,
+            onPlayMedia = onPlayMedia,
+            onDismiss = null,
+        )
+    }
+}
+
+/** Asks a direct link for every media file of a download, shown when there are at least two. */
+@Composable
+fun AllMediaLinksAction(
+    mediaCount: Int,
+    progress: Pair<Int, Int>?,
+    hasUnlocked: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    TvActionButton(
+        text =
+            when {
+                progress != null -> stringResource(R.string.unlocking_progress, progress.first, progress.second)
+                hasUnlocked -> stringResource(R.string.unlock_again)
+                else -> stringResource(R.string.unlock_all_media, mediaCount)
+            },
+        icon = R.drawable.ic_play_arrow,
+        loading = progress != null,
+        enabled = enabled && progress == null,
+        onClick = onClick,
+    )
 }

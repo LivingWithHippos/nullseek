@@ -600,4 +600,5 @@
     <string name="torrent_id">Torrent ID</string>
     <string name="file_not_selected">Not selected</string>
     <string name="unlock_failed_count">%1$d failed</string>
+    <string name="unlock_all_media">Links for all media (%1$d)</string>
 </resources>

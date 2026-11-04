@@ -1,5 +1,6 @@
 package com.github.livingwithhippos.nullseek.ui.lists.usenet
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.domain.DebridCapabilities
@@ -12,9 +13,15 @@ import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
+import com.github.livingwithhippos.nullseek.ui.lists.UnlockedFile
+import com.github.livingwithhippos.nullseek.ui.lists.mediaFiles
+import com.github.livingwithhippos.nullseek.ui.lists.notUnlockedIn
+import com.github.livingwithhippos.nullseek.ui.lists.unlockOneByOne
+import com.github.livingwithhippos.nullseek.ui.lists.unlockSummary
 import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
+import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -61,6 +68,10 @@ data class UsenetDetailUiState(
     val downloadLinkResult: DownloadLinkResult? = null,
     val showDeleteConfirmDialog: Boolean = false,
     val pendingDownload: PendingDownload? = null,
+    /** files unlocked one by one, each with its own link */
+    val unlockedFiles: List<UnlockedFile> = emptyList(),
+    /** done and total files while unlocking, null when idle */
+    val unlockProgress: Pair<Int, Int>? = null,
 )
 
 @KoinViewModel
@@ -344,6 +355,51 @@ class UsenetDetailViewModel(
                 _events.emit(UsenetDetailEvent.ShowMessage(response.error.describe("Failed to generate download link")))
             }
         }
+    }
+
+    /** Asks a direct link for every video and audio file, instead of a zip of the whole download. */
+    fun unlockAllMedia() {
+        val item = _uiState.value.usenet ?: return
+        if (!item.cached || _uiState.value.unlockProgress != null) return
+        val accountId = _uiState.value.accountId
+        val targets = item.files.mediaFiles().notUnlockedIn(_uiState.value.unlockedFiles)
+        if (targets.isEmpty()) {
+            viewModelScope.launch { _events.emit(UsenetDetailEvent.ShowMessage("These files are already unlocked")) }
+            return
+        }
+        viewModelScope.launch {
+            val outcome =
+                unlockOneByOne(
+                    targets = targets,
+                    existing = _uiState.value.unlockedFiles,
+                    fetch = { file -> service.usenetDownloadLink(download = item, fileId = file.id, zip = false) },
+                    onUpdate = { files, progress ->
+                        _uiState.value = _uiState.value.copy(unlockedFiles = files, unlockProgress = progress)
+                    },
+                    isStillCurrent = { isCurrentAccount(accountId) && _uiState.value.usenet?.id == item.id },
+                )
+            if (outcome == null) {
+                _uiState.value = _uiState.value.copy(unlockProgress = null)
+                return@launch
+            }
+            _events.emit(UsenetDetailEvent.ShowMessage(unlockSummary(outcome.unlocked, outcome.failures)))
+        }
+    }
+
+    fun clearUnlockedFiles() {
+        if (_uiState.value.unlockProgress != null) return
+        _uiState.value = _uiState.value.copy(unlockedFiles = emptyList())
+    }
+
+    /** Copies the links of the unlocked files, one per line. */
+    fun copyUnlockedLinks(context: Context) {
+        val links =
+            _uiState.value.unlockedFiles
+                .filter { !it.failed }
+                .map { it.url }
+        if (links.isEmpty()) return
+        setClipboardText(context, links.joinToString("\n"))
+        viewModelScope.launch { _events.emit(UsenetDetailEvent.ShowMessage("Copied ${links.size} links to the clipboard")) }
     }
 
     fun dismissDownloadLink() {

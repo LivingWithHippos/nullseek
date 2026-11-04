@@ -1,6 +1,10 @@
 package com.github.livingwithhippos.nullseek.ui.lists.web
 
 import android.content.Context
+import com.github.livingwithhippos.nullseek.core.domain.DebridCapabilities
+import com.github.livingwithhippos.nullseek.ui.lists.mediaFiles
+import com.github.livingwithhippos.nullseek.ui.utils.AllMediaLinksButton
+import com.github.livingwithhippos.nullseek.ui.utils.UnlockedFilesCard
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -163,6 +167,10 @@ fun WebDownloadDetailScreen(
                 },
                 onRefresh = { viewModel.refreshWebDownload() },
                 onDownloadZip = { viewModel.startDownload() },
+                capabilities = capabilities,
+                onUnlockAllMedia = { viewModel.unlockAllMedia() },
+                onClearUnlocked = { viewModel.clearUnlockedFiles() },
+                onCopyUnlockedLinks = { context -> viewModel.copyUnlockedLinks(context) },
                 onDownloadDirect = { fileId, fileName -> viewModel.downloadDirect(fileId, fileName) },
                 onDownloadFile = { fileId, fileName -> viewModel.startDownload(fileId, fileName) },
                 onDismissDownloadLink = { viewModel.dismissDownloadLink() },
@@ -191,6 +199,10 @@ private fun WebDownloadDetailScreen(
     onPlayMedia: (ExternalService, String, Boolean) -> Unit,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
+    capabilities: DebridCapabilities = DebridCapabilities.Torbox,
+    onUnlockAllMedia: () -> Unit = {},
+    onClearUnlocked: () -> Unit = {},
+    onCopyUnlockedLinks: (Context) -> Unit = {},
     onDownloadFile: (Int, String) -> Unit,
     onDownloadDirect: (Int, String) -> Unit = { _, _ -> },
     onDismissDownloadLink: () -> Unit,
@@ -200,7 +212,11 @@ private fun WebDownloadDetailScreen(
     onConfirmDelete: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
-    var showPlayChoiceDialog by remember { mutableStateOf(false) }
+    // the link waiting for a media player to be picked
+    var pendingPlayUrl by remember { mutableStateOf<String?>(null) }
+    val playUrl: (String) -> Unit = { url ->
+        if (defaultPlayer != null) onPlayMedia(defaultPlayer, url, false) else pendingPlayUrl = url
+    }
 
     Column(
         modifier =
@@ -248,15 +264,22 @@ private fun WebDownloadDetailScreen(
                     result = linkResult,
                     context = context,
                     defaultPlayer = defaultPlayer,
-                    onPlay = {
-                        if (defaultPlayer != null) {
-                            onPlayMedia(defaultPlayer, linkResult.url, false)
-                        } else {
-                            showPlayChoiceDialog = true
-                        }
-                    },
+                    onPlay = { playUrl(linkResult.url) },
                     onDismiss = onDismissDownloadLink,
                     modifier = Modifier.bringIntoViewRequester(linkRequester),
+                )
+            }
+
+            // a direct link for each media file
+            if (uiState.unlockedFiles.isNotEmpty()) {
+                UnlockedFilesCard(
+                    files = uiState.unlockedFiles,
+                    defaultPlayer = defaultPlayer,
+                    onPlay = playUrl,
+                    onCopyAll = { onCopyUnlockedLinks(context) },
+                    onClear = onClearUnlocked,
+                    showTokenWarning = capabilities.linksContainToken,
+                    context = context,
                 )
             }
 
@@ -274,6 +297,8 @@ private fun WebDownloadDetailScreen(
                 uiState = uiState,
                 onRefresh = onRefresh,
                 onDownloadZip = onDownloadZip,
+                onUnlockAllMedia = onUnlockAllMedia,
+                perFileLinks = capabilities.perFileLinks,
                 onDownloadDirect = onDownloadDirect,
                 onShowVideos = showVideos,
                 downloadZipMode = downloadZipMode,
@@ -307,15 +332,14 @@ private fun WebDownloadDetailScreen(
         )
     }
 
-    val playLink = uiState.downloadLinkResult
-    if (showPlayChoiceDialog && playLink != null) {
+    pendingPlayUrl?.let { url ->
         PlayChoiceDialog(
             services = mediaPlayers,
             onSelect = { selected, setAsDefault ->
-                onPlayMedia(selected, playLink.url, setAsDefault)
-                showPlayChoiceDialog = false
+                onPlayMedia(selected, url, setAsDefault)
+                pendingPlayUrl = null
             },
-            onDismiss = { showPlayChoiceDialog = false },
+            onDismiss = { pendingPlayUrl = null },
         )
     }
 
@@ -685,6 +709,8 @@ private fun WebActionsCard(
     uiState: WebDownloadDetailUiState,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
+    onUnlockAllMedia: () -> Unit = {},
+    perFileLinks: Boolean = true,
     onDownloadDirect: (Int, String) -> Unit = { _, _ -> },
     // several videos: turn on the Video filter and scroll to the file list
     onShowVideos: () -> Unit = {},
@@ -729,6 +755,18 @@ private fun WebActionsCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 val isZip = wholeDownloadIsZipped(downloadZipMode, item.files, { it.name }, { it.mimetype })
                 Text(text = stringResource(id = if (isZip) R.string.action_generate_zip else R.string.action_download))
+            }
+
+            // a direct link for each media file instead of a zip
+            val mediaCount = remember(item.files) { item.files.mediaFiles().size }
+            if (perFileLinks && item.cached && mediaCount >= 2) {
+                AllMediaLinksButton(
+                    mediaCount = mediaCount,
+                    progress = uiState.unlockProgress,
+                    hasUnlocked = uiState.unlockedFiles.isNotEmpty(),
+                    onClick = onUnlockAllMedia,
+                    enabled = !uiState.isDeleting,
+                )
             }
 
             // a full download with several files is zipped: offer the only video directly, or point to the file list

@@ -103,6 +103,9 @@ import com.github.livingwithhippos.nullseek.core.domain.DebridCapabilities
 import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
 import com.github.livingwithhippos.nullseek.core.domain.needsFileSelection
 import com.github.livingwithhippos.nullseek.ui.utils.FileSelectionCard
+import com.github.livingwithhippos.nullseek.ui.utils.UnlockedFilesCard
+import com.github.livingwithhippos.nullseek.ui.utils.AllMediaLinksButton
+import com.github.livingwithhippos.nullseek.ui.lists.mediaFiles
 import com.github.livingwithhippos.nullseek.ui.utils.FileSelectionDialog
 import com.github.livingwithhippos.nullseek.core.domain.DebridFile
 import com.github.livingwithhippos.nullseek.core.domain.TorrentFullInfo
@@ -170,6 +173,7 @@ fun TorrentDetailScreen(
                 capabilities = capabilities,
                 onSelectFiles = { viewModel.selectFiles(it) },
                 onUnlockAll = { viewModel.unlockAllFiles() },
+                onUnlockAllMedia = { viewModel.unlockAllMedia() },
                 onUnlockFiles = { viewModel.unlockFiles(it) },
                 onClearUnlocked = { viewModel.clearUnlockedFiles() },
                 onCopyUnlockedLinks = { context -> viewModel.copyUnlockedLinks(context) },
@@ -217,6 +221,7 @@ private fun TorrentDetailScreen(
     capabilities: DebridCapabilities = DebridCapabilities.Torbox,
     onSelectFiles: (Set<Int>) -> Unit = {},
     onUnlockAll: () -> Unit = {},
+    onUnlockAllMedia: () -> Unit = {},
     onUnlockFiles: (Set<Int>) -> Unit = {},
     onClearUnlocked: () -> Unit = {},
     onCopyUnlockedLinks: (Context) -> Unit = {},
@@ -335,6 +340,7 @@ private fun TorrentDetailScreen(
                 uiState = uiState,
                 capabilities = capabilities,
                 onUnlockAll = onUnlockAll,
+                onUnlockAllMedia = onUnlockAllMedia,
                 onRequeue = onRequeue,
                 onRefresh = onRefresh,
                 onDownloadZip = onDownloadZip,
@@ -721,194 +727,13 @@ private fun TorrentDownloadLinkCard(
     }
 }
 
-// small lists don't need a search field
-private const val UNLOCKED_SEARCH_MIN_FILES = 5
-
-/** The files of a multi-link torrent, each with the actions of a generated link. */
-@Composable
-private fun UnlockedFilesCard(
-    files: List<UnlockedFile>,
-    defaultPlayer: ExternalService?,
-    onPlay: (String) -> Unit,
-    onCopyAll: () -> Unit,
-    context: Context,
-    modifier: Modifier = Modifier,
-    onClear: (() -> Unit)? = null,
-    // TorBox links include the API token
-    showTokenWarning: Boolean = false,
-) {
-    var query by rememberSaveable { mutableStateOf("") }
-    // only one file shows its actions, so long lists stay short
-    var expandedUrl by rememberSaveable { mutableStateOf<String?>(null) }
-    val shown =
-        remember(files, query) {
-            val clean = query.trim()
-            if (clean.isEmpty()) files else files.filter { it.name.contains(clean, ignoreCase = true) }
-        }
-
-    OutlinedCard(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(id = R.string.unlocked_files_title, files.count { !it.failed }),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    val failedCount = files.count { it.failed }
-                    if (failedCount > 0) {
-                        Text(
-                            text = stringResource(id = R.string.unlock_failed_count, failedCount),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                }
-                IconButton(onClick = onCopyAll) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_copy),
-                        contentDescription = stringResource(id = R.string.copy_all_links),
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-                onClear?.let { clear ->
-                    IconButton(onClick = clear) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_close),
-                            contentDescription = stringResource(id = R.string.clear_selection),
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                }
-            }
-
-            if (showTokenWarning) {
-                Text(
-                    text = stringResource(id = R.string.download_link_api_key_warning),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-
-            if (files.size > UNLOCKED_SEARCH_MIN_FILES) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    placeholder = { Text(stringResource(id = R.string.search_files_hint)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    trailingIcon =
-                        if (query.isNotEmpty()) {
-                            {
-                                IconButton(onClick = { query = "" }) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_close),
-                                        contentDescription = stringResource(id = R.string.clear_search),
-                                    )
-                                }
-                            }
-                        } else {
-                            null
-                        },
-                )
-            }
-
-            shown.forEachIndexed { index, file ->
-                if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                val fileError = file.error
-                if (fileError != null) {
-                    // the provider refused this file, show why
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = file.name,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_warning),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(16.dp),
-                            )
-                            Text(
-                                text = fileError,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
-                    }
-                    return@forEachIndexed
-                }
-                val expanded = expandedUrl == file.url
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { expandedUrl = if (expanded) null else file.url },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = file.name,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            file.size?.let { size ->
-                                Text(
-                                    text = convertToSize(size),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                        Icon(
-                            painter =
-                                painterResource(
-                                    id = if (expanded) R.drawable.ic_arrow_drop_up else R.drawable.ic_arrow_drop_down,
-                                ),
-                            contentDescription = null,
-                        )
-                    }
-                    AnimatedVisibility(visible = expanded) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            DownloadLinkTypeRow(isZipped = false, fileType = file.fileType)
-                            DownloadLinkActions(
-                                url = file.url,
-                                title = file.name,
-                                streamingPageUrl = file.streamingPageUrl,
-                                defaultPlayer = defaultPlayer,
-                                onPlay = { onPlay(file.url) },
-                                context = context,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 @Composable
 private fun TorrentActionsCard(
     item: DebridTorrent,
     uiState: TorrentDetailUiState,
     capabilities: DebridCapabilities,
     onUnlockAll: () -> Unit,
+    onUnlockAllMedia: () -> Unit,
     onRequeue: () -> Unit,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
@@ -992,6 +817,18 @@ private fun TorrentActionsCard(
                     capabilities.zipDownloads &&
                         wholeDownloadIsZipped(downloadZipMode, item.files, { it.name }, { it.mimetype })
                 Text(text = stringResource(id = if (isZip) R.string.action_generate_zip else R.string.action_download))
+            }
+
+            // a direct link for each media file instead of a zip (TorBox)
+            val mediaCount = remember(item.files) { item.files.mediaFiles().size }
+            if (capabilities.perFileLinks && item.cached && mediaCount >= 2) {
+                AllMediaLinksButton(
+                    mediaCount = mediaCount,
+                    progress = uiState.unlockProgress,
+                    hasUnlocked = uiState.unlockedFiles.isNotEmpty(),
+                    onClick = onUnlockAllMedia,
+                    enabled = !uiState.isDeleting,
+                )
             }
 
             // a full download with several files is zipped: offer the only video directly, or point to the file list

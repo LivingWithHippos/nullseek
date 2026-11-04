@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
+import com.github.livingwithhippos.nullseek.ui.lists.mediaFiles
+import androidx.compose.runtime.remember
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvTextField
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -36,9 +38,6 @@ import com.github.livingwithhippos.nullseek.ui.lists.torrent.TorrentDetailViewMo
 import com.github.livingwithhippos.nullseek.utils.wholeDownloadIsZipped
 import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
 import org.koin.androidx.compose.koinViewModel
-
-// small lists don't need a search field
-private const val UNLOCKED_SEARCH_MIN_FILES = 5
 
 @Composable
 fun TvTorrentDetailScreen(
@@ -149,6 +148,17 @@ fun TvTorrentDetailScreen(
                     onClick = { viewModel.startDownload() },
                 )
             }
+            // a direct link for each media file instead of a zip (TorBox)
+            val mediaCount = remember(torrent.files) { torrent.files.mediaFiles().size }
+            if (capabilities.perFileLinks && torrent.cached && mediaCount >= 2) {
+                AllMediaLinksAction(
+                    mediaCount = mediaCount,
+                    progress = uiState.unlockProgress,
+                    hasUnlocked = uiState.unlockedFiles.isNotEmpty(),
+                    enabled = !uiState.isDeleting,
+                    onClick = viewModel::unlockAllMedia,
+                )
+            }
             if (capabilities.exportTorrent) {
                 TvActionButton(
                     text = stringResource(R.string.action_export),
@@ -218,71 +228,19 @@ fun TvTorrentDetailScreen(
                 null
             },
         extraSections = {
-            // Real-Debrid torrents with a link for each file
-            val unlocked = uiState.unlockedFiles
-            if (unlocked.isNotEmpty()) {
-                item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            stringResource(R.string.unlocked_files_title, unlocked.count { !it.failed }),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        val failedCount = unlocked.count { it.failed }
-                        if (failedCount > 0) {
-                            Text(
-                                stringResource(R.string.unlock_failed_count, failedCount),
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
-                        TvActionButton(
-                            text = stringResource(R.string.copy_all_links),
-                            icon = R.drawable.ic_copy,
-                            onClick = { viewModel.copyUnlockedLinks(context) },
-                        )
-                        TvActionButton(
-                            text = stringResource(R.string.clear_selection),
-                            icon = R.drawable.ic_close,
-                            enabled = uiState.unlockProgress == null,
-                            onClick = viewModel::clearUnlockedFiles,
-                        )
-                    }
-                }
-                if (unlocked.size > UNLOCKED_SEARCH_MIN_FILES) {
-                    item {
-                        TvTextField(
-                            value = unlockedQuery,
-                            onValueChange = { unlockedQuery = it },
-                            label = stringResource(R.string.search_files_hint),
-                        )
-                    }
-                }
-                val clean = unlockedQuery.trim()
-                val shown = if (clean.isEmpty()) unlocked else unlocked.filter { it.name.contains(clean, ignoreCase = true) }
-                items(shown) { file ->
-                    val fileError = file.error
-                    if (fileError != null) {
-                        // the provider refused this file, show why
-                        SectionCard(title = file.name, icon = R.drawable.ic_warning) {
-                            Text(fileError, color = MaterialTheme.colorScheme.error)
-                        }
-                        return@items
-                    }
-                    DownloadLinkSection(
-                        result =
-                            LinkResult(
-                                title = file.name,
-                                url = file.url,
-                                fileType = file.fileType,
-                                streamingPageUrl = file.streamingPageUrl,
-                                containsToken = capabilities.linksContainToken,
-                            ),
-                        defaultPlayer = defaultPlayer,
-                        mediaPlayers = mediaPlayers,
-                        onPlayMedia = viewModel::playOnMedia,
-                        onDismiss = null,
-                    )
-                }
-            }
+            // the files unlocked one by one, each with its own link
+            unlockedFilesSection(
+                files = uiState.unlockedFiles,
+                query = unlockedQuery,
+                onQueryChange = { unlockedQuery = it },
+                unlocking = uiState.unlockProgress != null,
+                containsToken = capabilities.linksContainToken,
+                defaultPlayer = defaultPlayer,
+                mediaPlayers = mediaPlayers,
+                onPlayMedia = viewModel::playOnMedia,
+                onCopyAll = { viewModel.copyUnlockedLinks(context) },
+                onClear = viewModel::clearUnlockedFiles,
+            )
             if (torrent.needsFileSelection && torrent.files.isNotEmpty()) {
                 item {
                     TvFileSelectionSection(

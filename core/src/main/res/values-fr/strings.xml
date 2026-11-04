@@ -590,4 +590,5 @@
     <string name="torrent_id">ID du torrent</string>
     <string name="file_not_selected">Non sélectionné</string>
     <string name="unlock_failed_count">%1$d en échec</string>
+    <string name="unlock_all_media">Liens pour tous les médias (%1$d)</string>
 </resources>
