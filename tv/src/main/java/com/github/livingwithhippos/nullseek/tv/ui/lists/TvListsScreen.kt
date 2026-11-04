@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,9 +54,8 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.LoadingBox
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvActionButton
 import com.github.livingwithhippos.nullseek.tv.ui.components.TvTextField
 import com.github.livingwithhippos.nullseek.ui.lists.ListsViewModel
-import com.github.livingwithhippos.torbox.model.TorrentDto
-import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
-import com.github.livingwithhippos.torbox.model.WebDownloadDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
 import org.koin.androidx.compose.koinViewModel
 
 private enum class ListTab(
@@ -69,7 +69,7 @@ private enum class ListTab(
 
 /** Fields shown in a list row, shared by the three download types. */
 private data class RowData(
-    val id: Int,
+    val id: String,
     val name: String,
     val size: Long,
     val state: String,
@@ -77,18 +77,16 @@ private data class RowData(
     val cached: Boolean,
 )
 
-private fun TorrentDto.toRow() = RowData(id, name, size, downloadState, progress, cached)
+private fun DebridTorrent.toRow() = RowData(id, name, size, downloadState, progress, cached)
 
-private fun WebDownloadDto.toRow() = RowData(id, name, size, downloadState, progress, cached)
-
-private fun UsenetDownloadDto.toRow() = RowData(id, name, size, downloadState, progress, cached)
+private fun DebridDownload.toRow() = RowData(id, name, size, downloadState, progress, cached)
 
 @Composable
 fun TvListsScreen(
     uiState: NullRootUiState,
-    loadTorrentDetails: (TorrentDto) -> Unit,
-    loadWebDetails: (WebDownloadDto) -> Unit,
-    loadUsenetDetails: (UsenetDownloadDto) -> Unit,
+    loadTorrentDetails: (DebridTorrent) -> Unit,
+    loadWebDetails: (DebridDownload) -> Unit,
+    loadUsenetDetails: (DebridDownload) -> Unit,
     closeDetails: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ListsViewModel = koinViewModel(),
@@ -101,7 +99,10 @@ fun TvListsScreen(
     val webDownloads = viewModel.webPagingFlow.collectAsLazyPagingItems()
     val usenetDownloads = viewModel.usenetPagingFlow.collectAsLazyPagingItems()
 
-    val tab = ListTab.entries[selectedTab]
+    val capabilities by viewModel.capabilities.collectAsStateWithLifecycle()
+    // usenet is hidden on providers without it
+    val tabs = ListTab.entries.filter { it != ListTab.USENET || capabilities?.usenet != false }
+    val tab = ListTab.entries[selectedTab].takeIf { it in tabs } ?: ListTab.TORRENTS
     val hasDetail =
         when (tab) {
             ListTab.TORRENTS -> uiState.selectedTorrent != null
@@ -130,13 +131,13 @@ fun TvListsScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            TabRow(selectedTabIndex = selectedTab, modifier = Modifier.weight(1f)) {
-                ListTab.entries.forEachIndexed { index, entry ->
+            TabRow(selectedTabIndex = tabs.indexOf(tab), modifier = Modifier.weight(1f)) {
+                tabs.forEach { entry ->
                     Tab(
-                        selected = index == selectedTab,
+                        selected = entry == tab,
                         onFocus = {
-                            if (selectedTab != index) {
-                                selectedTab = index
+                            if (tab != entry) {
+                                selectedTab = entry.ordinal
                                 closeDetail()
                             }
                         },
@@ -234,6 +235,7 @@ fun TvListsScreen(
                                         closeDetail()
                                         torrents.refresh()
                                     },
+                                    onOpenTorrent = loadTorrentDetails,
                                 )
                             }
 
@@ -275,7 +277,7 @@ fun TvListsScreen(
 private fun <T : Any> PagedDownloads(
     items: LazyPagingItems<T>,
     query: String,
-    selectedId: Int?,
+    selectedId: String?,
     toRow: (T) -> RowData,
     onClick: (T) -> Unit,
 ) {

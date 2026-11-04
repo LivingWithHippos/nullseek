@@ -38,7 +38,9 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.RadioButton
+import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
+import com.github.livingwithhippos.nullseek.ui.lists.UnlockedFile
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.utils.convertToSize
 import com.github.livingwithhippos.nullseek.core.utils.formatSpeed
@@ -64,9 +66,7 @@ import com.github.livingwithhippos.nullseek.utils.multiFileVideos
 import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
-import com.github.livingwithhippos.torbox.model.TorrentFileDto
-import com.github.livingwithhippos.torbox.model.UsenetDownloadFileDto
-import com.github.livingwithhippos.torbox.model.WebDownloadFileDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridFile
 
 /** A file of a torrent, web or usenet download, so a single file list works for all of them. */
 data class DetailFile(
@@ -75,6 +75,8 @@ data class DetailFile(
     val shortName: String,
     val size: Long,
     val mimetype: String?,
+    /** false for files not picked on Real-Debrid */
+    val selected: Boolean = true,
 ) {
     val displayName: String
         get() = shortName.ifBlank { name.replace('\\', '/').substringAfterLast('/') }
@@ -96,15 +98,13 @@ data class DetailFile(
     val isSubtitle: Boolean get() = isSubtitleFile(name)
 }
 
-fun TorrentFileDto.toDetailFile() = DetailFile(id, name, shortName, size, mimetype)
-
-fun WebDownloadFileDto.toDetailFile() = DetailFile(id, name, shortName, size, mimetype)
-
-fun UsenetDownloadFileDto.toDetailFile() = DetailFile(id, name, shortName, size, mimetype)
+fun DebridFile.toDetailFile() = DetailFile(id, name, shortName, size, mimetype, selected)
 
 /** Common fields shown at the top of a detail pane. */
 data class DetailOverview(
     val name: String,
+    // the provider id of the item, shown in the details
+    val itemId: String? = null,
     val sizeBytes: Long,
     val state: String,
     val cached: Boolean,
@@ -114,7 +114,7 @@ data class DetailOverview(
     val progress: Double,
     val downloadSpeed: Long,
     val uploadSpeed: Long? = null,
-    val eta: Int,
+    val eta: Int?,
     val seeds: Int? = null,
     val peers: Int? = null,
     val ratio: Double? = null,
@@ -129,6 +129,10 @@ data class LinkResult(
     val url: String,
     val isZipped: Boolean = false,
     val fileType: FileTypeCategory? = null,
+    // a page that streams the file in the browser (Real-Debrid)
+    val streamingPageUrl: String? = null,
+    // the link includes the API token and must not be shared (TorBox)
+    val containsToken: Boolean = true,
 )
 
 private fun FileTypeCategory.labelRes(): Int =
@@ -169,6 +173,10 @@ fun TvDetailPane(
     isDownloading: Boolean = false,
     actions: @Composable () -> Unit,
     extraSections: LazyListScope.() -> Unit = {},
+    // set when single files can be picked and unlocked together (TorBox)
+    fileSelection: TvFileSelection? = null,
+    // scrolls to the extra sections when it turns true, e.g. while files are unlocked
+    scrollToExtras: Boolean = false,
 ) {
     var query by rememberSaveable(overview.name) { mutableStateOf("") }
     var filterVideo by rememberSaveable { mutableStateOf(false) }
@@ -210,6 +218,13 @@ fun TvDetailPane(
     // the link section is item 2, after the header and the overview: show it when a new link arrives
     LaunchedEffect(linkResult) {
         if (linkResult != null) listState.animateScrollToItem(2)
+    }
+    // header, overview, the optional link and the actions come before the extra sections
+    LaunchedEffect(scrollToExtras) {
+        if (scrollToExtras) {
+            withFrameNanos { }
+            listState.animateScrollToItem(3 + if (linkResult != null) 1 else 0)
+        }
     }
 
     LazyColumn(
@@ -295,6 +310,14 @@ fun TvDetailPane(
                         text = stringResource(R.string.torrent_files_title) + " (${filteredFiles.size}/${files.size})",
                         style = MaterialTheme.typography.titleLarge,
                     )
+                    // Real-Debrid downloads only the picked files
+                    val selectedCount = files.count { it.selected }
+                    if (selectedCount < files.size) {
+                        Text(
+                            text = stringResource(R.string.file_selection_selected_count, selectedCount, files.size),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     TvTextField(
                         value = query,
                         onValueChange = { query = it },
@@ -317,11 +340,22 @@ fun TvDetailPane(
                     }
                 }
             }
+            fileSelection?.let { selection ->
+                item { FileSelectionControls(selection, filteredFiles) }
+            }
             if (filteredFiles.isEmpty()) {
                 item { Text(stringResource(R.string.no_files_found), color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             items(filteredFiles, key = { it.id }) { file ->
-                FileRow(file = file, onClick = onDownloadFile?.let { { it(file) } })
+                if (fileSelection?.active == true && file.selected) {
+                    FileRow(
+                        file = file,
+                        onClick = { fileSelection.onToggle(file.id) },
+                        checked = file.id in fileSelection.selected,
+                    )
+                } else {
+                    FileRow(file = file, onClick = onDownloadFile?.takeIf { file.selected }?.let { { it(file) } })
+                }
             }
         }
     }
@@ -348,7 +382,7 @@ private fun OverviewSection(overview: DetailOverview) {
             )
             InfoRow(stringResource(R.string.download_speed), formatSpeed(overview.downloadSpeed))
             overview.uploadSpeed?.let { InfoRow(stringResource(R.string.upload_speed), formatSpeed(it)) }
-            if (overview.eta > 0) InfoRow(stringResource(R.string.eta), formatEta(overview.eta))
+            overview.eta?.takeIf { it > 0 }?.let { InfoRow(stringResource(R.string.eta), formatEta(it)) }
         }
         if (overview.seeds != null && overview.peers != null) {
             InfoRow(stringResource(R.string.torrent_seeds_peers), "${overview.seeds} / ${overview.peers}")
@@ -365,6 +399,7 @@ private fun OverviewSection(overview: DetailOverview) {
             onClick = { expanded = !expanded },
         )
         if (!expanded) return@SectionCard
+        overview.itemId?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.torrent_id), it, maxLines = 1) }
         overview.createdAt?.let { InfoRow(stringResource(R.string.added_on), formatToLocalDate(it)) }
         overview.expiresAt?.let { InfoRow(stringResource(R.string.expires), formatToLocalDate(it)) }
         overview.hash?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.hash), it, maxLines = 1) }
@@ -400,10 +435,63 @@ private fun formatEta(seconds: Int): String {
     return if (h > 0) stringResource(R.string.eta_hours_minutes, h, m) else stringResource(R.string.eta_minutes_seconds, m, s)
 }
 
+/** The state and actions of the file selection mode, to unlock several files separately. */
+class TvFileSelection(
+    val active: Boolean,
+    val selected: Set<Int>,
+    val unlockProgress: Pair<Int, Int>?,
+    val onToggleMode: () -> Unit,
+    val onToggle: (Int) -> Unit,
+    val onSelect: (Collection<Int>) -> Unit,
+    val onClear: () -> Unit,
+    val onUnlock: () -> Unit,
+)
+
+@Composable
+private fun FileSelectionControls(
+    selection: TvFileSelection,
+    shownFiles: List<DetailFile>,
+) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        TvActionButton(
+            text = stringResource(if (selection.active) R.string.cancel else R.string.select_files),
+            icon = if (selection.active) R.drawable.ic_close else R.drawable.ic_check,
+            onClick = selection.onToggleMode,
+        )
+        if (selection.active) {
+            TvActionButton(
+                text = stringResource(R.string.select_shown),
+                onClick = { selection.onSelect(shownFiles.filter { it.selected }.map { it.id }) },
+            )
+            TvActionButton(
+                text = stringResource(R.string.clear_selection),
+                enabled = selection.selected.isNotEmpty(),
+                onClick = selection.onClear,
+            )
+            val progress = selection.unlockProgress
+            TvActionButton(
+                text =
+                    if (progress != null) {
+                        stringResource(R.string.unlocking_progress, progress.first, progress.second)
+                    } else {
+                        stringResource(R.string.unlock_selected, selection.selected.size)
+                    },
+                icon = R.drawable.ic_download,
+                primary = true,
+                loading = progress != null,
+                enabled = selection.selected.isNotEmpty() && progress == null,
+                onClick = selection.onUnlock,
+            )
+        }
+    }
+}
+
 @Composable
 private fun FileRow(
     file: DetailFile,
     onClick: (() -> Unit)?,
+    // non null in the selection mode
+    checked: Boolean? = null,
 ) {
     val icon =
         when {
@@ -419,14 +507,20 @@ private fun FileRow(
         leadingContent = { Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(24.dp)) },
         supportingContent = {
             Text(
-                text = file.directory + " · " + convertToSize(file.size),
+                text =
+                    file.directory + " · " + convertToSize(file.size) +
+                        if (file.selected) "" else " · " + stringResource(R.string.file_not_selected),
                 maxLines = 5,
                 overflow = TextOverflow.Ellipsis,
             )
         },
         trailingContent =
-            onClick?.let {
-                { Icon(painterResource(R.drawable.ic_download), contentDescription = stringResource(R.string.download)) }
+            if (checked != null) {
+                { Switch(checked = checked, onCheckedChange = null) }
+            } else {
+                onClick?.let {
+                    { Icon(painterResource(R.drawable.ic_download), contentDescription = stringResource(R.string.download)) }
+                }
             },
         headlineContent = { Text(file.displayName, maxLines = 2, overflow = TextOverflow.Ellipsis) },
     )
@@ -499,7 +593,7 @@ fun DownloadLinkSection(
     onPlayMedia: (ExternalService, String, Boolean) -> Unit,
     onDismiss: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    isMedia: Boolean = isStreamableOrSubtitle(result.title),
+    isMedia: Boolean = isStreamableOrSubtitle(result.title) || result.streamingPageUrl != null,
 ) {
     val context = LocalContext.current
     val messenger = LocalMessenger.current
@@ -523,11 +617,13 @@ fun DownloadLinkSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Text(
-            text = stringResource(R.string.download_link_api_key_warning),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error,
-        )
+        if (result.containsToken) {
+            Text(
+                text = stringResource(R.string.download_link_api_key_warning),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         Text(result.url, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (isMedia) {
@@ -540,6 +636,13 @@ fun DownloadLinkSection(
                     onClick = {
                         if (defaultPlayer != null) onPlayMedia(defaultPlayer, result.url, false) else showPlayChoice = true
                     },
+                )
+            }
+            result.streamingPageUrl?.let { streamingPage ->
+                TvActionButton(
+                    text = stringResource(R.string.action_stream_browser),
+                    icon = R.drawable.ic_play_arrow,
+                    onClick = { safeOpenUrl(context, streamingPage) },
                 )
             }
             TvActionButton(
@@ -678,4 +781,115 @@ fun DownloadZipDialog(
             onCheckedChange = { rememberChoice = it },
         )
     }
+}
+
+// small lists don't need a search field
+private const val UNLOCKED_SEARCH_MIN_FILES = 5
+
+/** The files unlocked one by one: title with counts, copy and clear, a search above 5 files, then each link. */
+fun LazyListScope.unlockedFilesSection(
+    files: List<UnlockedFile>,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    unlocking: Boolean,
+    containsToken: Boolean,
+    defaultPlayer: ExternalService?,
+    mediaPlayers: List<ExternalService>,
+    onPlayMedia: (ExternalService, String, Boolean) -> Unit,
+    onCopyAll: () -> Unit,
+    onClear: () -> Unit,
+    onSavePlaylist: () -> Unit,
+) {
+    if (files.isEmpty()) return
+    item {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.unlocked_files_title, files.count { !it.failed }),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            val failedCount = files.count { it.failed }
+            if (failedCount > 0) {
+                Text(
+                    stringResource(R.string.unlock_failed_count, failedCount),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            if (files.any { !it.failed }) {
+                TvActionButton(
+                    text = stringResource(R.string.save_playlist),
+                    icon = R.drawable.ic_download,
+                    onClick = onSavePlaylist,
+                )
+            }
+            TvActionButton(
+                text = stringResource(R.string.copy_all_links),
+                icon = R.drawable.ic_copy,
+                onClick = onCopyAll,
+            )
+            TvActionButton(
+                text = stringResource(R.string.clear_selection),
+                icon = R.drawable.ic_close,
+                enabled = !unlocking,
+                onClick = onClear,
+            )
+        }
+    }
+    if (files.size > UNLOCKED_SEARCH_MIN_FILES) {
+        item {
+            TvTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                label = stringResource(R.string.search_files_hint),
+            )
+        }
+    }
+    val clean = query.trim()
+    val shown = if (clean.isEmpty()) files else files.filter { it.name.contains(clean, ignoreCase = true) }
+    items(shown) { file ->
+        val fileError = file.error
+        if (fileError != null) {
+            // the provider refused this file, show why
+            SectionCard(title = file.name, icon = R.drawable.ic_warning) {
+                Text(fileError, color = MaterialTheme.colorScheme.error)
+            }
+            return@items
+        }
+        DownloadLinkSection(
+            result =
+                LinkResult(
+                    title = file.name,
+                    url = file.url,
+                    fileType = file.fileType,
+                    streamingPageUrl = file.streamingPageUrl,
+                    containsToken = containsToken,
+                ),
+            defaultPlayer = defaultPlayer,
+            mediaPlayers = mediaPlayers,
+            onPlayMedia = onPlayMedia,
+            onDismiss = null,
+        )
+    }
+}
+
+/** Asks a direct link for every media file of a download, shown when there are at least two. */
+@Composable
+fun AllMediaLinksAction(
+    mediaCount: Int,
+    progress: Pair<Int, Int>?,
+    hasUnlocked: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    TvActionButton(
+        text =
+            when {
+                progress != null -> stringResource(R.string.unlocking_progress, progress.first, progress.second)
+                hasUnlocked -> stringResource(R.string.unlock_again)
+                else -> stringResource(R.string.unlock_all_media, mediaCount)
+            },
+        icon = R.drawable.ic_play_arrow,
+        loading = progress != null,
+        enabled = enabled && progress == null,
+        onClick = onClick,
+    )
 }

@@ -10,6 +10,8 @@ import com.github.livingwithhippos.nullseek.core.data.stremio.AddonSearchHelper
 import com.github.livingwithhippos.nullseek.core.data.stremio.ImdbTitleResult
 import com.github.livingwithhippos.nullseek.core.data.stremio.ImdbUtils
 import com.github.livingwithhippos.nullseek.core.data.stremio.SeriesEpisodeItem
+import com.github.livingwithhippos.nullseek.core.domain.DebridResult
+import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
 import com.github.livingwithhippos.nullseek.data.model.ExternalService
 import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
 import com.github.livingwithhippos.nullseek.data.model.Indexer
@@ -23,7 +25,6 @@ import com.github.livingwithhippos.nullseek.data.repository.DownloadCreator
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.data.repository.IndexersRepository
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
-import com.github.livingwithhippos.torbox.network.ApiResult
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
@@ -171,6 +173,18 @@ data class SearchUiState(
 
 fun List<Indexer>.activeOnly(): List<Indexer> = filter { it.active }
 
+/** The mode to switch to when [current] has nothing to search with, null to keep it. */
+fun autoSearchMode(
+    current: SearchMode,
+    enabledIndexers: Int,
+    enabledAddons: Int,
+): SearchMode? =
+    when {
+        current == SearchMode.INDEXERS && enabledIndexers == 0 && enabledAddons > 0 -> SearchMode.STREMIO_ADDONS
+        current == SearchMode.STREMIO_ADDONS && enabledAddons == 0 && enabledIndexers > 0 -> SearchMode.INDEXERS
+        else -> null
+    }
+
 /** Relevance keeps the indexers order, the direction only applies to the other options. */
 fun List<SearchResult>.applySort(sort: SearchSort): List<SearchResult> {
     val sorted =
@@ -260,6 +274,7 @@ class SearchViewModel(
     private val externalServicesRepository: ExternalServicesRepository,
     private val cacheChecker: CacheChecker,
     private val imdbFavouriteDao: ImdbFavouriteDao,
+    private val debridProvider: DebridServiceProvider,
 ) : ViewModel() {
     /** Starred IMDb titles, newest first. */
     val favourites: StateFlow<List<ImdbTitleResult>> =
@@ -337,8 +352,13 @@ class SearchViewModel(
 
     private val progress = MutableStateFlow(SearchProgress())
 
+    // only providers with a cache lookup (TorBox) can mark the cached results
     private val checkCache: StateFlow<Boolean> =
-        preferencesRepository.searchCheckCache.stateIn(viewModelScope, SharingStarted.Eagerly, true)
+        combine(
+            preferencesRepository.searchCheckCache,
+            debridProvider.active.map { it?.capabilities?.cacheCheck == true },
+        ) { enabled, supported -> enabled && supported }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** Whether the IMDb details card starts expanded. */
     val imdbDetailsExpanded: StateFlow<Boolean> =
@@ -346,6 +366,34 @@ class SearchViewModel(
 
     // Torrent hashes TorBox reported as cached; empty while the check is turned off.
     private val cachedHashes = MutableStateFlow<Set<String>>(emptySet())
+
+    init {
+        // use the mode that has something to search with. Only a change in the enabled sources
+        // triggers it, so switching mode by hand is never undone.
+        combine(
+            indexersRepository.indexers.map { it.activeOnly().size },
+            addonSearchHelper.getEnabledAddons().map { it.size },
+        ) { indexers, addons -> indexers to addons }
+            .distinctUntilChanged()
+            .onEach { (indexers, addons) ->
+                // the saved value, not the StateFlow default
+                val current =
+                    preferencesRepository.searchMode.first().let { name ->
+                        SearchMode.entries.firstOrNull { it.name == name } ?: SearchMode.INDEXERS
+                    }
+                autoSearchMode(current, indexers, addons)?.let { setSearchMode(it) }
+            }.launchIn(viewModelScope)
+    }
+
+    init {
+        // the cached answers belong to the previous provider
+        debridProvider.active
+            .map { it?.kind }
+            .distinctUntilChanged()
+            .onEach { cachedHashes.value = emptySet() }
+            .launchIn(viewModelScope)
+    }
+
     private val visibleCachedHashes =
         combine(cachedHashes, checkCache) { cached, enabled -> if (enabled) cached else emptySet() }
     private val stremioState = MutableStateFlow(StremioSearchState())
@@ -778,9 +826,9 @@ class SearchViewModel(
         if (!_addingDownload.compareAndSet(expect = false, update = true)) return
         viewModelScope.launch {
             val seeding = preferencesRepository.getDefaultSeedingOption().apiValue
-            val result = runCatching { downloadCreator.createFromLink(link, seedingOption = seeding) }.getOrNull()
+            val result = runCatching { downloadCreator.createFromLink(link, seedingOption = seeding, autoSelectAll = true) }.getOrNull()
             _addingDownload.value = false
-            _downloadEvents.tryEmit(result != null && result !is ApiResult.Failure)
+            _downloadEvents.tryEmit(result is DebridResult.Ok)
         }
     }
 

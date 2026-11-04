@@ -1,6 +1,9 @@
 package com.github.livingwithhippos.nullseek.ui.lists.torrent
 
 import android.content.Context
+import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.Immutable
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
@@ -27,6 +30,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -38,6 +42,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import com.github.livingwithhippos.nullseek.ui.lists.PLAYLIST_MIME_TYPE
+import com.github.livingwithhippos.nullseek.utils.openSavedFile
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,6 +59,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -76,6 +85,7 @@ import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
 import com.github.livingwithhippos.nullseek.ui.utils.DeletingOverlay
 import com.github.livingwithhippos.nullseek.ui.utils.DetailOverviewCard
+import com.github.livingwithhippos.nullseek.ui.utils.DownloadLinkActions
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadLinkTypeRow
 import com.github.livingwithhippos.nullseek.ui.utils.DownloadZipModal
 import com.github.livingwithhippos.nullseek.ui.utils.FileTypeBadge
@@ -96,9 +106,16 @@ import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
 import com.github.livingwithhippos.nullseek.utils.wholeDownloadIsZipped
-import com.github.livingwithhippos.torbox.model.TorrentDto
-import com.github.livingwithhippos.torbox.model.TorrentFileDto
-import com.github.livingwithhippos.torbox.model.TorrentInfoDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridCapabilities
+import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
+import com.github.livingwithhippos.nullseek.core.domain.needsFileSelection
+import com.github.livingwithhippos.nullseek.ui.utils.FileSelectionCard
+import com.github.livingwithhippos.nullseek.ui.utils.UnlockedFilesCard
+import com.github.livingwithhippos.nullseek.ui.utils.AllMediaLinksButton
+import com.github.livingwithhippos.nullseek.ui.lists.mediaFiles
+import com.github.livingwithhippos.nullseek.ui.utils.FileSelectionDialog
+import com.github.livingwithhippos.nullseek.core.domain.DebridFile
+import com.github.livingwithhippos.nullseek.core.domain.TorrentFullInfo
 import java.util.Locale
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -108,8 +125,10 @@ fun TorrentDetailScreen(
     modifier: Modifier = Modifier,
     contentType: NullContentType,
     navigationType: NullNavigationType,
-    item: TorrentDto,
+    item: DebridTorrent,
     closeDetails: () -> Unit,
+    // shows another torrent in this pane, e.g. the one added again with other files
+    onOpenTorrent: (DebridTorrent) -> Unit = {},
     viewModel: TorrentDetailViewModel = koinViewModel(),
 ) {
     BackHandler {
@@ -125,8 +144,10 @@ fun TorrentDetailScreen(
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
     val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
+    val capabilities by viewModel.capabilities.collectAsStateWithLifecycle()
     val currentItem = uiState.torrent ?: item
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -136,8 +157,30 @@ fun TorrentDetailScreen(
                     launch { snackbarHostState.showSnackbar(event.message) }
                 }
 
+                is TorrentDetailEvent.PlaylistSaved -> {
+                    launch {
+                        val uri = event.uri
+                        val result =
+                            snackbarHostState.showSnackbar(
+                                message = event.message,
+                                actionLabel = uri?.let { context.getString(R.string.action_open) },
+                                withDismissAction = true,
+                                duration = SnackbarDuration.Long,
+                            )
+                        if (result == SnackbarResult.ActionPerformed && uri != null &&
+                            !openSavedFile(context, uri, PLAYLIST_MIME_TYPE)
+                        ) {
+                            snackbarHostState.showSnackbar(context.getString(R.string.playlist_no_app))
+                        }
+                    }
+                }
+
                 TorrentDetailEvent.Deleted -> {
                     closeDetails()
+                }
+
+                is TorrentDetailEvent.OpenTorrent -> {
+                    onOpenTorrent(event.torrent)
                 }
             }
         }
@@ -153,6 +196,17 @@ fun TorrentDetailScreen(
                 context = LocalContext.current,
                 item = currentItem,
                 uiState = uiState,
+                capabilities = capabilities,
+                onSelectFiles = { viewModel.selectFiles(it) },
+                onUnlockAll = { viewModel.unlockAllFiles() },
+                onUnlockAllMedia = { viewModel.unlockAllMedia() },
+                onUnlockFiles = { viewModel.unlockFiles(it) },
+                onClearUnlocked = { viewModel.clearUnlockedFiles() },
+                onCopyUnlockedLinks = { context -> viewModel.copyUnlockedLinks(context) },
+                onSavePlaylist = { context -> viewModel.savePlaylist(context) },
+                onRequeue = { viewModel.startRequeue() },
+                onConfirmRequeue = { viewModel.confirmRequeue(it) },
+                onCancelRequeue = { viewModel.cancelRequeue() },
                 defaultPlayer = defaultPlayer,
                 mediaPlayers = mediaPlayers,
                 filterFilesFullPath = filterFilesFullPath,
@@ -189,8 +243,19 @@ fun TorrentDetailScreen(
 private fun TorrentDetailScreen(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    item: TorrentDto,
+    item: DebridTorrent,
     uiState: TorrentDetailUiState,
+    capabilities: DebridCapabilities = DebridCapabilities.Torbox,
+    onSelectFiles: (Set<Int>) -> Unit = {},
+    onUnlockAll: () -> Unit = {},
+    onUnlockAllMedia: () -> Unit = {},
+    onUnlockFiles: (Set<Int>) -> Unit = {},
+    onClearUnlocked: () -> Unit = {},
+    onCopyUnlockedLinks: (Context) -> Unit = {},
+    onSavePlaylist: (Context) -> Unit = {},
+    onRequeue: () -> Unit = {},
+    onConfirmRequeue: (Set<Int>) -> Unit = {},
+    onCancelRequeue: () -> Unit = {},
     defaultPlayer: ExternalService?,
     mediaPlayers: List<ExternalService>,
     filterFilesFullPath: Boolean = false,
@@ -211,7 +276,11 @@ private fun TorrentDetailScreen(
     onConfirmDelete: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
-    var showPlayChoiceDialog by remember { mutableStateOf(false) }
+    // the link waiting for a media player to be picked
+    var pendingPlayUrl by remember { mutableStateOf<String?>(null) }
+    val playUrl: (String) -> Unit = { url ->
+        if (defaultPlayer != null) onPlayMedia(defaultPlayer, url, false) else pendingPlayUrl = url
+    }
 
     Column(
         modifier = modifier
@@ -257,15 +326,34 @@ private fun TorrentDetailScreen(
                     result = linkResult,
                     context = context,
                     defaultPlayer = defaultPlayer,
-                    onPlay = {
-                        if (defaultPlayer != null) {
-                            onPlayMedia(defaultPlayer, linkResult.url, false)
-                        } else {
-                            showPlayChoiceDialog = true
-                        }
-                    },
+                    onPlay = { playUrl(linkResult.url) },
                     onDismiss = onDismissDownloadLink,
                     modifier = Modifier.bringIntoViewRequester(linkRequester),
+                )
+            }
+
+            // Real-Debrid torrents with a link for each file
+            // show the unlocked files as soon as the first one arrives
+            val unlockedRequester = remember { BringIntoViewRequester() }
+            val isUnlocking = uiState.unlockProgress != null
+            val hasUnlocked = uiState.unlockedFiles.isNotEmpty()
+            LaunchedEffect(isUnlocking, hasUnlocked) {
+                if (isUnlocking && hasUnlocked) {
+                    withFrameNanos { }
+                    unlockedRequester.bringIntoView()
+                }
+            }
+            if (uiState.unlockedFiles.isNotEmpty()) {
+                UnlockedFilesCard(
+                    modifier = Modifier.bringIntoViewRequester(unlockedRequester),
+                    files = uiState.unlockedFiles,
+                    defaultPlayer = defaultPlayer,
+                    onPlay = playUrl,
+                    onCopyAll = { onCopyUnlockedLinks(context) },
+                    onSavePlaylist = { onSavePlaylist(context) },
+                    onClear = onClearUnlocked,
+                    showTokenWarning = capabilities.linksContainToken,
+                    context = context,
                 )
             }
 
@@ -278,9 +366,22 @@ private fun TorrentDetailScreen(
                 filterVideo = true
                 scope.launch { filesRequester.bringIntoView() }
             }
+            // Real-Debrid waits for the files to be picked before downloading
+            if (item.needsFileSelection && item.files.isNotEmpty()) {
+                FileSelectionCard(
+                    files = item.files,
+                    isSelecting = uiState.isSelectingFiles,
+                    onConfirm = onSelectFiles,
+                )
+            }
+
             TorrentActionsCard(
                 item = item,
                 uiState = uiState,
+                capabilities = capabilities,
+                onUnlockAll = onUnlockAll,
+                onUnlockAllMedia = onUnlockAllMedia,
+                onRequeue = onRequeue,
                 onRefresh = onRefresh,
                 onDownloadZip = onDownloadZip,
                 onDownloadDirect = onDownloadDirect,
@@ -300,22 +401,42 @@ private fun TorrentDetailScreen(
                 )
             }
 
-            // Card 5: Files List (with per-file download buttons)
-            if (item.files.isNotEmpty()) {
+            // Card 5: Files List (with per-file download buttons), only the picked ones on Real-Debrid
+            // every file, the ones not picked on Real-Debrid are marked as such
+            val downloadableFiles = item.files
+            if (downloadableFiles.isNotEmpty() && !item.needsFileSelection) {
                 TorrentFilesCard(
-                    files = item.files,
-                    isCached = item.cached,
+                    files = downloadableFiles,
+                    // on Real-Debrid the files come together, the list is read-only
+                    isCached = item.cached && capabilities.perFileLinks,
                     filterVideo = filterVideo,
                     onFilterVideoChange = { filterVideo = it },
                     modifier = Modifier.bringIntoViewRequester(filesRequester),
                     filterFilesFullPath = filterFilesFullPath,
                     onDownloadFile = onDownloadFile,
+                    // TorBox can unlock single files, pick several to avoid a zip
+                    onUnlockFiles = onUnlockFiles.takeIf { capabilities.perFileLinks && item.cached },
+                    unlockProgress = uiState.unlockProgress,
                 )
             }
 
             // Bottom spacer for FAB
             Spacer(modifier = Modifier.height(88.dp))
         }
+    }
+
+    (uiState.requeue as? RequeueState.Picking)?.let { picking ->
+        FileSelectionDialog(
+            name = picking.newTorrent.name,
+            files = picking.newTorrent.files,
+            remaining = 0,
+            onConfirm = onConfirmRequeue,
+            onLater = onCancelRequeue,
+            onSelectAllRemaining = {},
+            onDelete = {},
+            initialSelected = picking.preselected,
+            showDelete = false,
+        )
     }
 
     uiState.pendingDownload?.let { pending ->
@@ -327,15 +448,14 @@ private fun TorrentDetailScreen(
         )
     }
 
-    val playLink = uiState.downloadLinkResult
-    if (showPlayChoiceDialog && playLink != null) {
+    pendingPlayUrl?.let { url ->
         PlayChoiceDialog(
             services = mediaPlayers,
             onSelect = { selected, setAsDefault ->
-                onPlayMedia(selected, playLink.url, setAsDefault)
-                showPlayChoiceDialog = false
+                onPlayMedia(selected, url, setAsDefault)
+                pendingPlayUrl = null
             },
-            onDismiss = { showPlayChoiceDialog = false },
+            onDismiss = { pendingPlayUrl = null },
         )
     }
 
@@ -373,7 +493,7 @@ private fun TorrentDetailScreen(
     }
 }
 
-private fun TorrentDto.toOverviewInfo() =
+private fun DebridTorrent.toOverviewInfo() =
     OverviewInfo(
         titleRes = R.string.torrent_overview,
         name = name,
@@ -387,11 +507,12 @@ private fun TorrentDto.toOverviewInfo() =
         linkLabelRes = R.string.magnet_link,
         copyLinkDescriptionRes = R.string.copy_magnet,
         showLinkText = false,
+        itemId = id,
     )
 
 @Composable
 private fun TorrentTransferProgressCard(
-    item: TorrentDto,
+    item: DebridTorrent,
     modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
@@ -462,7 +583,7 @@ private fun TorrentTransferProgressCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = formatSpeed(item.uploadSpeed),
+                    text = formatSpeed(item.uploadSpeed ?: 0),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -480,7 +601,7 @@ private fun TorrentTransferProgressCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = stringResource(R.string.seeds_peers_count, item.seeds, item.peers),
+                    text = stringResource(R.string.seeds_peers_count, item.seeds ?: 0, item.peers ?: 0),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -498,7 +619,7 @@ private fun TorrentTransferProgressCard(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = String.format(Locale.US, "%.2f", item.ratio),
+                    text = item.ratio?.let { String.format(Locale.US, "%.2f", it) } ?: "—",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -518,8 +639,8 @@ private fun TorrentTransferProgressCard(
                 Text(
                     text = if (item.downloadFinished || item.progress >= 1.0) {
                         stringResource(R.string.finished)
-                    } else if (item.eta > 0) {
-                        stringResource(R.string.eta_seconds, item.eta)
+                    } else if ((item.eta ?: 0) > 0) {
+                        stringResource(R.string.eta_seconds, item.eta ?: 0)
                     } else {
                         "—"
                     },
@@ -592,29 +713,31 @@ private fun TorrentDownloadLinkCard(
 
             DownloadLinkTypeRow(isZipped = result.isZipped, fileType = result.fileType)
 
-            // Security Warning Banner
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier = Modifier.padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+            // Security Warning Banner, the link includes the API token
+            if (result.containsToken) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_warning),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Text(
-                        text = stringResource(id = R.string.download_link_api_key_warning),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontWeight = FontWeight.Medium,
-                    )
+                    Row(
+                        modifier = Modifier.padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_warning),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Text(
+                            text = stringResource(id = R.string.download_link_api_key_warning),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
                 }
             }
 
@@ -632,124 +755,26 @@ private fun TorrentDownloadLinkCard(
                 )
             }
 
-            val isMedia = isStreamableOrSubtitle(displayTitle)
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (isMedia) {
-                    Button(
-                        onClick = onPlay,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_play_arrow),
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        val playText = defaultPlayer?.let {
-                            stringResource(id = R.string.action_play_on, it.name)
-                        } ?: stringResource(id = R.string.action_play_external)
-                        Text(text = playText)
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (isMedia) {
-                        FilledTonalButton(
-                            onClick = { openWebPage(context, result.url) },
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_open_in_new),
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = stringResource(id = R.string.action_open_link))
-                        }
-                    } else {
-                        Button(
-                            onClick = { openWebPage(context, result.url) },
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_open_in_new),
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = stringResource(id = R.string.action_open_link))
-                        }
-                    }
-
-                    val chooserTitle = stringResource(id = R.string.action_open_with)
-                    FilledTonalButton(
-                        onClick = {
-                            openWith(
-                                context = context,
-                                url = result.url,
-                                fileName = displayTitle,
-                                chooserTitle = chooserTitle,
-                            )
-                        },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_apps),
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = stringResource(id = R.string.action_open_with))
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    OutlinedButton(
-                        onClick = {
-                            setClipboardText(context, result.url)
-                        },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_copy),
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = stringResource(id = R.string.copy_link))
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            shareText(context, result.url, title = displayTitle)
-                        },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_share),
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = stringResource(id = R.string.action_share))
-                    }
-                }
-            }
+            DownloadLinkActions(
+                url = result.url,
+                title = displayTitle,
+                streamingPageUrl = result.streamingPageUrl,
+                defaultPlayer = defaultPlayer,
+                onPlay = onPlay,
+                context = context,
+            )
         }
     }
 }
 
 @Composable
 private fun TorrentActionsCard(
-    item: TorrentDto,
+    item: DebridTorrent,
     uiState: TorrentDetailUiState,
+    capabilities: DebridCapabilities,
+    onUnlockAll: () -> Unit,
+    onUnlockAllMedia: () -> Unit,
+    onRequeue: () -> Unit,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
     modifier: Modifier = Modifier,
@@ -777,8 +802,40 @@ private fun TorrentActionsCard(
                 fontWeight = FontWeight.Bold,
             )
 
-            // Download as Zip Button (Checks item.cached)
-            FilledTonalButton(
+            val selectedFiles = item.files.filter { it.selected }
+            // without zips a whole download works only with a single link, otherwise each file gets its own
+            val wholeAsLinks =
+                !capabilities.zipDownloads && selectedFiles.size > 1 && item.hosterLinks.size != 1
+            if (wholeAsLinks) {
+                val progress = uiState.unlockProgress
+                FilledTonalButton(
+                    onClick = onUnlockAll,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = item.cached && progress == null && !uiState.isDeleting,
+                ) {
+                    if (progress != null) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_download),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text =
+                            when {
+                                progress != null -> stringResource(id = R.string.unlocking_progress, progress.first, progress.second)
+                                uiState.unlockedFiles.isNotEmpty() -> stringResource(id = R.string.unlock_again)
+                                else -> stringResource(id = R.string.unlock_all_files)
+                            },
+                    )
+                }
+            } else FilledTonalButton(
                 onClick = onDownloadZip,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = item.cached && !uiState.isDownloading && !uiState.isDeleting,
@@ -796,12 +853,29 @@ private fun TorrentActionsCard(
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                val isZip = wholeDownloadIsZipped(downloadZipMode, item.files, { it.name }, { it.mimetype })
+                val isZip =
+                    capabilities.zipDownloads &&
+                        wholeDownloadIsZipped(downloadZipMode, item.files, { it.name }, { it.mimetype })
                 Text(text = stringResource(id = if (isZip) R.string.action_generate_zip else R.string.action_download))
             }
 
+            // a direct link for each media file instead of a zip (TorBox)
+            val mediaCount = remember(item.files) { item.files.mediaFiles().size }
+            if (capabilities.perFileLinks && item.cached && mediaCount >= 2) {
+                AllMediaLinksButton(
+                    mediaCount = mediaCount,
+                    progress = uiState.unlockProgress,
+                    hasUnlocked = uiState.unlockedFiles.isNotEmpty(),
+                    onClick = onUnlockAllMedia,
+                    enabled = !uiState.isDeleting,
+                )
+            }
+
             // a full download with several files is zipped: offer the only video directly, or point to the file list
-            when (val videos = if (item.cached) multiFileVideos(item.files, { it.name }, { it.mimetype }) else null) {
+            when (
+                val videos =
+                    if (item.cached && capabilities.perFileLinks) multiFileVideos(selectedFiles, { it.name }, { it.mimetype }) else null
+            ) {
                 is MultiFileVideos.Single -> {
                     val video = videos.file
                     SingleVideoShortcut(
@@ -823,7 +897,7 @@ private fun TorrentActionsCard(
                 null -> {}
             }
 
-            if (!item.cached) {
+            if (!item.cached && !item.needsFileSelection) {
                 Text(
                     text = stringResource(id = R.string.download_not_cached_warning),
                     style = MaterialTheme.typography.bodySmall,
@@ -832,7 +906,7 @@ private fun TorrentActionsCard(
             }
 
             // Export Button
-            if (item.cached.not()) {
+            if (item.cached.not() && capabilities.exportTorrent) {
                 OutlinedButton(
                     onClick = onShowExportDialog,
                     modifier = Modifier.fillMaxWidth(),
@@ -855,7 +929,7 @@ private fun TorrentActionsCard(
                 }
             }
 
-            if (item.cached.not()) {
+            if (item.cached.not() && capabilities.fullTorrentInfo) {
                 // Full Info Button
                 OutlinedButton(
                     onClick = onToggleFullInfo,
@@ -884,6 +958,31 @@ private fun TorrentActionsCard(
                             stringResource(R.string.show_full_info)
                         },
                     )
+                }
+            }
+
+            // Real-Debrid can't change the files of a torrent, it is added again instead
+            if (capabilities.reselectFiles && !item.needsFileSelection) {
+                val requeueing = uiState.requeue != null
+                OutlinedButton(
+                    onClick = onRequeue,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !requeueing && !uiState.isDeleting,
+                ) {
+                    if (requeueing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_edit),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(id = R.string.requeue_choose_files))
                 }
             }
 
@@ -942,7 +1041,7 @@ private fun TorrentActionsCard(
 
 @Composable
 private fun TorrentFullInfoCard(
-    fullInfo: TorrentInfoDto,
+    fullInfo: TorrentFullInfo,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1118,30 +1217,159 @@ private fun formatFilePathDisplay(fullName: String, shortName: String): String {
     return rawPath.ifBlank { "/" }
 }
 
-private fun TorrentFileDto.isVideo(): Boolean = isVideoFile(name, mimetype)
+private fun DebridFile.isVideo(): Boolean = isVideoFile(name, mimetype)
 
-private fun TorrentFileDto.isAudio(): Boolean = isAudioFile(name, mimetype)
+private fun DebridFile.isAudio(): Boolean = isAudioFile(name, mimetype)
 
-private fun TorrentFileDto.isSubtitle(): Boolean = isSubtitleFile(name)
+private fun DebridFile.isSubtitle(): Boolean = isSubtitleFile(name)
+
+// how many file rows are drawn at a time
+private const val FILE_ROWS_STEP = 100
+
+/** The texts shown for a file, computed once. */
+@Immutable
+private data class FileRowData(
+    val file: DebridFile,
+    val displayName: String,
+    val path: String,
+    val sizeText: String,
+    val fileType: FileTypeCategory?,
+    val downloadName: String,
+)
+
+private fun DebridFile.toRowData() =
+    FileRowData(
+        file = this,
+        displayName = formatFileNameDisplay(name, shortName),
+        path = formatFilePathDisplay(name, shortName),
+        sizeText = convertToSize(size),
+        fileType = detectFileTypeCategory(name, mimetype),
+        downloadName = shortName.ifBlank { name.substringAfterLast('/').substringAfterLast('\\') },
+    )
+
+/** A file of the list, redrawn only when its own state changes. */
+@Composable
+private fun TorrentFileRow(
+    row: FileRowData,
+    inSelection: Boolean,
+    checked: Boolean,
+    canDownload: Boolean,
+    onToggle: (Int) -> Unit,
+    onDownload: (Int, String) -> Unit,
+) {
+    val file = row.file
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .alpha(if (file.selected) 1f else 0.5f)
+                .then(if (inSelection) Modifier.clickable { onToggle(file.id) } else Modifier),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (inSelection) {
+            Checkbox(checked = checked, onCheckedChange = null)
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = row.displayName,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = row.sizeText,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (!file.selected) {
+                    Text(
+                        text = stringResource(id = R.string.file_not_selected),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                row.fileType?.let { category ->
+                    FileTypeBadge(category = category)
+                }
+            }
+            Text(
+                text = row.path,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 5,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        if (canDownload) {
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = { onDownload(file.id, row.downloadName) },
+                modifier = Modifier.size(36.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_download),
+                    contentDescription = "Download ${file.name}",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun TorrentFilesCard(
-    files: List<TorrentFileDto>,
+    files: List<DebridFile>,
     isCached: Boolean,
     filterVideo: Boolean,
     onFilterVideoChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     filterFilesFullPath: Boolean = false,
     onDownloadFile: (Int, String) -> Unit,
+    // set when single files can be unlocked together, enables the selection mode
+    onUnlockFiles: ((Set<Int>) -> Unit)? = null,
+    unlockProgress: Pair<Int, Int>? = null,
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    var selectionMode by rememberSaveable(files) { mutableStateOf(false) }
+    var selected by rememberSaveable(files) { mutableStateOf(emptySet<Int>()) }
+    val canSelect = isCached && onUnlockFiles != null
+    val isUnlocking = unlockProgress != null
+    // turning on the selection mode waits a frame, so the button can show it's working
+    var switchingMode by remember { mutableStateOf(false) }
+    LaunchedEffect(switchingMode) {
+        if (switchingMode) {
+            withFrameNanos { }
+            selectionMode = true
+            switchingMode = false
+        }
+    }
+    // the text of each row, computed once per file list instead of at every redraw
+    val rows = remember(files) { files.map { it.toRowData() } }
+    val toggleFile: (Int) -> Unit =
+        remember {
+            { id -> selected = if (id in selected) selected - id else selected + id }
+        }
     var filterAudio by rememberSaveable { mutableStateOf(false) }
     var filterSubtitles by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
     val filteredFiles =
-        remember(files, searchQuery, filterFilesFullPath, filterVideo, filterAudio, filterSubtitles) {
-            files.filter { file ->
+        remember(rows, searchQuery, filterFilesFullPath, filterVideo, filterAudio, filterSubtitles) {
+            rows.filter { row ->
+                val file = row.file
                 val fileNameOnly =
                     file.shortName.ifBlank {
                         file.name.substringAfterLast('/').substringAfterLast('\\')
@@ -1161,6 +1389,10 @@ private fun TorrentFilesCard(
                 matchesSearch && matchesType
             }
         }
+    // long lists are drawn in steps, drawing thousands of rows at once freezes the screen
+    var shownCount by rememberSaveable(files, searchQuery, filterVideo, filterAudio, filterSubtitles) {
+        mutableIntStateOf(FILE_ROWS_STEP)
+    }
 
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
@@ -1173,11 +1405,53 @@ private fun TorrentFilesCard(
                 searchQuery.isNotBlank() || filterVideo || filterAudio || filterSubtitles
             val countText =
                 if (isFiltered) "${filteredFiles.size}/${files.size}" else "${files.size}"
-            Text(
-                text = "${stringResource(id = R.string.torrent_files_title)} ($countText)",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "${stringResource(id = R.string.torrent_files_title)} ($countText)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    // Real-Debrid downloads only the picked files
+                    val selectedCount = files.count { it.selected }
+                    if (selectedCount < files.size) {
+                        Text(
+                            text = stringResource(id = R.string.file_selection_selected_count, selectedCount, files.size),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                if (canSelect) {
+                    TextButton(
+                        onClick = {
+                            if (selectionMode) {
+                                selectionMode = false
+                                selected = emptySet()
+                            } else {
+                                switchingMode = true
+                            }
+                        },
+                        enabled = !isUnlocking && !switchingMode,
+                    ) {
+                        if (switchingMode) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                        } else if (!selectionMode) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_check),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                        }
+                        Text(text = stringResource(id = if (selectionMode) R.string.cancel else R.string.select_files))
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = searchQuery,
@@ -1253,6 +1527,58 @@ private fun TorrentFilesCard(
                 )
             }
 
+            if (canSelect && selectionMode) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.selection_count, selected.size),
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(
+                        onClick = { selected = selected + filteredFiles.filter { it.file.selected }.map { it.file.id } },
+                        enabled = !isUnlocking,
+                    ) {
+                        Text(text = stringResource(id = R.string.select_shown))
+                    }
+                    TextButton(onClick = { selected = emptySet() }, enabled = selected.isNotEmpty() && !isUnlocking) {
+                        Text(text = stringResource(id = R.string.clear_selection))
+                    }
+                }
+                FilledTonalButton(
+                    onClick = {
+                        onUnlockFiles?.invoke(selected)
+                        selected = emptySet()
+                        selectionMode = false
+                    },
+                    enabled = selected.isNotEmpty() && unlockProgress == null,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (unlockProgress != null) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text =
+                                stringResource(
+                                    id = R.string.unlocking_progress,
+                                    unlockProgress.first,
+                                    unlockProgress.second,
+                                ),
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_download),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(id = R.string.unlock_selected, selected.size))
+                    }
+                }
+            }
+
             if (filteredFiles.isEmpty()) {
                 Text(
                     text = stringResource(id = R.string.no_files_found),
@@ -1261,71 +1587,27 @@ private fun TorrentFilesCard(
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
             } else {
-                filteredFiles.forEachIndexed { index, file ->
+                filteredFiles.take(shownCount).forEachIndexed { index, row ->
                     if (index > 0) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
-
-                    Row(
+                    val inSelection = canSelect && selectionMode && row.file.selected
+                    TorrentFileRow(
+                        row = row,
+                        inSelection = inSelection,
+                        checked = inSelection && row.file.id in selected,
+                        canDownload = isCached && !inSelection && row.file.selected && !isUnlocking,
+                        onToggle = toggleFile,
+                        onDownload = onDownloadFile,
+                    )
+                }
+                val hidden = filteredFiles.size - shownCount
+                if (hidden > 0) {
+                    TextButton(
+                        onClick = { shownCount += FILE_ROWS_STEP },
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Text(
-                                text = formatFileNameDisplay(file.name, file.shortName),
-                                style = MaterialTheme.typography.bodyMedium,
-                                maxLines = 3,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(
-                                    text = convertToSize(file.size),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                detectFileTypeCategory(file.name, file.mimetype)?.let { category ->
-                                    FileTypeBadge(category = category)
-                                }
-                            }
-                            Text(
-                                text = formatFilePathDisplay(file.name, file.shortName),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 5,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-
-                        if (isCached) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            IconButton(
-                                onClick = {
-                                    onDownloadFile(
-                                        file.id,
-                                        file.shortName.ifBlank {
-                                            file.name.substringAfterLast('/')
-                                                .substringAfterLast('\\')
-                                        },
-                                    )
-                                },
-                                modifier = Modifier.size(36.dp),
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_download),
-                                    contentDescription = "Download ${file.name}",
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
+                        Text(text = stringResource(id = R.string.show_more_files, minOf(hidden, FILE_ROWS_STEP), hidden))
                     }
                 }
             }

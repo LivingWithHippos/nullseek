@@ -13,7 +13,7 @@ class WidgetModelsTest {
                 items =
                     listOf(
                         WidgetDownloadItem(
-                            id = 42,
+                            id = "42",
                             name = "Linux ISO",
                             type = WidgetDownloadType.TORRENT,
                             progress = 0.65,

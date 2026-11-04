@@ -1,7 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">NullSeek</string>
-    <string name="compose">Compose</string>
+    <string name="app_name" translatable="false">NullSeek</string>
     <string name="close_drawer">Close Drawer</string>
     <string name="navigation_drawer">Navigation Drawer</string>
     <string name="user">User</string>
@@ -11,7 +10,7 @@
     <string name="settings">Settings</string>
     <string name="new_download">New Download</string>
     <string name="link_label">Link</string>
-    <string name="link_hint">magnet, https</string>
+    <string name="link_hint" translatable="false">magnet, https</string>
     <string name="file_label">File</string>
     <string name="file_hint">Tap to select a file</string>
     <string name="password_label">Password</string>
@@ -37,7 +36,7 @@
     <string name="open_torbox_web">Open TorBox Web</string>
     <string name="open_torbox_subscription">Open Subscription Page</string>
     <string name="referral_dialog_title">Support NullSeek?</string>
-    <string name="referral_dialog_message">Would you like to include our referral code when opening TorBox in your browser? Your choice will be saved for next runs.</string>
+    <string name="referral_dialog_message">Would you like to support us including a referral code? Your choice will be saved for next runs, you can change it in Settings.</string>
     <string name="referral_dialog_positive">Yes, Include Referral</string>
     <string name="referral_dialog_negative">No, Open Directly</string>
     <string name="account_overview">Account Overview</string>
@@ -71,7 +70,7 @@
     <string name="setup_connect_button">Connect Account</string>
     <string name="paste_from_clipboard">Paste from Clipboard</string>
     <string name="clear_links">Clear links</string>
-    <string name="setup_dialog_message">Would you like to include our referral code when signing up on TorBox? Your choice will be saved for future runs.</string>
+    <string name="setup_dialog_message">Would you like to support us including a referral code? Your choice will be saved for next runs.</string>
     <string name="copy_referral">Copy Referral Code</string>
     <string name="torrent_overview">Torrent Overview</string>
     <string name="hash">Hash</string>
@@ -266,7 +265,7 @@
     <string name="providers_default_set">%1$s is now the default</string>
     <string name="find_in_list_hint">Find in loaded list</string>
     <string name="find_in_list_no_matches">No matches</string>
-    <string name="find_in_list_counter">%1$d/%2$d</string>
+    <string name="find_in_list_counter" translatable="false">%1$d/%2$d</string>
     <string name="find_in_list_previous">Previous match</string>
     <string name="find_in_list_next">Next match</string>
     <string name="find_in_list_clear">Clear search</string>
@@ -346,7 +345,7 @@
     <string name="search_favourites_clear_confirm">Remove all %1$d favourites?</string>
     <string name="search_favourites_show">Show favourites</string>
     <string name="search_favourites_show_count">Show favourites (%1$d)</string>
-    <string name="search_stremio_imdb_rating">★ %1$s</string>
+    <string name="search_stremio_imdb_rating" translatable="false">★ %1$s</string>
     <string name="search_stremio_expand_details">Expand details</string>
     <string name="search_stremio_collapse_details">Collapse details</string>
     <string name="search_stremio_director">Director: %1$s</string>
@@ -374,7 +373,7 @@
     <string name="enabled">Enabled</string>
     <string name="disabled">Disabled</string>
     <string name="installing">Installing…</string>
-    <string name="version_format">v%s</string>
+    <string name="version_format" translatable="false">v%s</string>
     <string name="stremio_addon_delete_title">Delete Addon</string>
     <string name="stremio_addon_delete_message">Are you sure you want to delete addon \"%s\"?</string>
     <string name="delete">Delete</string>
@@ -402,15 +401,15 @@
     <string name="theme_color_green">Green</string>
     <string name="theme_color_orange">Orange</string>
     <string name="theme_color_red">Red</string>
-    <string name="theme_mode_amoled">AMOLED</string>
-    <string name="theme_color_torbox">TorBox</string>
+    <string name="theme_mode_amoled" translatable="false">AMOLED</string>
+    <string name="theme_color_torbox" translatable="false">TorBox</string>
     <string name="theme_standard_font_title">Standard font</string>
     <string name="theme_standard_font_summary">Use the system font instead of monospace</string>
     <string name="donate_title">Support NullSeek</string>
     <string name="donate_summary">NullSeek is free and open source. If you find it useful, consider buying me a coffee.</string>
     <string name="donate_github_hint">The GitHub page always has the latest donation options.</string>
-    <string name="donate_kofi_button">Ko-fi</string>
-    <string name="donate_github_button">GitHub</string>
+    <string name="donate_kofi_button" translatable="false">Ko-fi</string>
+    <string name="donate_github_button" translatable="false">GitHub</string>
     <string name="download_zip_notice_multi">This item has several files, so it will always be zipped. To get a direct video link, download a single file from the file list.</string>
     <string name="download_link_zipped">ZIP archive</string>
     <string name="download_link_direct">Direct link</string>
@@ -477,12 +476,13 @@
     <string name="state">State</string>
     <string name="inactive">Inactive</string>
     <string name="status_ready">Ready</string>
+    <string name="streaming">Streaming</string>
     <string name="status_error">Error</string>
     <string name="expires">Expires</string>
     <string name="finished">Finished</string>
     <string name="seeds_count">%1$d seeds</string>
     <string name="seeds_peers_count">%1$d seeds • %2$d peers</string>
-    <string name="eta_seconds">%1$ds</string>
+    <string name="eta_seconds" translatable="false">%1$ds</string>
     <string name="eta_hours_minutes">%1$dh %2$02dm</string>
     <string name="eta_minutes_seconds">%1$dm %2$02ds</string>
     <string name="show_full_info">Show Full Info</string>
@@ -546,9 +546,65 @@
     <string name="stats_data_uploaded">Seeded data</string>
     <string name="stats_data_uploaded_hint">Uploaded to other peers</string>
     <string name="stats_items_title">Items downloaded</string>
-    <string name="stats_items_total">Total</string>
     <string name="stats_show_detailed">Show detailed stats</string>
     <string name="stats_ratio">Seeding ratio</string>
     <string name="stats_bandwidth_title">Downloaded in the last 30 days</string>
     <string name="stats_bandwidth_empty">No downloads in the last 30 days</string>
+
+    <!-- multiple providers -->
+    <string name="provider_service">Service</string>
+    <string name="open_provider_web">Open %1$s Web</string>
+    <string name="user_points">Fidelity points</string>
+    <string name="user_account_type">Account type</string>
+    <string name="user_premium_days_left">%1$d days left</string>
+    <string name="file_selection_title">Choose the files to download</string>
+    <string name="file_selection_needed">This torrent is waiting for the files to download to be picked</string>
+    <string name="file_selection_remaining">%1$d more torrents after this one</string>
+    <string name="file_selection_confirm">Confirm Files</string>
+    <string name="file_selection_later">Later</string>
+    <string name="file_selection_select_all_rest">All files for every torrent</string>
+    <string name="file_selection_select_all">Select all</string>
+    <string name="file_selection_select_none">Select none</string>
+    <string name="file_selection_selected_count">%1$d of %2$d files selected</string>
+    <string name="file_selection_resolving">Reading the torrents…</string>
+    <string name="file_selection_action_needed">Pick files</string>
+    <string name="uploads_awaiting_selection">%1$d torrents are still waiting for their files to be picked, finish from their page</string>
+    <string name="copy_all_links">Copy all links</string>
+    <string name="no_zip_hint">This service can\'t zip downloads, pick single files</string>
+    <string name="web_history_hint">Real-Debrid keeps unrestricted links here, they expire after a while</string>
+    <string name="setup_provider_description_generic">NullSeek connects to your debrid account to stream, download, and manage your cloud files and torrents. Pick your service below.</string>
+    <string name="setup_signup_title_provider">New to %1$s?</string>
+    <string name="setup_signup_description_provider">Create an account on %1$s to get started.</string>
+    <string name="setup_signup_button_provider">Create a %1$s Account</string>
+    <string name="setup_key_description_provider">Retrieve your API token from your %1$s account and paste it below to link your account.</string>
+    <string name="setup_get_key_button_provider">Get API Token from %1$s</string>
+    <string name="widget_setup_needed_title_generic">Account Needed</string>
+    <string name="widget_setup_needed_message_generic">Tap to configure your account in NullSeek</string>
+    <string name="providers_filter_all">All</string>
+    <string name="providers_empty_filter">No %1$s accounts</string>
+    <string name="providers_edit">Edit</string>
+    <string name="providers_token_keep_hint">Leave empty to keep the current token</string>
+    <string name="file_selection_no_match">No files match the filter</string>
+    <string name="requeue_choose_files">Re-select files</string>
+    <string name="action_stream_browser">Stream in browser</string>
+    <string name="unlock_all_files">Unlock all files</string>
+    <string name="unlock_again">Unlock again</string>
+    <string name="unlocking_progress">Unlocking %1$d of %2$d…</string>
+    <string name="unlocked_files_title">Unlocked files (%1$d)</string>
+    <string name="select_files">Select</string>
+    <string name="selection_count">%1$d selected</string>
+    <string name="select_shown">Select shown</string>
+    <string name="clear_selection">Clear</string>
+    <string name="unlock_selected">Unlock selected (%1$d)</string>
+    <string name="torrent_id">Torrent ID</string>
+    <string name="file_not_selected">Not selected</string>
+    <string name="unlock_failed_count">%1$d failed</string>
+    <string name="unlock_all_media">Links for all media (%1$d)</string>
+    <string name="save_playlist">Save M3U8 playlist</string>
+    <string name="playlist_sort_title">Sort playlists alphabetically</string>
+    <string name="playlist_sort_summary">Order the files of saved M3U8 playlists by name, numbers in order (useful for series)</string>
+    <string name="playlist_saved">Playlist saved to Downloads</string>
+    <string name="playlist_save_failed">Failed to save the playlist</string>
+    <string name="playlist_no_app">No app can open the playlist</string>
+    <string name="show_more_files">Show %1$d more (%2$d left)</string>
 </resources>

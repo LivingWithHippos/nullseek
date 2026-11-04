@@ -50,6 +50,8 @@ import com.github.livingwithhippos.nullseek.tv.ui.components.TvTextField
 import com.github.livingwithhippos.nullseek.tv.ui.components.launchSafely
 import com.github.livingwithhippos.nullseek.ui.newdownload.NewDownloadViewModel
 import com.github.livingwithhippos.nullseek.ui.newdownload.UploadState
+import com.github.livingwithhippos.nullseek.ui.newdownload.isBusy
+import com.github.livingwithhippos.nullseek.tv.ui.components.TvFileSelectionDialog
 import com.github.livingwithhippos.nullseek.ui.newdownload.appendLinkLine
 import com.github.livingwithhippos.nullseek.ui.newdownload.getFileName
 import com.github.livingwithhippos.nullseek.ui.newdownload.labelRes
@@ -103,6 +105,9 @@ fun TvNewDownloadScreen(
     val messenger = LocalMessenger.current
     val scope = rememberCoroutineScope()
     val uploadState by viewModel.uploadState.collectAsStateWithLifecycle()
+    val capabilities by viewModel.capabilities.collectAsStateWithLifecycle()
+    // usenet is hidden on providers without it
+    val tabs = NewDownloadTab.entries.filter { it != NewDownloadTab.USENET || capabilities.usenet }
 
     var selectedTab by rememberSaveable { mutableIntStateOf(if (initialLinks.startsWith("http")) 1 else 0) }
     var linkText by rememberSaveable(initialLinks) { mutableStateOf(initialLinks) }
@@ -114,7 +119,7 @@ fun TvNewDownloadScreen(
     var allowZipped by rememberSaveable { mutableStateOf(true) }
     var selectedFiles by remember { mutableStateOf<List<Uri>>(emptyList()) }
 
-    val tab = NewDownloadTab.entries[selectedTab]
+    val tab = NewDownloadTab.entries[selectedTab].takeIf { it in tabs } ?: NewDownloadTab.TORRENT
     val links =
         remember(linkText, tab) {
             parseDownloadLinks(if (tab == NewDownloadTab.TORRENT) normalizeTorrentInput(linkText) else linkText)
@@ -135,7 +140,13 @@ fun TvNewDownloadScreen(
         val state = uploadState
         if (state is UploadState.Finished && state.failed == 0) {
             // the messenger lives at the app root, so the message outlives this screen
-            messenger.show(context.getString(R.string.queued_success, state.successful))
+            messenger.show(
+                if (state.awaitingSelection > 0) {
+                    context.getString(R.string.uploads_awaiting_selection, state.awaitingSelection)
+                } else {
+                    context.getString(R.string.queued_success, state.successful)
+                },
+            )
             viewModel.resetState()
             onQueued()
         }
@@ -144,9 +155,9 @@ fun TvNewDownloadScreen(
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         ScreenHeader(title = stringResource(R.string.new_download))
 
-        TabRow(selectedTabIndex = selectedTab) {
-            NewDownloadTab.entries.forEachIndexed { index, entry ->
-                Tab(selected = index == selectedTab, onFocus = { selectedTab = index }) {
+        TabRow(selectedTabIndex = tabs.indexOf(tab)) {
+            tabs.forEach { entry ->
+                Tab(selected = entry == tab, onFocus = { selectedTab = entry.ordinal }) {
                     Text(stringResource(entry.label), modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                 }
             }
@@ -214,8 +225,10 @@ fun TvNewDownloadScreen(
                 SectionCard(title = stringResource(R.string.advanced_settings), icon = R.drawable.ic_tune) {
                     when (tab) {
                         NewDownloadTab.TORRENT -> {
-                            Text(stringResource(R.string.seeding_settings), style = MaterialTheme.typography.titleSmall)
-                            OptionChips(SEEDING_OPTIONS, seedingOption) { seedingOption = it }
+                            if (capabilities.seedingOptions) {
+                                Text(stringResource(R.string.seeding_settings), style = MaterialTheme.typography.titleSmall)
+                                OptionChips(SEEDING_OPTIONS, seedingOption) { seedingOption = it }
+                            }
                         }
 
                         NewDownloadTab.USENET -> {
@@ -233,19 +246,21 @@ fun TvNewDownloadScreen(
                             isPassword = true,
                         )
                     }
-                    SwitchRow(
-                        title = stringResource(R.string.allow_zipped_downloads),
-                        checked = allowZipped,
-                        onCheckedChange = { allowZipped = it },
-                    )
+                    if (capabilities.allowZipOption) {
+                        SwitchRow(
+                            title = stringResource(R.string.allow_zipped_downloads),
+                            checked = allowZipped,
+                            onCheckedChange = { allowZipped = it },
+                        )
+                    }
                 }
 
                 TvActionButton(
                     text = stringResource(R.string.action_add_downloads, total),
                     icon = R.drawable.ic_download,
                     primary = true,
-                    enabled = total > 0,
-                    loading = uploadState is UploadState.Uploading,
+                    enabled = total > 0 && !uploadState.isBusy,
+                    loading = uploadState.isBusy,
                     onClick = {
                         scope.launch {
                             val files = withContext(Dispatchers.IO) { context.readPickedFiles(tabFiles) }
@@ -266,6 +281,16 @@ fun TvNewDownloadScreen(
     }
 
     val state = uploadState
+    if (state is UploadState.AwaitingSelection) {
+        TvFileSelectionDialog(
+            name = state.selection.name,
+            files = state.selection.files,
+            remaining = state.remaining,
+            onConfirm = viewModel::confirmSelection,
+            onLater = viewModel::skipSelection,
+            onSelectAllRemaining = viewModel::selectAllRemaining,
+        )
+    }
     if (state is UploadState.Finished && state.failed > 0) {
         TvDialog(
             title = stringResource(R.string.upload_report_title),

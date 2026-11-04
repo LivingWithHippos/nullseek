@@ -3,6 +3,7 @@ package com.github.livingwithhippos.nullseek.utils
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.core.net.toUri
@@ -61,5 +62,27 @@ fun openWith(
         context.startActivity(Intent.createChooser(viewIntent, chooserTitle))
     } catch (e: ActivityNotFoundException) {
         Toast.makeText(context, R.string.open_with_no_app, Toast.LENGTH_SHORT).show()
+    }
+}
+
+/**
+ * Opens a file saved by the app, e.g. a playlist, in another app.
+ * @return false when no app can open it
+ */
+fun openSavedFile(
+    context: Context,
+    uri: Uri,
+    mimeType: String,
+): Boolean {
+    val intent =
+        Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, mimeType)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    return try {
+        context.startActivity(intent)
+        true
+    } catch (_: ActivityNotFoundException) {
+        false
     }
 }

@@ -30,11 +30,11 @@
     <string name="action_cancel">Annulla</string>
     <string name="action_add_downloads">Aggiungi download (%1$d)</string>
     <string name="incoming_nothing_to_download">Niente da scaricare nel contenuto condiviso</string>
-    <string name="incoming_setup_provider_first">Configura prima un account per aggiungere download</string>
+    <string name="incoming_setup_provider_first">Configura un account per aggiungere download</string>
     <string name="open_torbox_web">Apri TorBox Web</string>
-    <string name="open_torbox_subscription">Apri la pagina dell\'abbonamento</string>
+    <string name="open_torbox_subscription">Apri pagina abbonamento</string>
     <string name="referral_dialog_title">Supportare NullSeek?</string>
-    <string name="referral_dialog_message">Vuoi includere il nostro codice referral quando apri TorBox nel browser? La scelta verrà salvata per le prossime volte.</string>
+    <string name="referral_dialog_message">Vuoi supportarci includendo il nostro referral? La scelta verrà salvata, modificabile nelle impostazioni.</string>
     <string name="referral_dialog_positive">Sì, includi il referral</string>
     <string name="referral_dialog_negative">No, apri direttamente</string>
     <string name="account_overview">Riepilogo account</string>
@@ -56,19 +56,19 @@
     <string name="referral_support_inactive">Supporto referral disattivato</string>
     <string name="change_referral_choice">Cambia</string>
     <string name="setup_title">Collega il tuo account</string>
-    <string name="setup_provider_description">NullSeek si collega al tuo account TorBox per riprodurre in streaming, scaricare e gestire i tuoi file cloud debrid, i torrent e i download Usenet.</string>
-    <string name="setup_signup_title">Nuovo su TorBox?</string>
-    <string name="setup_signup_description">Crea un account su TorBox per iniziare con le funzionalità gratuite o premium.</string>
+    <string name="setup_provider_description">NullSeek si collega al tuo account TorBox per scaricare e gestire i tuoi file, i torrent e i download Usenet.</string>
+    <string name="setup_signup_title">Non iscritto a TorBox?</string>
+    <string name="setup_signup_description">Crea un account per iniziare con le funzionalità gratuite o premium.</string>
     <string name="setup_signup_button">Crea un account TorBox</string>
-    <string name="setup_key_title">Configurazione della chiave API</string>
-    <string name="setup_key_description">Recupera la tua chiave API dalle impostazioni dell\'account TorBox e incollala qui sotto per collegare l\'account.</string>
+    <string name="setup_key_title">Configurazione chiave API</string>
+    <string name="setup_key_description">Copia la tua chiave API e incollala qui sotto per collegare l\'account.</string>
     <string name="setup_get_key_button">Ottieni la chiave API da TorBox</string>
     <string name="api_key">Chiave API</string>
     <string name="paste_api_key_placeholder">Incolla qui la tua chiave API</string>
     <string name="setup_connect_button">Collega account</string>
     <string name="paste_from_clipboard">Incolla dagli appunti</string>
     <string name="clear_links">Cancella link</string>
-    <string name="setup_dialog_message">Vuoi includere il nostro codice referral quando ti registri su TorBox? La scelta verrà salvata per le prossime volte.</string>
+    <string name="setup_dialog_message">Vuoi supportarci includendo il nostro referral? La scelta verrà salvata per le prossime volte</string>
     <string name="copy_referral">Copia codice referral</string>
     <string name="torrent_overview">Riepilogo torrent</string>
     <string name="hash">Hash</string>
@@ -104,7 +104,7 @@
     <string name="action_open">Apri</string>
     <string name="download_link_title">Link di download</string>
     <string name="copy_link">Copia</string>
-    <string name="download_link_copied">Link di download copiato negli appunti</string>
+    <string name="download_link_copied">Link copiato negli appunti</string>
     <string name="download_not_cached_warning">I download sono disponibili solo per i torrent in cache</string>
     <string name="generating_download_link">Generazione del link di download…</string>
     <string name="export_dialog_title">Esporta torrent</string>
@@ -171,7 +171,7 @@
     <string name="indexers_dialog_add_title">Aggiungi indexer</string>
     <string name="indexers_dialog_edit_title">Modifica indexer</string>
     <string name="indexers_name_hint">es. Jackett di casa</string>
-    <string name="indexers_api_token_label">Token API</string>
+    <string name="indexers_api_token_label">Chiave API</string>
     <string name="indexers_active_label">Attivo</string>
     <string name="indexers_delete_confirm_title">Elimina indexer</string>
     <string name="indexers_delete_confirm_message">Vuoi davvero eliminare l\'indexer %1$s \"%2$s\"?</string>
@@ -246,19 +246,19 @@
     <string name="providers_set_default">Imposta come predefinito</string>
     <string name="set_active">Imposta come attivo</string>
     <string name="providers_rename">Rinomina</string>
-    <string name="providers_replace_token">Sostituisci token API</string>
+    <string name="providers_replace_token">Sostituisci chiave API</string>
     <string name="providers_delete">Elimina</string>
     <string name="providers_add_title">Aggiungi account</string>
     <string name="providers_name_label">Nome</string>
-    <string name="providers_token_label">Token API</string>
+    <string name="providers_token_label">Chiave API</string>
     <string name="providers_empty">Nessun account configurato</string>
     <string name="providers_delete_title">Elimina account</string>
     <string name="providers_delete_message">Eliminare \"%1$s\"? Verrà rimosso solo da questa app.</string>
-    <string name="providers_validating">Verifica del token…</string>
-    <string name="providers_invalid_token">Token non valido</string>
+    <string name="providers_validating">Verifica della chiave API…</string>
+    <string name="providers_invalid_token">Chiave API non valida</string>
     <string name="providers_added">%1$s aggiunto</string>
     <string name="providers_renamed">Rinominato in %1$s</string>
-    <string name="providers_token_replaced">Token aggiornato</string>
+    <string name="providers_token_replaced">Chiave API aggiornata</string>
     <string name="providers_deleted">%1$s eliminato</string>
     <string name="providers_default_set">%1$s è ora il predefinito</string>
     <string name="find_in_list_hint">Trova nell\'elenco</string>
@@ -379,11 +379,11 @@
     <!-- Language -->
     <string name="language_title">Lingua</string>
     <string name="language_summary">Lingua usata dall\'app</string>
-    <string name="language_system">Segui il sistema</string>
+    <string name="language_system">Lingua di sistema</string>
 
     <!-- Theme & Appearance -->
     <string name="theme_preference_title">Tema e aspetto</string>
-    <string name="theme_preference_summary">Personalizza la modalità scura e la tavolozza dei colori</string>
+    <string name="theme_preference_summary">Personalizza colori e modalità scura</string>
     <string name="theme_dark_mode_label">Modalità scura</string>
     <string name="theme_mode_system">Sistema</string>
     <string name="theme_mode_light">Chiara</string>
@@ -396,10 +396,10 @@
     <string name="theme_color_green">Verde</string>
     <string name="theme_color_orange">Arancione</string>
     <string name="theme_color_red">Rosso</string>
-    <string name="theme_standard_font_title">Carattere standard</string>
-    <string name="theme_standard_font_summary">Usa il carattere di sistema invece di quello a spaziatura fissa</string>
+    <string name="theme_standard_font_title">Font standard</string>
+    <string name="theme_standard_font_summary">Usa il font di sistema invece di quello monospace</string>
     <string name="donate_title">Supporta NullSeek</string>
-    <string name="donate_summary">NullSeek è gratuito e open source. Se ti è utile, valuta di offrirmi un caffè.</string>
+    <string name="donate_summary">NullSeek è gratuito e open source. Se ti è utile, puoi offrirmi un caffè.</string>
     <string name="donate_github_hint">La pagina GitHub ha sempre le opzioni di donazione più aggiornate.</string>
     <string name="download_zip_notice_multi">Questo elemento contiene più file, quindi verrà sempre compresso in zip. Per un link diretto al video, scarica un singolo file dall\'elenco dei file.</string>
     <string name="download_link_zipped">Archivio ZIP</string>
@@ -421,7 +421,7 @@
 
     <!-- Backup & Restore -->
     <string name="backup_preference_title">Backup e ripristino</string>
-    <string name="backup_preference_summary">Esporta o ripristina preferenze, account, lettori multimediali, indexer e addon Stremio (include chiavi API e password in chiaro)</string>
+    <string name="backup_preference_summary">Esporta o ripristina preferenze e account (include chiavi API e password in chiaro)</string>
     <string name="backup_create_button">Crea backup</string>
     <string name="backup_restore_button">Ripristina backup</string>
     <string name="backup_restore_confirm_title">Ripristinare il backup?</string>
@@ -432,7 +432,7 @@
     <string name="backup_restored_success">Backup ripristinato</string>
     <string name="backup_restore_failed">Impossibile ripristinare il backup</string>
     <string name="setup_restore_title">Hai un backup?</string>
-    <string name="setup_restore_description">Se in passato hai esportato un backup di NullSeek, puoi ripristinare account, preferenze, servizi esterni, indexer e addon Stremio direttamente dal file di backup.</string>
+    <string name="setup_restore_description">Se hai esportato un backup di NullSeek puoi ripristinare account e preferenze direttamente dal file di backup.</string>
 
     <!-- File Filter Scope -->
     <string name="filter_files_full_path_title">Filtra i file per percorso completo</string>
@@ -456,7 +456,7 @@
     <string name="widget_locked_title">Widget premium</string>
     <string name="widget_locked_message">Abbonati in NullSeek per sbloccare i widget TorBox per la schermata Home</string>
     <string name="widget_setup_needed_title">Serve un account TorBox</string>
-    <string name="widget_setup_needed_message">Tocca per configurare il tuo token API TorBox in NullSeek</string>
+    <string name="widget_setup_needed_message">Tocca per configurare la tua chiave API TorBox in NullSeek</string>
     <string name="widget_no_downloads">Nessun download attivo o recente</string>
     <string name="widget_action_add">Aggiungi</string>
     <string name="widget_action_search">Cerca</string>
@@ -467,11 +467,14 @@
     <string name="state">Stato</string>
     <string name="inactive">Inattivo</string>
     <string name="status_ready">Pronto</string>
+    <string name="streaming">Streaming</string>
     <string name="status_error">Errore</string>
     <string name="expires">Scade</string>
     <string name="finished">Completato</string>
     <string name="seeds_count">%1$d seed</string>
     <string name="seeds_peers_count">%1$d seed • %2$d peer</string>
+    <string name="eta_hours_minutes">%1$do %2$02dm</string>
+    <string name="eta_minutes_seconds">%1$dm %2$02ds</string>
     <string name="show_full_info">Mostra info complete</string>
     <string name="hide_full_info">Nascondi info complete</string>
     <string name="expand">Espandi</string>
@@ -485,7 +488,7 @@
     <!-- paging -->
     <string name="retry">Riprova</string>
     <string name="error_unknown">Errore sconosciuto</string>
-    <string name="error_loading_more">Errore nel caricamento di altri elementi</string>
+    <string name="error_loading_more">Errore durante il caricamento</string>
     <string name="error_loading_failed">Caricamento non riuscito</string>
 
     <!-- user -->
@@ -501,6 +504,7 @@
     <string name="upload_report_title">Riepilogo dell\'invio</string>
     <string name="upload_report_successful">Messi in coda: %1$d</string>
     <string name="upload_report_failed">Non messi in coda: %1$d</string>
+    <string name="ok">OK</string>
     <string name="valid_links_count">%1$d validi</string>
     <string name="links_label_torrent">Link magnet o info hash</string>
     <string name="links_label_web">Link web (https://…)</string>
@@ -532,9 +536,63 @@
     <string name="stats_data_uploaded">Dati in seeding</string>
     <string name="stats_data_uploaded_hint">Inviati ad altri peer</string>
     <string name="stats_items_title">Elementi scaricati</string>
-    <string name="stats_items_total">Totale</string>
     <string name="stats_show_detailed">Mostra statistiche dettagliate</string>
     <string name="stats_ratio">Rapporto di seeding</string>
     <string name="stats_bandwidth_title">Scaricato negli ultimi 30 giorni</string>
     <string name="stats_bandwidth_empty">Nessun download negli ultimi 30 giorni</string>
+    <string name="provider_service">Servizio</string>
+    <string name="open_provider_web">Apri %1$s Web</string>
+    <string name="user_points">Punti Fedeltà</string>
+    <string name="user_account_type">Tipo Account</string>
+    <string name="user_premium_days_left">%1$d giorni rimanenti</string>
+    <string name="file_selection_title">Seleziona i files da scaricare</string>
+    <string name="file_selection_needed">Questo torrent è in attesa della selezione dei files</string>
+    <string name="file_selection_remaining">%1$d altri torrents dopo questo</string>
+    <string name="file_selection_confirm">Conferma files</string>
+    <string name="file_selection_later">Più tardi</string>
+    <string name="file_selection_select_all_rest">Tutti i files per ogni torrent</string>
+    <string name="file_selection_select_all">Seleziona tutto</string>
+    <string name="file_selection_select_none">Seleziona nessuno</string>
+    <string name="file_selection_selected_count">%1$d su %2$d files selezionati</string>
+    <string name="file_selection_resolving">Lettura dei torrents…</string>
+    <string name="file_selection_action_needed">Seleziona files</string>
+    <string name="uploads_awaiting_selection">%1$d torrent sono ancora in attesa della selezione dei files, completala dalla loro pagina</string>
+    <string name="copy_all_links">Copia tutti i link</string>
+    <string name="no_zip_hint">Questo servizio non può comprimere i download, seleziona i singoli files</string>
+    <string name="web_history_hint">Real-Debrid conserva qui i link sbloccati, scadranno dopo un po\' di tempo</string>
+    <string name="setup_provider_description_generic">NullSeek si collega al tuo account debrid per riprodurre, scaricare e gestire i tuoi files e torrent nel cloud. Scegli il tuo servizio qui sotto.</string>
+    <string name="setup_signup_title_provider">Non sei iscritto a %1$s?</string>
+    <string name="setup_signup_description_provider">Crea un account su %1$s per iniziare.</string>
+    <string name="setup_signup_button_provider">Crea un account %1$s</string>
+    <string name="setup_key_description_provider">Recupera la chiave API dal tuo account %1$s e incollala per collegare il tuo account.</string>
+    <string name="setup_get_key_button_provider">Ottieni chiave API %1$s</string>
+    <string name="widget_setup_needed_title_generic">Account necessario</string>
+    <string name="widget_setup_needed_message_generic">Tocca per configurare il tuo account in NullSeek</string>
+    <string name="providers_filter_all">Tutti</string>
+    <string name="providers_empty_filter">Nessun account %1$s</string>
+    <string name="providers_edit">Modifica</string>
+    <string name="providers_token_keep_hint">Lascia vuoto per mantenere la chiave API attuale</string>
+    <string name="file_selection_no_match">Nessun file corrisponde al filtro</string>
+    <string name="requeue_choose_files">Modifica files inclusi</string>
+    <string name="action_stream_browser">Guarda nel browser</string>
+    <string name="unlock_all_files">Sblocca tutti i files</string>
+    <string name="unlock_again">Sblocca di nuovo</string>
+    <string name="unlocking_progress">Sblocco %1$d di %2$d…</string>
+    <string name="unlocked_files_title">Files sbloccati (%1$d)</string>
+    <string name="select_files">Seleziona</string>
+    <string name="selection_count">%1$d selezionati</string>
+    <string name="select_shown">Seleziona visibili</string>
+    <string name="clear_selection">Pulisci</string>
+    <string name="unlock_selected">Sblocca selezionati (%1$d)</string>
+    <string name="torrent_id">ID torrent</string>
+    <string name="file_not_selected">Non selezionato</string>
+    <string name="unlock_failed_count">%1$d non riusciti</string>
+    <string name="unlock_all_media">Link per tutti i media (%1$d)</string>
+    <string name="save_playlist">Salva playlist M3U8</string>
+    <string name="playlist_sort_title">Ordina le playlist alfabeticamente</string>
+    <string name="playlist_sort_summary">Ordina per nome i file delle playlist M3U8 salvate, con i numeri in ordine (utile per le serie)</string>
+    <string name="playlist_saved">Playlist salvata in Download</string>
+    <string name="playlist_save_failed">Impossibile salvare la playlist</string>
+    <string name="playlist_no_app">Nessuna app può aprire la playlist</string>
+    <string name="show_more_files">Mostra altri %1$d (%2$d rimanenti)</string>
 </resources>

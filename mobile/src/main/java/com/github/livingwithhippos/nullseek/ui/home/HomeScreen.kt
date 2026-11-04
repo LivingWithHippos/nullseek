@@ -28,6 +28,7 @@ fun HomeScreen(
     onNewDownload: () -> Unit,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
     onBackupRestored: () -> Unit = {},
+    onRetry: () -> Unit = {},
     userViewModel: UserViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
@@ -53,6 +54,7 @@ fun HomeScreen(
                 context = context,
                 viewModel = userViewModel,
                 enabled = !isRestoring,
+                onRetry = onRetry,
             )
         }
 

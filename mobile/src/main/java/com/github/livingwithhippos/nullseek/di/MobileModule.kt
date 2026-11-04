@@ -18,7 +18,7 @@ fun mobileModule() =
                 context = get(),
                 dataStore = get(),
                 providerRepository = get(),
-                torboxClient = get(),
+                debridProvider = get(),
                 entitlementCache = get(),
             )
         }

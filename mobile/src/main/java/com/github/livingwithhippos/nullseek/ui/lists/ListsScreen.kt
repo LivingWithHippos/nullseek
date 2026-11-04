@@ -10,6 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -30,9 +31,8 @@ import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.ExtendableFabMenu
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
-import com.github.livingwithhippos.torbox.model.TorrentDto
-import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
-import com.github.livingwithhippos.torbox.model.WebDownloadDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import org.koin.androidx.compose.koinViewModel
@@ -52,18 +52,18 @@ fun ListsScreen(
     modifier: Modifier = Modifier,
     contentType: NullContentType,
     navigationType: NullNavigationType,
-    loadTorrentDetails: (torrent: TorrentDto) -> Unit,
-    loadWebDetails: (webDownload: WebDownloadDto) -> Unit,
-    loadUsenetDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
+    loadTorrentDetails: (torrent: DebridTorrent) -> Unit,
+    loadWebDetails: (webDownload: DebridDownload) -> Unit,
+    loadUsenetDetails: (usenetDownload: DebridDownload) -> Unit,
     closeDetails: () -> Unit,
     uiState: NullRootUiState,
     onNewDownload: () -> Unit = {},
     showSettings: () -> Unit = {},
     viewModel: ListsViewModel = koinViewModel()
 ) {
-    val torrentFlow: Flow<PagingData<TorrentDto>> = viewModel.torrentsPagingFlow
-    val webFlow: Flow<PagingData<WebDownloadDto>> = viewModel.webPagingFlow
-    val usenetFlow: Flow<PagingData<UsenetDownloadDto>> = viewModel.usenetPagingFlow
+    val torrentFlow: Flow<PagingData<DebridTorrent>> = viewModel.torrentsPagingFlow
+    val webFlow: Flow<PagingData<DebridDownload>> = viewModel.webPagingFlow
+    val usenetFlow: Flow<PagingData<DebridDownload>> = viewModel.usenetPagingFlow
 
     // todo: single pane with multiple data from torrent + download + usenet
     //  will also need a detail page on the right side  org.koin.compose.viewmodel.if double sided, or just opening a new page if single sided
@@ -72,18 +72,23 @@ fun ListsScreen(
     // todo: decide if we should use a second navController instead, we'd have a separate backstack
     val startDestination = Destination.TORRENTS
     var selectedDestination by rememberSaveable { mutableIntStateOf(startDestination.ordinal) }
+    val capabilities by viewModel.capabilities.collectAsState()
+    // usenet is hidden on providers without it
+    val destinations =
+        Destination.entries.filter { it != Destination.USENET || capabilities?.usenet != false }
+    val currentDestination = Destination.entries[selectedDestination].takeIf { it in destinations } ?: startDestination
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             PrimaryTabRow(
-                selectedTabIndex = selectedDestination,
+                selectedTabIndex = destinations.indexOf(currentDestination),
                 modifier = Modifier.padding(10.dp)
             ) {
-                Destination.entries.forEachIndexed { index, destination ->
+                destinations.forEach { destination ->
                     Tab(
                         // todo: add icon to see if it's better
-                        selected = selectedDestination == index, onClick = {
-                            selectedDestination = index
+                        selected = currentDestination == destination, onClick = {
+                            selectedDestination = destination.ordinal
                         }, text = {
                             Text(
                                 text = destination.label,
@@ -94,7 +99,7 @@ fun ListsScreen(
                 }
             }
             // todo: decide if we should use a single viewModel and pass the functions/lists down
-            when (Destination.entries[selectedDestination]) {
+            when (currentDestination) {
                 Destination.TORRENTS -> {
                     TorrentsScreen(
                         modifier = Modifier.fillMaxSize(),

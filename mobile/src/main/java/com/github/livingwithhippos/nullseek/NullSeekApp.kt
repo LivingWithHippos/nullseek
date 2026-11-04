@@ -44,9 +44,8 @@ import com.github.livingwithhippos.nullseek.widget.WIDGET_DEST_LISTS
 import com.github.livingwithhippos.nullseek.widget.WIDGET_DEST_NEW_DOWNLOAD
 import com.github.livingwithhippos.nullseek.widget.WIDGET_DEST_SEARCH
 import com.github.livingwithhippos.nullseek.widget.WIDGET_DEST_SETTINGS
-import com.github.livingwithhippos.torbox.model.TorrentDto
-import com.github.livingwithhippos.torbox.model.UsenetDownloadDto
-import com.github.livingwithhippos.torbox.model.WebDownloadDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridTorrent
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
 import org.koin.compose.viewmodel.koinViewModel
 
 private fun NavigationSuiteType.toNullNavType() = when (this) {
@@ -61,9 +60,9 @@ fun NullSeekApp(
     windowSize: WindowSizeClass,
     rootUiState: NullRootUiState,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
-    loadTorrentDetails: (torrent: TorrentDto) -> Unit,
-    loadWebDetails: (webDownload: WebDownloadDto) -> Unit,
-    loadUsenetDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
+    loadTorrentDetails: (torrent: DebridTorrent) -> Unit,
+    loadWebDetails: (webDownload: DebridDownload) -> Unit,
+    loadUsenetDetails: (usenetDownload: DebridDownload) -> Unit,
     closeDetails: () -> Unit,
     reloadProviders: () -> Unit = {},
     pendingWidgetDestination: String? = null,
@@ -216,9 +215,9 @@ private fun NullNavHost(
     uiState: NullRootUiState,
     navigationType: NullNavigationType,
     checkValidToken: (provider: NetProvider, token: String) -> Unit,
-    loadTorrentDetails: (torrent: TorrentDto) -> Unit,
-    loadWebDetails: (webDownload: WebDownloadDto) -> Unit,
-    loadUsenetDetails: (usenetDownload: UsenetDownloadDto) -> Unit,
+    loadTorrentDetails: (torrent: DebridTorrent) -> Unit,
+    loadWebDetails: (webDownload: DebridDownload) -> Unit,
+    loadUsenetDetails: (usenetDownload: DebridDownload) -> Unit,
     showSettings: () -> Unit,
     showNewDownload: () -> Unit,
     closeDetails: () -> Unit,
@@ -239,6 +238,7 @@ private fun NullNavHost(
                 showSettings = showSettings,
                 onNewDownload = showNewDownload,
                 onBackupRestored = reloadProviders,
+                onRetry = reloadProviders,
             )
         }
         composable<Route.Lists> {

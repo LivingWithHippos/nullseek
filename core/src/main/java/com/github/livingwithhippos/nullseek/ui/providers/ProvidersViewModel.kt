@@ -7,9 +7,9 @@ import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
 import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
 import com.github.livingwithhippos.nullseek.core.data.repository.NullProviderRepository
-import com.github.livingwithhippos.torbox.client.TorboxClient
-import com.github.livingwithhippos.torbox.network.ApiResult
-import com.github.livingwithhippos.torbox.network.TorboxClientConfig
+import com.github.livingwithhippos.nullseek.core.domain.DebridResult
+import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
+import com.github.livingwithhippos.nullseek.core.domain.ProviderKind
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,7 +36,7 @@ data class ProvidersUiState(
 
 class ProvidersViewModel(
     private val repository: NullProviderRepository,
-    private val client: TorboxClient,
+    private val debridProvider: DebridServiceProvider,
 ) : ViewModel() {
     val providers: StateFlow<List<NullProvider>> =
         repository.observeAll().stateIn(
@@ -51,19 +51,18 @@ class ProvidersViewModel(
     private val _events = MutableSharedFlow<ProvidersEvent>()
     val events = _events.asSharedFlow()
 
-    private val tempClient by lazy { TorboxClient.create(TorboxClientConfig()) }
-
     fun clearError() {
         _uiState.value = _uiState.value.copy(tokenError = false)
     }
 
-    private suspend fun isTokenValid(token: String): Boolean {
+    private suspend fun isTokenValid(
+        kind: ProviderKind,
+        token: String,
+    ): Boolean {
         _uiState.value = ProvidersUiState(validating = true)
         val valid =
             try {
-                tempClient.updateBearerToken(token)
-                val response = tempClient.user.data()
-                response is ApiResult.Success && response.value.data != null
+                debridProvider.newTemp(kind, token).user() is DebridResult.Ok
             } catch (e: Exception) {
                 false
             }
@@ -73,6 +72,7 @@ class ProvidersViewModel(
 
     /** @param onDone called with true when the provider was added */
     fun add(
+        kind: ProviderKind,
         name: String,
         token: String,
         onDone: (Boolean) -> Unit,
@@ -81,11 +81,11 @@ class ProvidersViewModel(
         val cleanToken = token.trim()
         if (cleanName.isEmpty() || cleanToken.isEmpty()) return
         viewModelScope.launch {
-            if (!isTokenValid(cleanToken)) {
+            if (!isTokenValid(kind, cleanToken)) {
                 onDone(false)
                 return@launch
             }
-            val netProvider = NetProvider.Torbox()
+            val netProvider = NetProvider.of(kind)
             val hasActive = repository.getActive() != null
             val provider =
                 NullProvider(
@@ -125,7 +125,7 @@ class ProvidersViewModel(
         val cleanToken = token.trim()
         if (cleanToken.isEmpty()) return
         viewModelScope.launch {
-            if (!isTokenValid(cleanToken)) {
+            if (!isTokenValid(ProviderKind.fromDbType(provider.type), cleanToken)) {
                 onDone(false)
                 return@launch
             }
@@ -134,6 +134,40 @@ class ProvidersViewModel(
                 refreshActive()
             }
             _events.emit(ProvidersEvent.ShowMessage(R.string.providers_token_replaced))
+            onDone(true)
+        }
+    }
+
+    /**
+     * Renames an account and, when [token] is not blank, replaces its token after checking it.
+     * @param onDone called with true when the changes were saved
+     */
+    fun edit(
+        provider: NullProvider,
+        name: String,
+        token: String?,
+        onDone: (Boolean) -> Unit,
+    ) {
+        val cleanName = name.trim()
+        val cleanToken = token?.trim()?.takeIf { it.isNotEmpty() }
+        if (cleanName.isEmpty()) return
+        viewModelScope.launch {
+            if (cleanToken != null && !isTokenValid(ProviderKind.fromDbType(provider.type), cleanToken)) {
+                onDone(false)
+                return@launch
+            }
+            if (cleanName != provider.name) {
+                repository.updateName(provider.id, cleanName)
+            }
+            if (cleanToken != null) {
+                repository.updateToken(provider.id, cleanToken)
+                if (provider.active) {
+                    refreshActive()
+                }
+                _events.emit(ProvidersEvent.ShowMessage(R.string.providers_token_replaced))
+            } else {
+                _events.emit(ProvidersEvent.ShowMessage(R.string.providers_renamed, cleanName))
+            }
             onDone(true)
         }
     }
@@ -156,9 +190,9 @@ class ProvidersViewModel(
         }
     }
 
-    // keeps the shared API client in sync with the default provider
+    // keeps the shared API clients in sync with the default provider
     private suspend fun refreshActive() {
-        repository.getActive()?.let { client.updateBearerToken(it.token) }
+        debridProvider.activate()
         _events.emit(ProvidersEvent.ActiveChanged)
     }
 }

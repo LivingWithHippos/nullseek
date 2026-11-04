@@ -16,7 +16,7 @@ import com.github.livingwithhippos.nullseek.core.data.database.model.ImdbFavouri
 import com.github.livingwithhippos.nullseek.core.data.database.model.IndexerEntity
 import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
 import com.github.livingwithhippos.nullseek.core.data.database.model.StremioAddonEntity
-import com.github.livingwithhippos.torbox.client.TorboxClient
+import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -84,6 +84,7 @@ data class PreferencesBackup(
     val includeReferral: Boolean? = null,
     val searchAutoAddDownload: Boolean? = null,
     val searchCheckCache: Boolean? = null,
+    val playlistSortByName: Boolean? = null,
     val imdbDetailsExpanded: Boolean? = null,
     val searchSortOption: String? = null,
     val searchSortAscending: Boolean? = null,
@@ -270,7 +271,7 @@ class BackupRepositoryImpl(
     private val stremioAddonDao: StremioAddonDao,
     private val imdbFavouriteDao: ImdbFavouriteDao,
     private val dataStore: DataStore<Preferences>,
-    private val torboxClient: TorboxClient,
+    private val debridProvider: DebridServiceProvider,
 ) : BackupRepository {
     private val zipModeKey = stringPreferencesKey("download_zip_mode")
     private val defaultSeedingKey = stringPreferencesKey("default_seeding_option")
@@ -278,6 +279,7 @@ class BackupRepositoryImpl(
     private val referralKey = booleanPreferencesKey("include_referral_in_browser")
     private val searchAutoAddDownloadKey = booleanPreferencesKey("search_auto_add_download")
     private val searchCheckCacheKey = booleanPreferencesKey("search_check_cache")
+    private val playlistSortByNameKey = booleanPreferencesKey("playlist_sort_by_name")
     private val imdbDetailsExpandedKey = booleanPreferencesKey("imdb_details_expanded")
     private val searchSortOptionKey = stringPreferencesKey("search_sort_option")
     private val searchSortAscendingKey = booleanPreferencesKey("search_sort_ascending")
@@ -363,8 +365,7 @@ class BackupRepositoryImpl(
 
             restorePreferences(backup.preferences)
 
-            val activeProvider = providerDao.getActive()
-            torboxClient.updateBearerToken(activeProvider?.token.orEmpty())
+            debridProvider.activate()
         }
 
     private suspend fun exportPreferences(): PreferencesBackup {
@@ -381,6 +382,7 @@ class BackupRepositoryImpl(
             includeReferral = preferences[referralKey],
             searchAutoAddDownload = preferences[searchAutoAddDownloadKey],
             searchCheckCache = preferences[searchCheckCacheKey],
+            playlistSortByName = preferences[playlistSortByNameKey],
             imdbDetailsExpanded = preferences[imdbDetailsExpandedKey],
             searchSortOption = preferences[searchSortOptionKey],
             searchSortAscending = preferences[searchSortAscendingKey],
@@ -405,6 +407,7 @@ class BackupRepositoryImpl(
             backup.includeReferral?.let { preferences[referralKey] = it }
             backup.searchAutoAddDownload?.let { preferences[searchAutoAddDownloadKey] = it }
             backup.searchCheckCache?.let { preferences[searchCheckCacheKey] = it }
+            backup.playlistSortByName?.let { preferences[playlistSortByNameKey] = it }
             backup.imdbDetailsExpanded?.let { preferences[imdbDetailsExpandedKey] = it }
             backup.searchSortOption?.let { preferences[searchSortOptionKey] = it }
             backup.searchSortAscending?.let { preferences[searchSortAscendingKey] = it }

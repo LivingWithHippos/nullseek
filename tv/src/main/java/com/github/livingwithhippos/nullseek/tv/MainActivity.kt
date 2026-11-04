@@ -15,6 +15,12 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class MainActivity : AppCompatActivity() {
     private val viewModel: NullRootViewModel by viewModel()
 
+    override fun onStart() {
+        super.onStart()
+        // coming back to the app: try again if the provider was unreachable
+        viewModel.retryAfterNetworkError()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {

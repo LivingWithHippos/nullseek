@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.koin.annotations)
 
     implementation(libs.torbox.client)
+    implementation(libs.realdebrid.client)
 
     implementation(libs.androidx.paging)
     implementation(libs.kotlinx.datetime)

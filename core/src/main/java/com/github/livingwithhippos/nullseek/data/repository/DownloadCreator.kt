@@ -1,7 +1,17 @@
 package com.github.livingwithhippos.nullseek.data.repository
 
-import com.github.livingwithhippos.torbox.client.TorboxClient
-import com.github.livingwithhippos.torbox.network.ApiResult
+import com.github.livingwithhippos.nullseek.core.domain.AddOptions
+import com.github.livingwithhippos.nullseek.core.domain.AddedItem
+import com.github.livingwithhippos.nullseek.core.domain.ConversionOutcome
+import com.github.livingwithhippos.nullseek.core.domain.DebridResult
+import com.github.livingwithhippos.nullseek.core.domain.DebridService
+import com.github.livingwithhippos.nullseek.core.domain.DebridServiceProvider
+import com.github.livingwithhippos.nullseek.core.domain.awaitConversion
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import logcat.logcat
 
 enum class LinkType { MAGNET, NZB, WEB }
 
@@ -12,42 +22,65 @@ fun linkType(link: String): LinkType =
         else -> LinkType.WEB
     }
 
-/** Creates a download on TorBox from a link, picking the endpoint from the link type. */
+/** Creates a download on the active provider from a link, picking the endpoint from the link type. */
 class DownloadCreator(
-    private val client: TorboxClient,
+    private val debridProvider: DebridServiceProvider,
+    private val backgroundScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
+    /**
+     * @param autoSelectAll on providers that need the files picked after adding (Real-Debrid),
+     * pick all of them in the background once the magnet is converted
+     */
     suspend fun createFromLink(
         link: String,
         password: String? = null,
         seedingOption: Int = DEFAULT_SEEDING_OPTION,
         usenetOption: Int = DEFAULT_USENET_OPTION,
         allowZipped: Boolean = true,
-    ): ApiResult<*> =
-        when (linkType(link)) {
+        autoSelectAll: Boolean = false,
+    ): DebridResult<AddedItem> {
+        val service = debridProvider.current
+        val options =
+            AddOptions(seeding = seedingOption, allowZip = allowZipped, password = password, usenetOption = usenetOption)
+        return when (linkType(link)) {
             LinkType.MAGNET -> {
-                client.torrent.create(magnet = link, seed = seedingOption, allowZip = allowZipped)
+                service.addMagnet(link, options).also { result ->
+                    if (autoSelectAll && result is DebridResult.Ok) selectAllWhenReady(service, result.value.id)
+                }
             }
 
             LinkType.NZB -> {
-                client.usenet.create(link = link, password = password, postProcessing = usenetOption)
+                service.addNzbLink(link, options)
             }
 
             LinkType.WEB -> {
-                client.web.create(link = link, password = password)
+                service.addWeb(link, password)
             }
         }
+    }
+
+    private fun selectAllWhenReady(
+        service: DebridService,
+        torrentId: String,
+    ) {
+        if (!service.capabilities.fileSelectionAfterAdd) return
+        backgroundScope.launch {
+            when (val outcome = service.awaitConversion(torrentId, timeoutMs = AUTO_SELECT_TIMEOUT_MS)) {
+                is ConversionOutcome.NeedsSelection -> {
+                    val result = service.selectFiles(torrentId, null)
+                    logcat { "Selected all files of $torrentId: $result" }
+                }
+
+                else -> {
+                    logcat { "Not selecting the files of $torrentId: $outcome" }
+                }
+            }
+        }
+    }
 
     companion object {
         const val DEFAULT_SEEDING_OPTION = 1
         const val DEFAULT_USENET_OPTION = -1
+        private const val AUTO_SELECT_TIMEOUT_MS = 30_000L
     }
 }
-
-fun ApiResult.Failure.describe(subject: String): String =
-    when (this) {
-        is ApiResult.Failure.Http -> "$subject: HTTP Error $code"
-        is ApiResult.Failure.Network -> "$subject: Network Error - $cause"
-        is ApiResult.Failure.BadRequest -> "$subject: Bad Request - $cause"
-        is ApiResult.Failure.NoSuccess<*> -> "$subject: No Success"
-        is ApiResult.Failure.Serialization -> "$subject: Serialization Error - $cause"
-    }

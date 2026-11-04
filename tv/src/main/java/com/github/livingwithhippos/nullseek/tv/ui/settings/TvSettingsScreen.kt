@@ -325,8 +325,17 @@ private fun DownloadSettings(viewModel: SettingsViewModel) {
     val autoAdd by viewModel.searchAutoAddDownload.collectAsStateWithLifecycle()
     val checkCache by viewModel.searchCheckCache.collectAsStateWithLifecycle()
     val fullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
+    val playlistSort by viewModel.playlistSortByName.collectAsStateWithLifecycle()
 
     DownloadFormatSettings(selected = zipMode, onSelect = viewModel::setDownloadZipMode)
+    SectionCard {
+        SwitchRow(
+            title = stringResource(R.string.playlist_sort_title),
+            summary = stringResource(R.string.playlist_sort_summary),
+            checked = playlistSort,
+            onCheckedChange = viewModel::setPlaylistSortByName,
+        )
+    }
     DefaultSeedingSettings(selected = defaultSeeding, onSelect = viewModel::setDefaultSeedingOption)
     PagingSizeSettings(selected = pagingSize, onSelect = viewModel::setPagingLoadSize)
     DownloadSwitchSettings(

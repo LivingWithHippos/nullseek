@@ -45,6 +45,8 @@ import com.github.livingwithhippos.nullseek.tv.ui.provider.TvProviderSetupScreen
 import com.github.livingwithhippos.nullseek.ui.user.DetailedStatsState
 import com.github.livingwithhippos.nullseek.ui.user.UserViewModel
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
+import com.github.livingwithhippos.nullseek.core.domain.ProviderUserExtras
+import com.github.livingwithhippos.nullseek.core.domain.UserProfile
 import com.github.livingwithhippos.torbox.model.UserDataDto
 import java.util.Locale
 import org.koin.androidx.compose.koinViewModel
@@ -59,6 +61,7 @@ fun TvHomeScreen(
     onNewDownload: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    onRetry: (() -> Unit)? = null,
 ) {
     val user = uiState.user
     when {
@@ -71,18 +74,92 @@ fun TvHomeScreen(
             )
 
         user != null ->
-            UserOverview(
-                modifier = modifier,
-                user = user,
-                onOpenLists = onOpenLists,
-                onOpenSearch = onOpenSearch,
-                onNewDownload = onNewDownload,
-                onOpenSettings = onOpenSettings,
-            )
+            when (val extras = user.extras) {
+                is ProviderUserExtras.Torbox ->
+                    UserOverview(
+                        modifier = modifier,
+                        user = extras.data,
+                        onOpenLists = onOpenLists,
+                        onOpenSearch = onOpenSearch,
+                        onNewDownload = onNewDownload,
+                        onOpenSettings = onOpenSettings,
+                    )
+
+                is ProviderUserExtras.RealDebrid ->
+                    RealDebridOverview(
+                        modifier = modifier,
+                        user = user,
+                        extras = extras,
+                        onOpenLists = onOpenLists,
+                        onOpenSearch = onOpenSearch,
+                        onNewDownload = onNewDownload,
+                        onOpenSettings = onOpenSettings,
+                    )
+            }
 
         uiState.loading -> LoadingBox(modifier)
 
-        else -> uiState.error?.let { ErrorBanner(it, modifier) } ?: LoadingBox(modifier)
+        else ->
+            uiState.error?.let { error ->
+                Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    ErrorBanner(error)
+                    // loads the account again
+                    onRetry?.let { retry -> TvActionButton(stringResource(R.string.retry), retry, icon = R.drawable.ic_refresh) }
+                }
+            } ?: LoadingBox(modifier)
+    }
+}
+
+@Composable
+private fun RealDebridOverview(
+    user: UserProfile,
+    extras: ProviderUserExtras.RealDebrid,
+    onOpenLists: () -> Unit,
+    onOpenSearch: () -> Unit,
+    onNewDownload: () -> Unit,
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: UserViewModel = koinViewModel(),
+) {
+    val context = LocalContext.current
+    val isRestoring by viewModel.isRestoringBackup.collectAsStateWithLifecycle()
+    val enabled = !isRestoring
+
+    Column(modifier = modifier
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())) {
+        ScreenHeader(title = stringResource(R.string.account_overview), subtitle = user.username ?: user.email)
+
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            TvActionButton(stringResource(R.string.lists), onOpenLists, icon = R.drawable.ic_list_bullet, primary = true, enabled = enabled)
+            TvActionButton(stringResource(R.string.search), onOpenSearch, icon = R.drawable.ic_manage_search, enabled = enabled)
+            TvActionButton(stringResource(R.string.new_download), onNewDownload, icon = R.drawable.ic_add, enabled = enabled)
+            TvActionButton(stringResource(R.string.settings), onOpenSettings, icon = R.drawable.ic_settings, enabled = enabled)
+        }
+
+        SectionCard(
+            title = user.provider.displayName,
+            icon = R.drawable.ic_contact_page,
+            modifier = Modifier.padding(top = 24.dp),
+        ) {
+            InfoRow(stringResource(R.string.user), user.email)
+            InfoRow(stringResource(R.string.user_account_type), extras.type.uppercase())
+            InfoRow(
+                stringResource(R.string.expires),
+                if (user.isPremium) {
+                    stringResource(R.string.user_premium_days_left, (extras.premiumSecondsLeft / 86_400).toInt())
+                } else {
+                    "—"
+                },
+            )
+            user.points?.let { InfoRow(stringResource(R.string.user_points), it.toString()) }
+            TvActionButton(
+                enabled = enabled,
+                text = stringResource(R.string.open_provider_web, user.provider.displayName),
+                icon = R.drawable.ic_link,
+                onClick = { safeOpenUrl(context, viewModel.getAccountSettingsUrl()) },
+            )
+        }
     }
 }
 
@@ -104,7 +181,9 @@ private fun UserOverview(
     val detailedStats by viewModel.detailedStats.collectAsStateWithLifecycle()
     val enabled = !isRestoring
 
-    Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+    Column(modifier = modifier
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())) {
         ScreenHeader(title = stringResource(R.string.account_overview), subtitle = user.email)
 
         // quick actions first: they are the first thing focused when the app opens
@@ -116,7 +195,9 @@ private fun UserOverview(
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(24.dp)) {
@@ -141,15 +222,15 @@ private fun UserOverview(
                                 if (pref == null) {
                                     showReferralDialog = true
                                 } else {
-                                    safeOpenUrl(context, viewModel.buildTorboxSubscriptionUrl(pref))
+                                    safeOpenUrl(context, viewModel.buildSubscriptionUrl(pref))
                                 }
                             },
                         )
                         TvActionButton(
                             enabled = enabled,
-                            text = stringResource(R.string.open_torbox_web),
+                            text = stringResource(R.string.open_provider_web, "TorBox"),
                             icon = R.drawable.ic_link,
-                            onClick = { safeOpenUrl(context, viewModel.getTorboxSettingsUrl()) },
+                            onClick = { safeOpenUrl(context, viewModel.getAccountSettingsUrl()) },
                         )
                     }
                 }
@@ -177,13 +258,10 @@ private fun UserOverview(
                     InfoRow(stringResource(R.string.stats_data_uploaded), convertToSize(user.totalBytesUploaded))
                     StatsHint(stringResource(R.string.stats_data_uploaded_hint))
                     Text(stringResource(R.string.stats_items_title), style = MaterialTheme.typography.titleSmall)
-                    InfoRow(stringResource(R.string.stats_items_total), user.totalDownloaded.toString())
-                    // the per-type counts are indented under the total so they read as a breakdown
-                    Column(modifier = Modifier.padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        InfoRow(stringResource(R.string.torrents), user.torrentsDownloaded.toString())
-                        InfoRow(stringResource(R.string.web_downloads), user.webDownloadsDownloaded.toString())
-                        InfoRow(stringResource(R.string.usenet_downloads), user.usenetDownloadsDownloaded.toString())
-                    }
+                    // TorBox's total isn't the sum of these, so only the per-type counts are shown
+                    InfoRow(stringResource(R.string.torrents), user.torrentsDownloaded.toString())
+                    InfoRow(stringResource(R.string.web_downloads), user.webDownloadsDownloaded.toString())
+                    InfoRow(stringResource(R.string.usenet_downloads), user.usenetDownloadsDownloaded.toString())
                     TvDetailedStats(detailedStats, onLoad = viewModel::loadDetailedStats)
                 }
 
@@ -199,16 +277,18 @@ private fun UserOverview(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        val copied = stringResource(R.string.copy_referral)
-                        TvActionButton(
-                            enabled = enabled,
-                            text = stringResource(R.string.copy_referral),
-                            icon = R.drawable.ic_copy,
-                            onClick = {
-                                setClipboardText(context, user.userReferral)
-                                messenger.show(copied)
-                            },
-                        )
+                        if (false) {
+                            val copied = stringResource(R.string.copy_referral)
+                            TvActionButton(
+                                enabled = enabled,
+                                text = stringResource(R.string.copy_referral),
+                                icon = R.drawable.ic_copy,
+                                onClick = {
+                                    setClipboardText(context, user.userReferral)
+                                    messenger.show(copied)
+                                },
+                            )
+                        }
                         if (referralPreference != null) {
                             TvActionButton(
                                 enabled = enabled,
@@ -231,13 +311,13 @@ private fun UserOverview(
             onConfirm = {
                 showReferralDialog = false
                 viewModel.setReferralPreference(true)
-                safeOpenUrl(context, viewModel.buildTorboxSubscriptionUrl(true))
+                safeOpenUrl(context, viewModel.buildSubscriptionUrl(true))
             },
             dismissText = stringResource(R.string.referral_dialog_negative),
             onDismissClick = {
                 showReferralDialog = false
                 viewModel.setReferralPreference(false)
-                safeOpenUrl(context, viewModel.buildTorboxSubscriptionUrl(false))
+                safeOpenUrl(context, viewModel.buildSubscriptionUrl(false))
             },
         ) {
             androidx.compose.material3.Text(stringResource(R.string.referral_dialog_message))

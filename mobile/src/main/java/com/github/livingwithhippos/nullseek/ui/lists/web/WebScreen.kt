@@ -53,7 +53,7 @@ import com.github.livingwithhippos.nullseek.ui.lists.utils.rememberFindInListSta
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.utils.NullContentType
 import com.github.livingwithhippos.nullseek.ui.utils.NullNavigationType
-import com.github.livingwithhippos.torbox.model.WebDownloadDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
 import kotlinx.coroutines.flow.Flow
 
 @Composable
@@ -61,9 +61,9 @@ fun WebScreen(
     modifier: Modifier = Modifier,
     contentType: NullContentType,
     navigationType: NullNavigationType,
-    webDownload: WebDownloadDto?,
-    flow: Flow<PagingData<WebDownloadDto>>,
-    loadDetails: (webDownload: WebDownloadDto) -> Unit,
+    webDownload: DebridDownload?,
+    flow: Flow<PagingData<DebridDownload>>,
+    loadDetails: (webDownload: DebridDownload) -> Unit,
     closeDetails: () -> Unit
 ) {
     val context = LocalContext.current
@@ -94,10 +94,10 @@ fun WebScreen(
 private fun WebDownloadsScreen(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    flow: Flow<PagingData<WebDownloadDto>>,
+    flow: Flow<PagingData<DebridDownload>>,
     query: String,
     onQueryChange: (String) -> Unit,
-    loadDetails: (webDownload: WebDownloadDto) -> Unit
+    loadDetails: (webDownload: DebridDownload) -> Unit
 ) {
     val listState: LazyListState = rememberLazyListState()
     val lazyPagingItems = flow.collectAsLazyPagingItems()
@@ -157,9 +157,9 @@ private fun WebDownloadsScreen(
 
 @Composable
 private fun WebDownloadRow(
-    item: WebDownloadDto,
+    item: DebridDownload,
     modifier: Modifier = Modifier,
-    loadDetails: (webDownload: WebDownloadDto) -> Unit,
+    loadDetails: (webDownload: DebridDownload) -> Unit,
     highlight: MatchHighlight = MatchHighlight.NONE,
 ) {
     OutlinedCard(
@@ -208,6 +208,7 @@ private fun WebDownloadRow(
                 val badgeText =
                     when {
                         hasError -> stringResource(R.string.status_error)
+                        isDone && item.streamable == true -> stringResource(R.string.streaming)
                         isDone -> stringResource(R.string.status_ready)
                         item.cached -> stringResource(R.string.cached)
                         item.downloadState.isNotBlank() -> item.downloadState.replaceFirstChar { it.uppercase() }

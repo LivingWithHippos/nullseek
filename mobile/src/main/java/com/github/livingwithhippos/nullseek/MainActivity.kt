@@ -38,6 +38,12 @@ class MainActivity : AppCompatActivity() {
     private var pendingWidgetDestination by mutableStateOf<String?>(null)
     private var pendingIncomingDownload by mutableStateOf<IncomingDownload?>(null)
 
+    override fun onStart() {
+        super.onStart()
+        // coming back to the app: try again if the provider was unreachable
+        viewModel.retryAfterNetworkError()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

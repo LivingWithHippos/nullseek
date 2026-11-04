@@ -1,6 +1,10 @@
 package com.github.livingwithhippos.nullseek.ui.lists.web
 
 import android.content.Context
+import com.github.livingwithhippos.nullseek.core.domain.DebridCapabilities
+import com.github.livingwithhippos.nullseek.ui.lists.mediaFiles
+import com.github.livingwithhippos.nullseek.ui.utils.AllMediaLinksButton
+import com.github.livingwithhippos.nullseek.ui.utils.UnlockedFilesCard
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -38,6 +42,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import com.github.livingwithhippos.nullseek.ui.lists.PLAYLIST_MIME_TYPE
+import com.github.livingwithhippos.nullseek.utils.openSavedFile
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -96,8 +104,8 @@ import com.github.livingwithhippos.nullseek.utils.openWith
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
 import com.github.livingwithhippos.nullseek.utils.shareText
 import com.github.livingwithhippos.nullseek.utils.wholeDownloadIsZipped
-import com.github.livingwithhippos.torbox.model.WebDownloadDto
-import com.github.livingwithhippos.torbox.model.WebDownloadFileDto
+import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
+import com.github.livingwithhippos.nullseek.core.domain.DebridFile
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -106,7 +114,7 @@ fun WebDownloadDetailScreen(
     modifier: Modifier = Modifier,
     contentType: NullContentType,
     navigationType: NullNavigationType,
-    webDownload: WebDownloadDto,
+    webDownload: DebridDownload,
     closeDetails: () -> Unit,
     viewModel: WebDownloadDetailViewModel = koinViewModel(),
 ) {
@@ -122,9 +130,13 @@ fun WebDownloadDetailScreen(
     val defaultPlayer by viewModel.defaultMediaPlayer.collectAsStateWithLifecycle()
     val mediaPlayers by viewModel.mediaPlayerServices.collectAsStateWithLifecycle()
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
-    val downloadZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
+    val savedZipMode by viewModel.downloadZipMode.collectAsStateWithLifecycle()
+    val capabilities by viewModel.capabilities.collectAsStateWithLifecycle()
+    // providers without zips always give plain links
+    val downloadZipMode = if (capabilities.zipDownloads) savedZipMode else DownloadZipMode.UNCOMPRESSED
     val currentItem = uiState.webDownload ?: webDownload
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -132,6 +144,24 @@ fun WebDownloadDetailScreen(
                 is WebDownloadDetailEvent.ShowMessage -> {
                     // don't wait for the snackbar, or Deleted would be handled only after it hides
                     launch { snackbarHostState.showSnackbar(event.message) }
+                }
+
+                is WebDownloadDetailEvent.PlaylistSaved -> {
+                    launch {
+                        val uri = event.uri
+                        val result =
+                            snackbarHostState.showSnackbar(
+                                message = event.message,
+                                actionLabel = uri?.let { context.getString(R.string.action_open) },
+                                withDismissAction = true,
+                                duration = SnackbarDuration.Long,
+                            )
+                        if (result == SnackbarResult.ActionPerformed && uri != null &&
+                            !openSavedFile(context, uri, PLAYLIST_MIME_TYPE)
+                        ) {
+                            snackbarHostState.showSnackbar(context.getString(R.string.playlist_no_app))
+                        }
+                    }
                 }
 
                 is WebDownloadDetailEvent.Deleted -> {
@@ -160,6 +190,11 @@ fun WebDownloadDetailScreen(
                 },
                 onRefresh = { viewModel.refreshWebDownload() },
                 onDownloadZip = { viewModel.startDownload() },
+                capabilities = capabilities,
+                onUnlockAllMedia = { viewModel.unlockAllMedia() },
+                onClearUnlocked = { viewModel.clearUnlockedFiles() },
+                onCopyUnlockedLinks = { context -> viewModel.copyUnlockedLinks(context) },
+                onSavePlaylist = { context -> viewModel.savePlaylist(context) },
                 onDownloadDirect = { fileId, fileName -> viewModel.downloadDirect(fileId, fileName) },
                 onDownloadFile = { fileId, fileName -> viewModel.startDownload(fileId, fileName) },
                 onDismissDownloadLink = { viewModel.dismissDownloadLink() },
@@ -179,7 +214,7 @@ fun WebDownloadDetailScreen(
 private fun WebDownloadDetailScreen(
     modifier: Modifier = Modifier,
     context: Context = LocalContext.current,
-    item: WebDownloadDto,
+    item: DebridDownload,
     uiState: WebDownloadDetailUiState,
     defaultPlayer: ExternalService?,
     mediaPlayers: List<ExternalService>,
@@ -188,6 +223,11 @@ private fun WebDownloadDetailScreen(
     onPlayMedia: (ExternalService, String, Boolean) -> Unit,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
+    capabilities: DebridCapabilities = DebridCapabilities.Torbox,
+    onUnlockAllMedia: () -> Unit = {},
+    onClearUnlocked: () -> Unit = {},
+    onCopyUnlockedLinks: (Context) -> Unit = {},
+    onSavePlaylist: (Context) -> Unit = {},
     onDownloadFile: (Int, String) -> Unit,
     onDownloadDirect: (Int, String) -> Unit = { _, _ -> },
     onDismissDownloadLink: () -> Unit,
@@ -197,7 +237,11 @@ private fun WebDownloadDetailScreen(
     onConfirmDelete: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
-    var showPlayChoiceDialog by remember { mutableStateOf(false) }
+    // the link waiting for a media player to be picked
+    var pendingPlayUrl by remember { mutableStateOf<String?>(null) }
+    val playUrl: (String) -> Unit = { url ->
+        if (defaultPlayer != null) onPlayMedia(defaultPlayer, url, false) else pendingPlayUrl = url
+    }
 
     Column(
         modifier =
@@ -245,15 +289,34 @@ private fun WebDownloadDetailScreen(
                     result = linkResult,
                     context = context,
                     defaultPlayer = defaultPlayer,
-                    onPlay = {
-                        if (defaultPlayer != null) {
-                            onPlayMedia(defaultPlayer, linkResult.url, false)
-                        } else {
-                            showPlayChoiceDialog = true
-                        }
-                    },
+                    onPlay = { playUrl(linkResult.url) },
                     onDismiss = onDismissDownloadLink,
                     modifier = Modifier.bringIntoViewRequester(linkRequester),
+                )
+            }
+
+            // a direct link for each media file
+            // show the unlocked files as soon as the first one arrives
+            val unlockedRequester = remember { BringIntoViewRequester() }
+            val isUnlocking = uiState.unlockProgress != null
+            val hasUnlocked = uiState.unlockedFiles.isNotEmpty()
+            LaunchedEffect(isUnlocking, hasUnlocked) {
+                if (isUnlocking && hasUnlocked) {
+                    withFrameNanos { }
+                    unlockedRequester.bringIntoView()
+                }
+            }
+            if (uiState.unlockedFiles.isNotEmpty()) {
+                UnlockedFilesCard(
+                    modifier = Modifier.bringIntoViewRequester(unlockedRequester),
+                    files = uiState.unlockedFiles,
+                    defaultPlayer = defaultPlayer,
+                    onPlay = playUrl,
+                    onCopyAll = { onCopyUnlockedLinks(context) },
+                    onSavePlaylist = { onSavePlaylist(context) },
+                    onClear = onClearUnlocked,
+                    showTokenWarning = capabilities.linksContainToken,
+                    context = context,
                 )
             }
 
@@ -271,6 +334,8 @@ private fun WebDownloadDetailScreen(
                 uiState = uiState,
                 onRefresh = onRefresh,
                 onDownloadZip = onDownloadZip,
+                onUnlockAllMedia = onUnlockAllMedia,
+                perFileLinks = capabilities.perFileLinks,
                 onDownloadDirect = onDownloadDirect,
                 onShowVideos = showVideos,
                 downloadZipMode = downloadZipMode,
@@ -304,15 +369,14 @@ private fun WebDownloadDetailScreen(
         )
     }
 
-    val playLink = uiState.downloadLinkResult
-    if (showPlayChoiceDialog && playLink != null) {
+    pendingPlayUrl?.let { url ->
         PlayChoiceDialog(
             services = mediaPlayers,
             onSelect = { selected, setAsDefault ->
-                onPlayMedia(selected, playLink.url, setAsDefault)
-                showPlayChoiceDialog = false
+                onPlayMedia(selected, url, setAsDefault)
+                pendingPlayUrl = null
             },
-            onDismiss = { showPlayChoiceDialog = false },
+            onDismiss = { pendingPlayUrl = null },
         )
     }
 
@@ -341,7 +405,7 @@ private fun WebDownloadDetailScreen(
     }
 }
 
-private fun WebDownloadDto.toOverviewInfo() =
+private fun DebridDownload.toOverviewInfo() =
     OverviewInfo(
         titleRes = R.string.web_overview,
         name = name,
@@ -357,7 +421,7 @@ private fun WebDownloadDto.toOverviewInfo() =
 
 @Composable
 private fun WebTransferProgressCard(
-    item: WebDownloadDto,
+    item: DebridDownload,
     modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
@@ -431,8 +495,8 @@ private fun WebTransferProgressCard(
                     text =
                         if (item.downloadFinished || item.progress >= 1.0) {
                             stringResource(R.string.finished)
-                        } else if (item.eta > 0) {
-                            stringResource(R.string.eta_seconds, item.eta)
+                        } else if ((item.eta ?: 0) > 0) {
+                            stringResource(R.string.eta_seconds, item.eta ?: 0)
                         } else {
                             "—"
                         },
@@ -504,29 +568,31 @@ private fun WebDownloadLinkCard(
 
             DownloadLinkTypeRow(isZipped = result.isZipped, fileType = result.fileType)
 
-            // Security Warning Banner
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier = Modifier.padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+            // Security Warning Banner, the link includes the API token
+            if (result.containsToken) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_warning),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Text(
-                        text = stringResource(id = R.string.download_link_api_key_warning),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontWeight = FontWeight.Medium,
-                    )
+                    Row(
+                        modifier = Modifier.padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_warning),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Text(
+                            text = stringResource(id = R.string.download_link_api_key_warning),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
                 }
             }
 
@@ -544,7 +610,8 @@ private fun WebDownloadLinkCard(
                 )
             }
 
-            val isMedia = isStreamableOrSubtitle(displayTitle)
+            // Real-Debrid marks streamable links even when the title has no media extension
+            val isMedia = isStreamableOrSubtitle(displayTitle) || result.streamingPageUrl != null
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (isMedia) {
@@ -562,6 +629,21 @@ private fun WebDownloadLinkCard(
                             stringResource(id = R.string.action_play_on, it.name)
                         } ?: stringResource(id = R.string.action_play_external)
                         Text(text = playText)
+                    }
+                }
+                // Real-Debrid can stream the file in the browser
+                result.streamingPageUrl?.let { streamingPage ->
+                    OutlinedButton(
+                        onClick = { openWebPage(context, streamingPage) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_play_arrow),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = stringResource(id = R.string.action_stream_browser))
                     }
                 }
 
@@ -660,10 +742,12 @@ private fun WebDownloadLinkCard(
 
 @Composable
 private fun WebActionsCard(
-    item: WebDownloadDto,
+    item: DebridDownload,
     uiState: WebDownloadDetailUiState,
     onRefresh: () -> Unit,
     onDownloadZip: () -> Unit,
+    onUnlockAllMedia: () -> Unit = {},
+    perFileLinks: Boolean = true,
     onDownloadDirect: (Int, String) -> Unit = { _, _ -> },
     // several videos: turn on the Video filter and scroll to the file list
     onShowVideos: () -> Unit = {},
@@ -708,6 +792,18 @@ private fun WebActionsCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 val isZip = wholeDownloadIsZipped(downloadZipMode, item.files, { it.name }, { it.mimetype })
                 Text(text = stringResource(id = if (isZip) R.string.action_generate_zip else R.string.action_download))
+            }
+
+            // a direct link for each media file instead of a zip
+            val mediaCount = remember(item.files) { item.files.mediaFiles().size }
+            if (perFileLinks && item.cached && mediaCount >= 2) {
+                AllMediaLinksButton(
+                    mediaCount = mediaCount,
+                    progress = uiState.unlockProgress,
+                    hasUnlocked = uiState.unlockedFiles.isNotEmpty(),
+                    onClick = onUnlockAllMedia,
+                    enabled = !uiState.isDeleting,
+                )
             }
 
             // a full download with several files is zipped: offer the only video directly, or point to the file list
@@ -799,15 +895,15 @@ private fun formatFileNameDisplay(fullName: String, shortName: String): String {
     return if (rawName.length > 90) "…${rawName.takeLast(85)}" else rawName
 }
 
-private fun WebDownloadFileDto.isVideo(): Boolean = isVideoFile(name, mimetype)
+private fun DebridFile.isVideo(): Boolean = isVideoFile(name, mimetype)
 
-private fun WebDownloadFileDto.isAudio(): Boolean = isAudioFile(name, mimetype)
+private fun DebridFile.isAudio(): Boolean = isAudioFile(name, mimetype)
 
-private fun WebDownloadFileDto.isSubtitle(): Boolean = isSubtitleFile(name)
+private fun DebridFile.isSubtitle(): Boolean = isSubtitleFile(name)
 
 @Composable
 private fun WebFilesCard(
-    files: List<WebDownloadFileDto>,
+    files: List<DebridFile>,
     isCached: Boolean,
     filterVideo: Boolean,
     onFilterVideoChange: (Boolean) -> Unit,

@@ -1,6 +1,7 @@
 package com.github.livingwithhippos.nullseek.ui.providers
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,21 +51,21 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.data.NetProvider
+import com.github.livingwithhippos.nullseek.core.domain.ProviderKind
+import com.github.livingwithhippos.nullseek.ui.provider.ProviderKindSelector
 import com.github.livingwithhippos.nullseek.core.data.database.model.NullProvider
 import com.github.livingwithhippos.nullseek.ui.theme.Button
 import com.github.livingwithhippos.nullseek.ui.theme.NullSeekTheme
 import com.github.livingwithhippos.nullseek.ui.theme.OutlinedButton
 import com.github.livingwithhippos.nullseek.ui.theme.TextButton
+import com.github.livingwithhippos.nullseek.utils.getClipboardText
+import com.github.livingwithhippos.nullseek.utils.openWebPage
 import org.koin.androidx.compose.koinViewModel
 
 private sealed interface ProviderDialog {
     data object Add : ProviderDialog
 
-    data class Rename(
-        val provider: NullProvider,
-    ) : ProviderDialog
-
-    data class Token(
+    data class Edit(
         val provider: NullProvider,
     ) : ProviderDialog
 
@@ -86,6 +88,8 @@ fun ProvidersScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val currentOnChanged by rememberUpdatedState(onProvidersChanged)
     var dialog by remember { mutableStateOf<ProviderDialog?>(null) }
+    // null shows every provider
+    var filter by rememberSaveable { mutableStateOf<ProviderKind?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -137,38 +141,58 @@ fun ProvidersScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Button(onClick = {
-                        viewModel.clearError()
-                        dialog = ProviderDialog.Add
-                    }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_add),
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
+                    FilterChip(
+                        selected = filter == null,
+                        onClick = { filter = null },
+                        label = { Text(stringResource(id = R.string.providers_filter_all)) },
+                    )
+                    ProviderKind.entries.forEach { kind ->
+                        FilterChip(
+                            selected = filter == kind,
+                            onClick = { filter = kind },
+                            label = { Text(kind.displayName) },
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = stringResource(id = R.string.add))
                     }
                 }
+                Button(onClick = {
+                    viewModel.clearError()
+                    dialog = ProviderDialog.Add
+                }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_add),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = stringResource(id = R.string.add))
+                }
+
+                val shownProviders = providers.filter { filter == null || ProviderKind.fromDbType(it.type) == filter }
                 if (providers.isEmpty()) {
                     Text(
                         text = stringResource(id = R.string.providers_empty),
                         style = MaterialTheme.typography.bodyMedium,
                     )
+                } else if (shownProviders.isEmpty()) {
+                    Text(
+                        text = stringResource(id = R.string.providers_empty_filter, filter?.displayName.orEmpty()),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                 }
-                providers.forEach { provider ->
+                shownProviders.forEach { provider ->
                     ProviderCard(
                         provider = provider,
                         onSetDefault = { viewModel.setDefault(provider) },
-                        onRename = { dialog = ProviderDialog.Rename(provider) },
-                        onReplaceToken = {
+                        onEdit = {
                             viewModel.clearError()
-                            dialog = ProviderDialog.Token(provider)
+                            dialog = ProviderDialog.Edit(provider)
                         },
-                        onDelete = { dialog = ProviderDialog.Delete(provider) },
                     )
                 }
             }
@@ -177,68 +201,59 @@ fun ProvidersScreen(
 
     when (val d = dialog) {
         null -> {}
-        ProviderDialog.Add -> ProviderInputDialog(
-            title = stringResource(id = R.string.providers_add_title),
-            showName = true,
-            showToken = true,
-            initialName = "",
-            validating = uiState.validating,
-            tokenError = uiState.tokenError,
-            onDismiss = { dialog = null },
-            onConfirm = { name, token ->
-                viewModel.add(name, token) { ok -> if (ok) dialog = null }
-            },
-        )
 
-        is ProviderDialog.Rename -> ProviderInputDialog(
-            title = stringResource(id = R.string.providers_rename),
-            showName = true,
-            showToken = false,
-            initialName = d.provider.name,
-            validating = false,
-            tokenError = false,
-            onDismiss = { dialog = null },
-            onConfirm = { name, _ ->
-                viewModel.rename(d.provider, name)
-                dialog = null
-            },
-        )
+        ProviderDialog.Add -> {
+            AddProviderDialog(
+                initialKind = filter ?: ProviderKind.TORBOX,
+                validating = uiState.validating,
+                tokenError = uiState.tokenError,
+                onTokenChange = viewModel::clearError,
+                onDismiss = { dialog = null },
+                onConfirm = { kind, name, token ->
+                    viewModel.add(kind, name, token) { ok -> if (ok) dialog = null }
+                },
+            )
+        }
 
-        is ProviderDialog.Token -> ProviderInputDialog(
-            title = stringResource(id = R.string.providers_replace_token),
-            showName = false,
-            showToken = true,
-            initialName = "",
-            validating = uiState.validating,
-            tokenError = uiState.tokenError,
-            onDismiss = { dialog = null },
-            onConfirm = { _, token ->
-                viewModel.replaceToken(d.provider, token) { ok -> if (ok) dialog = null }
-            },
-        )
+        is ProviderDialog.Edit -> {
+            EditProviderDialog(
+                provider = d.provider,
+                validating = uiState.validating,
+                tokenError = uiState.tokenError,
+                onTokenChange = viewModel::clearError,
+                onDismiss = { dialog = null },
+                onDelete = { dialog = ProviderDialog.Delete(d.provider) },
+                onConfirm = { name, token ->
+                    viewModel.edit(d.provider, name, token) { ok -> if (ok) dialog = null }
+                },
+            )
+        }
 
-        is ProviderDialog.Delete -> AlertDialog(
-            onDismissRequest = { dialog = null },
-            title = { Text(stringResource(id = R.string.providers_delete_title)) },
-            text = {
-                Text(
-                    stringResource(
-                        id = R.string.providers_delete_message, d.provider.name
+        is ProviderDialog.Delete -> {
+            AlertDialog(
+                onDismissRequest = { dialog = null },
+                title = { Text(stringResource(id = R.string.providers_delete_title)) },
+                text = {
+                    Text(
+                        stringResource(
+                            id = R.string.providers_delete_message,
+                            d.provider.name,
+                        ),
                     )
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.delete(d.provider)
-                    dialog = null
-                }) { Text(stringResource(id = R.string.providers_delete)) }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    dialog = null
-                }) { Text(stringResource(id = R.string.cancel)) }
-            },
-        )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.delete(d.provider)
+                        dialog = null
+                    }) { Text(stringResource(id = R.string.providers_delete)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        dialog = null
+                    }) { Text(stringResource(id = R.string.cancel)) }
+                },
+            )
+        }
     }
 }
 
@@ -246,11 +261,8 @@ fun ProvidersScreen(
 private fun ProviderCard(
     provider: NullProvider,
     onSetDefault: () -> Unit,
-    onRename: () -> Unit,
-    onReplaceToken: () -> Unit,
-    onDelete: () -> Unit,
+    onEdit: () -> Unit,
 ) {
-    // todo: just show info and open another screen with actions on click
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -265,6 +277,18 @@ private fun ProviderCard(
                     maxLines = 1,
                     overflow = TextOverflow.MiddleEllipsis,
                 )
+                Surface(
+                    shape = RoundedCornerShape(0.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.padding(end = 4.dp),
+                ) {
+                    Text(
+                        text = ProviderKind.fromDbType(provider.type).displayName,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
                 if (provider.active) {
                     Surface(
                         shape = RoundedCornerShape(0.dp),
@@ -280,101 +304,227 @@ private fun ProviderCard(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onRename) { Text(stringResource(id = R.string.providers_rename)) }
+                OutlinedButton(onClick = onEdit) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_edit),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(id = R.string.providers_edit))
+                }
                 if (!provider.active) {
                     OutlinedButton(
                         onClick = onSetDefault,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary,
-                        ),
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary,
+                            ),
                     ) { Text(stringResource(id = R.string.set_active)) }
-                }
-            }
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedButton(onClick = onReplaceToken) { Text(stringResource(id = R.string.providers_replace_token)) }
-
-                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_delete),
-                        contentDescription = stringResource(id = R.string.action_delete),
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(18.dp),
-                    )
                 }
             }
         }
     }
 }
 
+/** The API token input, with buttons to open the provider token page and to paste the clipboard. */
 @Composable
-private fun ProviderInputDialog(
-    title: String,
-    showName: Boolean,
-    showToken: Boolean,
-    initialName: String,
-    validating: Boolean,
-    tokenError: Boolean,
-    onDismiss: () -> Unit,
-    onConfirm: (name: String, token: String) -> Unit,
+private fun TokenField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    kind: ProviderKind,
+    enabled: Boolean,
+    isError: Boolean,
+    supportingText: String? = null,
 ) {
-    var name by rememberSaveable { mutableStateOf(initialName) }
-    var token by rememberSaveable { mutableStateOf("") }
-    val valid = (!showName || name.isNotBlank()) && (!showToken || token.isNotBlank())
+    val context = LocalContext.current
+    val provider = remember(kind) { NetProvider.of(kind) }
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(stringResource(id = R.string.providers_token_label)) },
+        singleLine = true,
+        visualTransformation = PasswordVisualTransformation(),
+        isError = isError,
+        supportingText =
+            when {
+                isError -> {
+                    { Text(stringResource(id = R.string.providers_invalid_token)) }
+                }
 
-    AlertDialog(
-        onDismissRequest = { if (!validating) onDismiss() },
-        title = { Text(title) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (showName) {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text(stringResource(id = R.string.providers_name_label)) },
-                        singleLine = true,
-                        enabled = !validating,
+                supportingText != null -> {
+                    { Text(supportingText) }
+                }
+
+                else -> {
+                    null
+                }
+            },
+        enabled = enabled,
+        trailingIcon = {
+            Row {
+                IconButton(onClick = { openWebPage(context, provider.tokenLink) }, enabled = enabled) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_open_in_new),
+                        contentDescription = stringResource(id = R.string.setup_get_key_button_provider, provider.name),
+                        modifier = Modifier.size(20.dp),
                     )
                 }
-                if (showToken) {
-                    OutlinedTextField(
-                        value = token,
-                        onValueChange = { token = it },
-                        label = { Text(stringResource(id = R.string.providers_token_label)) },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        isError = tokenError,
-                        supportingText = if (tokenError) {
-                            { Text(stringResource(id = R.string.providers_invalid_token)) }
-                        } else {
-                            null
-                        },
-                        enabled = !validating,
+                IconButton(
+                    onClick = { getClipboardText(context)?.let { onValueChange(it.trim()) } },
+                    enabled = enabled,
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_paste),
+                        contentDescription = stringResource(id = R.string.paste_from_clipboard),
+                        modifier = Modifier.size(20.dp),
                     )
-                }
-                if (validating) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp), strokeWidth = 2.dp
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(id = R.string.providers_validating))
-                    }
                 }
             }
         },
+    )
+}
+
+@Composable
+private fun ValidatingRow() {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(16.dp),
+            strokeWidth = 2.dp,
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(stringResource(id = R.string.providers_validating))
+    }
+}
+
+@Composable
+private fun AddProviderDialog(
+    initialKind: ProviderKind,
+    validating: Boolean,
+    tokenError: Boolean,
+    onTokenChange: () -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: (kind: ProviderKind, name: String, token: String) -> Unit,
+) {
+    var kind by rememberSaveable { mutableStateOf(initialKind) }
+    var name by rememberSaveable { mutableStateOf(initialKind.displayName) }
+    var token by rememberSaveable { mutableStateOf("") }
+    val valid = name.isNotBlank() && token.isNotBlank()
+
+    AlertDialog(
+        onDismissRequest = { if (!validating) onDismiss() },
+        title = { Text(stringResource(id = R.string.providers_add_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(id = R.string.provider_service),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                ProviderKindSelector(
+                    selected = kind,
+                    onSelect = { newKind ->
+                        // keep a custom name, follow the service otherwise
+                        if (name.isBlank() || ProviderKind.entries.any { it.displayName == name }) {
+                            name = newKind.displayName
+                        }
+                        kind = newKind
+                    },
+                    enabled = !validating,
+                )
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(id = R.string.providers_name_label)) },
+                    singleLine = true,
+                    enabled = !validating,
+                )
+                TokenField(
+                    value = token,
+                    onValueChange = {
+                        token = it
+                        onTokenChange()
+                    },
+                    kind = kind,
+                    enabled = !validating,
+                    isError = tokenError,
+                )
+                if (validating) ValidatingRow()
+            }
+        },
         confirmButton = {
-            TextButton(enabled = valid && !validating, onClick = { onConfirm(name, token) }) {
+            TextButton(enabled = valid && !validating, onClick = { onConfirm(kind, name, token) }) {
                 Text(stringResource(id = R.string.save))
             }
         },
         dismissButton = {
-            TextButton(
-                enabled = !validating, onClick = onDismiss
-            ) { Text(stringResource(id = R.string.cancel)) }
+            TextButton(enabled = !validating, onClick = onDismiss) { Text(stringResource(id = R.string.cancel)) }
+        },
+    )
+}
+
+/** Renames an account and optionally replaces its token. */
+@Composable
+private fun EditProviderDialog(
+    provider: NullProvider,
+    validating: Boolean,
+    tokenError: Boolean,
+    onTokenChange: () -> Unit,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    onConfirm: (name: String, token: String?) -> Unit,
+) {
+    val kind = ProviderKind.fromDbType(provider.type)
+    var name by rememberSaveable(provider.id) { mutableStateOf(provider.name) }
+    var token by rememberSaveable(provider.id) { mutableStateOf("") }
+    val changed = name.trim() != provider.name || token.isNotBlank()
+    val valid = name.isNotBlank() && changed
+
+    AlertDialog(
+        onDismissRequest = { if (!validating) onDismiss() },
+        title = { Text(stringResource(id = R.string.providers_edit)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(id = R.string.providers_name_label)) },
+                    singleLine = true,
+                    enabled = !validating,
+                )
+                TokenField(
+                    value = token,
+                    onValueChange = {
+                        token = it
+                        onTokenChange()
+                    },
+                    kind = kind,
+                    enabled = !validating,
+                    isError = tokenError,
+                    supportingText = stringResource(id = R.string.providers_token_keep_hint),
+                )
+                if (validating) ValidatingRow()
+                TextButton(
+                    onClick = onDelete,
+                    enabled = !validating,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_delete),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(id = R.string.providers_delete))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = valid && !validating, onClick = { onConfirm(name, token.takeIf { it.isNotBlank() }) }) {
+                Text(stringResource(id = R.string.save))
+            }
+        },
+        dismissButton = {
+            TextButton(enabled = !validating, onClick = onDismiss) { Text(stringResource(id = R.string.cancel)) }
         },
     )
 }
@@ -388,34 +538,31 @@ private fun ProviderCardPreview() {
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-
                 ProviderCard(
-                    provider = NullProvider(
-                        id = 1,
-                        name = "Example Provider",
-                        token = "token",
-                        active = false,
-                        type = NetProvider.Torbox().type
-                    ),
+                    provider =
+                        NullProvider(
+                            id = 1,
+                            name = "Example Provider",
+                            token = "token",
+                            active = false,
+                            type = ProviderKind.REAL_DEBRID.dbType,
+                        ),
                     onSetDefault = {},
-                    onRename = {},
-                    onReplaceToken = {},
-                    onDelete = {},
+                    onEdit = {},
                 )
                 ProviderCard(
-                    provider = NullProvider(
-                        id = 2,
-                        name = "Main",
-                        token = "token",
-                        active = true,
-                        type = NetProvider.Torbox().type
-                    ),
+                    provider =
+                        NullProvider(
+                            id = 2,
+                            name = "Main",
+                            token = "token",
+                            active = true,
+                            type = ProviderKind.TORBOX.dbType,
+                        ),
                     onSetDefault = {},
-                    onRename = {},
-                    onReplaceToken = {},
-                    onDelete = {},
+                    onEdit = {},
                 )
             }
         }

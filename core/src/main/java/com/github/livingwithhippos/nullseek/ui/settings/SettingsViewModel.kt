@@ -87,6 +87,13 @@ class SettingsViewModel(
             initialValue = true,
         )
 
+    val playlistSortByName: StateFlow<Boolean> =
+        preferencesRepository.playlistSortByName.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false,
+        )
+
     val filterFilesFullPath: StateFlow<Boolean> =
         preferencesRepository.filterFilesFullPath.stateIn(
             scope = viewModelScope,
@@ -138,6 +145,10 @@ class SettingsViewModel(
 
     fun setSearchCheckCache(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setSearchCheckCache(enabled) }
+    }
+
+    fun setPlaylistSortByName(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setPlaylistSortByName(enabled) }
     }
 
     fun setFilterFilesFullPath(enabled: Boolean) {

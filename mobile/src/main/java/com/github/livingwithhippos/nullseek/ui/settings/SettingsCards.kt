@@ -644,20 +644,20 @@ internal fun WidgetsPremiumSettingsCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             if (entitlementState.isPremiumUnlocked) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
                         onClick = onPinDownloadsWidgetClick,
-                        modifier = Modifier.weight(1f),
                     ) {
                         Text(text = stringResource(id = R.string.widgets_pin_downloads))
                     }
 
                     OutlinedButton(
-                        onClick = onPinQuickActionsWidgetClick,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = onPinQuickActionsWidgetClick
                     ) {
                         Text(text = stringResource(id = R.string.widgets_pin_quick_actions))
                     }
