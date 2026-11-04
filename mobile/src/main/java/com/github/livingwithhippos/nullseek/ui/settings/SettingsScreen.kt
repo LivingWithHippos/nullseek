@@ -90,6 +90,7 @@ fun SettingsScreen(
     val pagingLoadSize by viewModel.pagingLoadSize.collectAsStateWithLifecycle()
     val searchAutoAddDownload by viewModel.searchAutoAddDownload.collectAsStateWithLifecycle()
     val searchCheckCache by viewModel.searchCheckCache.collectAsStateWithLifecycle()
+    val playlistSortByName by viewModel.playlistSortByName.collectAsStateWithLifecycle()
     val imdbDetailsExpanded by viewModel.imdbDetailsExpanded.collectAsStateWithLifecycle()
     val filterFilesFullPath by viewModel.filterFilesFullPath.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
@@ -180,6 +181,8 @@ fun SettingsScreen(
             onSearchAutoAddDownloadChanged = { viewModel.setSearchAutoAddDownload(it) },
             searchCheckCache = searchCheckCache,
             onSearchCheckCacheChanged = { viewModel.setSearchCheckCache(it) },
+            playlistSortByName = playlistSortByName,
+            onPlaylistSortByNameChanged = { viewModel.setPlaylistSortByName(it) },
             imdbDetailsExpanded = imdbDetailsExpanded,
             onImdbDetailsExpandedChanged = { viewModel.setImdbDetailsExpanded(it) },
             filterFilesFullPath = filterFilesFullPath,
@@ -240,6 +243,8 @@ fun SettingsScreen(
     onSearchAutoAddDownloadChanged: (Boolean) -> Unit = {},
     searchCheckCache: Boolean = true,
     onSearchCheckCacheChanged: (Boolean) -> Unit = {},
+    playlistSortByName: Boolean = false,
+    onPlaylistSortByNameChanged: (Boolean) -> Unit = {},
     imdbDetailsExpanded: Boolean = false,
     onImdbDetailsExpandedChanged: (Boolean) -> Unit = {},
     filterFilesFullPath: Boolean = false,
@@ -372,6 +377,13 @@ fun SettingsScreen(
             )
 
             DownloadFormatSettingsCard(mode = downloadZipMode, onModeSelected = onDownloadZipModeSelected)
+
+            SwitchSettingCard(
+                title = R.string.playlist_sort_title,
+                summary = R.string.playlist_sort_summary,
+                checked = playlistSortByName,
+                onCheckedChange = onPlaylistSortByNameChanged,
+            )
 
             DefaultSeedingSettingsCard(option = defaultSeedingOption, onOptionSelected = onDefaultSeedingOptionSelected)
 

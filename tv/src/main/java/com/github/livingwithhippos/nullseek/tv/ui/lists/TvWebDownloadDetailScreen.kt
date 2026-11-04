@@ -140,6 +140,7 @@ fun TvWebDownloadDetailScreen(
                 onPlayMedia = viewModel::playOnMedia,
                 onCopyAll = { viewModel.copyUnlockedLinks(context) },
                 onClear = viewModel::clearUnlockedFiles,
+                onSavePlaylist = { viewModel.savePlaylist(context) },
             )
             if (!current.cached) {
                 item { Text(stringResource(R.string.web_download_not_cached_warning), color = MaterialTheme.colorScheme.error) }

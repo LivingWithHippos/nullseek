@@ -140,6 +140,7 @@ fun TvUsenetDetailScreen(
                 onPlayMedia = viewModel::playOnMedia,
                 onCopyAll = { viewModel.copyUnlockedLinks(context) },
                 onClear = viewModel::clearUnlockedFiles,
+                onSavePlaylist = { viewModel.savePlaylist(context) },
             )
             if (!current.cached) {
                 item { Text(stringResource(R.string.usenet_not_cached_warning), color = MaterialTheme.colorScheme.error) }

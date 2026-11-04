@@ -3,6 +3,7 @@ package com.github.livingwithhippos.nullseek.ui.lists.web
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.livingwithhippos.nullseek.core.R
 import com.github.livingwithhippos.nullseek.core.domain.DebridCapabilities
 import com.github.livingwithhippos.nullseek.core.domain.DebridDownload
 import com.github.livingwithhippos.nullseek.core.domain.DebridResult
@@ -14,23 +15,29 @@ import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
 import com.github.livingwithhippos.nullseek.ui.lists.UnlockedFile
+import com.github.livingwithhippos.nullseek.ui.lists.buildM3u8Playlist
 import com.github.livingwithhippos.nullseek.ui.lists.mediaFiles
 import com.github.livingwithhippos.nullseek.ui.lists.notUnlockedIn
+import com.github.livingwithhippos.nullseek.ui.lists.playlistFileName
 import com.github.livingwithhippos.nullseek.ui.lists.unlockOneByOne
 import com.github.livingwithhippos.nullseek.ui.lists.unlockSummary
 import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.detectFileTypeCategory
 import com.github.livingwithhippos.nullseek.utils.isStreamableOrSubtitle
+import com.github.livingwithhippos.nullseek.utils.saveFileToPublicDownloads
 import com.github.livingwithhippos.nullseek.utils.setClipboardText
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.core.annotation.KoinViewModel
 
 data class DownloadLinkResult(
@@ -389,6 +396,32 @@ class WebDownloadDetailViewModel(
     fun clearUnlockedFiles() {
         if (_uiState.value.unlockProgress != null) return
         _uiState.value = _uiState.value.copy(unlockedFiles = emptyList())
+    }
+
+    /** Saves an M3U8 playlist with the unlocked links in the Downloads folder. */
+    fun savePlaylist(context: Context) {
+        val item = _uiState.value.webDownload ?: return
+        val files = _uiState.value.unlockedFiles
+        if (files.none { !it.failed }) return
+        viewModelScope.launch {
+            val sortByName = preferencesRepository.playlistSortByName.first()
+            val playlist = buildM3u8Playlist(files, sortByName)
+            val saved =
+                withContext(Dispatchers.IO) {
+                    saveFileToPublicDownloads(
+                        context = context,
+                        fileName = playlistFileName(item.name),
+                        bytes = playlist.toByteArray(Charsets.UTF_8),
+                        mimeType = "application/vnd.apple.mpegurl",
+                        extension = "m3u8",
+                    )
+                }
+            _events.emit(
+                WebDownloadDetailEvent.ShowMessage(
+                    context.getString(if (saved != null) R.string.playlist_saved else R.string.playlist_save_failed),
+                ),
+            )
+        }
     }
 
     /** Copies the links of the unlocked files, one per line. */

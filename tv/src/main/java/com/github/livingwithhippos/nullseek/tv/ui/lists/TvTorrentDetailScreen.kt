@@ -240,6 +240,7 @@ fun TvTorrentDetailScreen(
                 onPlayMedia = viewModel::playOnMedia,
                 onCopyAll = { viewModel.copyUnlockedLinks(context) },
                 onClear = viewModel::clearUnlockedFiles,
+                onSavePlaylist = { viewModel.savePlaylist(context) },
             )
             if (torrent.needsFileSelection && torrent.files.isNotEmpty()) {
                 item {

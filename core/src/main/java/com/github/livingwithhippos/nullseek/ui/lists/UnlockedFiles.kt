@@ -112,3 +112,62 @@ fun unlockSummary(
         else -> "Unlocked $unlocked files, ${failures.size} failed, see the list for the reasons"
     }
 }
+
+/**
+ * Compares names ignoring case and reading runs of digits as numbers,
+ * so "Ep2" comes before "Ep10" and a series plays in order.
+ */
+val naturalNameOrder: Comparator<String> =
+    Comparator { a, b ->
+        var i = 0
+        var j = 0
+        while (i < a.length && j < b.length) {
+            val ca = a[i]
+            val cb = b[j]
+            if (ca.isDigit() && cb.isDigit()) {
+                val startA = i
+                val startB = j
+                while (i < a.length && a[i].isDigit()) i++
+                while (j < b.length && b[j].isDigit()) j++
+                val numA = a.substring(startA, i).trimStart('0')
+                val numB = b.substring(startB, j).trimStart('0')
+                if (numA.length != numB.length) return@Comparator numA.length - numB.length
+                val byValue = numA.compareTo(numB)
+                if (byValue != 0) return@Comparator byValue
+            } else {
+                val byChar = ca.lowercaseChar().compareTo(cb.lowercaseChar())
+                if (byChar != 0) return@Comparator byChar
+                i++
+                j++
+            }
+        }
+        (a.length - i) - (b.length - j)
+    }
+
+/** An M3U8 playlist with the links that worked, in list order or sorted by name. */
+fun buildM3u8Playlist(
+    files: List<UnlockedFile>,
+    sortByName: Boolean,
+): String {
+    val working = files.filter { !it.failed && it.url.isNotBlank() }
+    val ordered = if (sortByName) working.sortedWith(compareBy(naturalNameOrder) { it.name }) else working
+    return buildString {
+        append("#EXTM3U\n")
+        ordered.forEach { file ->
+            val title = file.name.replace('\r', ' ').replace('\n', ' ')
+            append("#EXTINF:-1,").append(title).append('\n')
+            append(file.url).append('\n')
+        }
+    }
+}
+
+/** A file name for the playlist of [itemName], without characters file systems refuse. */
+fun playlistFileName(itemName: String): String {
+    val clean =
+        itemName
+            .replace(Regex("""[/\\:*?"<>|]"""), "_")
+            .trim()
+            .take(100)
+            .ifBlank { "playlist" }
+    return "$clean.m3u8"
+}

@@ -84,6 +84,7 @@ data class PreferencesBackup(
     val includeReferral: Boolean? = null,
     val searchAutoAddDownload: Boolean? = null,
     val searchCheckCache: Boolean? = null,
+    val playlistSortByName: Boolean? = null,
     val imdbDetailsExpanded: Boolean? = null,
     val searchSortOption: String? = null,
     val searchSortAscending: Boolean? = null,
@@ -278,6 +279,7 @@ class BackupRepositoryImpl(
     private val referralKey = booleanPreferencesKey("include_referral_in_browser")
     private val searchAutoAddDownloadKey = booleanPreferencesKey("search_auto_add_download")
     private val searchCheckCacheKey = booleanPreferencesKey("search_check_cache")
+    private val playlistSortByNameKey = booleanPreferencesKey("playlist_sort_by_name")
     private val imdbDetailsExpandedKey = booleanPreferencesKey("imdb_details_expanded")
     private val searchSortOptionKey = stringPreferencesKey("search_sort_option")
     private val searchSortAscendingKey = booleanPreferencesKey("search_sort_ascending")
@@ -380,6 +382,7 @@ class BackupRepositoryImpl(
             includeReferral = preferences[referralKey],
             searchAutoAddDownload = preferences[searchAutoAddDownloadKey],
             searchCheckCache = preferences[searchCheckCacheKey],
+            playlistSortByName = preferences[playlistSortByNameKey],
             imdbDetailsExpanded = preferences[imdbDetailsExpandedKey],
             searchSortOption = preferences[searchSortOptionKey],
             searchSortAscending = preferences[searchSortAscendingKey],
@@ -404,6 +407,7 @@ class BackupRepositoryImpl(
             backup.includeReferral?.let { preferences[referralKey] = it }
             backup.searchAutoAddDownload?.let { preferences[searchAutoAddDownloadKey] = it }
             backup.searchCheckCache?.let { preferences[searchCheckCacheKey] = it }
+            backup.playlistSortByName?.let { preferences[playlistSortByNameKey] = it }
             backup.imdbDetailsExpanded?.let { preferences[imdbDetailsExpandedKey] = it }
             backup.searchSortOption?.let { preferences[searchSortOptionKey] = it }
             backup.searchSortAscending?.let { preferences[searchSortAscendingKey] = it }

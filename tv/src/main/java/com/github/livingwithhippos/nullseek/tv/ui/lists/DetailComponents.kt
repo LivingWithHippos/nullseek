@@ -789,6 +789,7 @@ fun LazyListScope.unlockedFilesSection(
     onPlayMedia: (ExternalService, String, Boolean) -> Unit,
     onCopyAll: () -> Unit,
     onClear: () -> Unit,
+    onSavePlaylist: () -> Unit,
 ) {
     if (files.isEmpty()) return
     item {
@@ -802,6 +803,13 @@ fun LazyListScope.unlockedFilesSection(
                 Text(
                     stringResource(R.string.unlock_failed_count, failedCount),
                     color = MaterialTheme.colorScheme.error,
+                )
+            }
+            if (files.any { !it.failed }) {
+                TvActionButton(
+                    text = stringResource(R.string.save_playlist),
+                    icon = R.drawable.ic_download,
+                    onClick = onSavePlaylist,
                 )
             }
             TvActionButton(

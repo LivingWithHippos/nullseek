@@ -589,4 +589,9 @@
     <string name="file_not_selected">Non selezionato</string>
     <string name="unlock_failed_count">%1$d non riusciti</string>
     <string name="unlock_all_media">Link per tutti i media (%1$d)</string>
+    <string name="save_playlist">Salva playlist M3U8</string>
+    <string name="playlist_sort_title">Ordina le playlist alfabeticamente</string>
+    <string name="playlist_sort_summary">Ordina per nome i file delle playlist M3U8 salvate, con i numeri in ordine (utile per le serie)</string>
+    <string name="playlist_saved">Playlist salvata in Download</string>
+    <string name="playlist_save_failed">Impossibile salvare la playlist</string>
 </resources>

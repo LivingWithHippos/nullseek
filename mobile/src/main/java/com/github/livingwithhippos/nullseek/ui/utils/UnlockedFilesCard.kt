@@ -126,6 +126,8 @@ fun UnlockedFilesCard(
     onClear: (() -> Unit)? = null,
     // TorBox links include the API token
     showTokenWarning: Boolean = false,
+    // saves an M3U8 playlist with the links
+    onSavePlaylist: (() -> Unit)? = null,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     // only one file shows its actions, so long lists stay short
@@ -184,6 +186,21 @@ fun UnlockedFilesCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
+            }
+
+            if (onSavePlaylist != null && files.any { !it.failed }) {
+                OutlinedButton(
+                    onClick = onSavePlaylist,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_download),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(id = R.string.save_playlist))
+                }
             }
 
             if (files.size > UNLOCKED_SEARCH_MIN_FILES) {
