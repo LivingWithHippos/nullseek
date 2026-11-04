@@ -80,7 +80,9 @@ fun UserScreen(
 ) {
     if (loading || user == null) {
         Box(
-            modifier = modifier.fillMaxSize().padding(16.dp),
+            modifier = modifier
+                .fillMaxSize()
+                .padding(16.dp),
             contentAlignment = Alignment.Center,
         ) {
             if (!loading && error != null) {
@@ -532,24 +534,26 @@ private fun AccountOverviewAndActionsCard(
                 Text(text = stringResource(id = R.string.open_torbox_subscription))
             }
 
-
-            OutlinedButton(
-                onClick = {
-                    setClipboardText(context, user.userReferral)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = enabled,
-                colors =
-                    ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary,
-                    ),
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_copy),
-                    contentDescription = null,
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(text = stringResource(id = R.string.copy_referral))
+            if (false) {
+                // disabled button for now
+                OutlinedButton(
+                    onClick = {
+                        setClipboardText(context, user.userReferral)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = enabled,
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary,
+                        ),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_copy),
+                        contentDescription = null,
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(text = stringResource(id = R.string.copy_referral))
+                }
             }
 
             if (user.purchasesReferred > 0) {

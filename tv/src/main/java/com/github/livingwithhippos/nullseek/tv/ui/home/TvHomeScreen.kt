@@ -125,7 +125,9 @@ private fun RealDebridOverview(
     val isRestoring by viewModel.isRestoringBackup.collectAsStateWithLifecycle()
     val enabled = !isRestoring
 
-    Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+    Column(modifier = modifier
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())) {
         ScreenHeader(title = stringResource(R.string.account_overview), subtitle = user.username ?: user.email)
 
         FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -179,7 +181,9 @@ private fun UserOverview(
     val detailedStats by viewModel.detailedStats.collectAsStateWithLifecycle()
     val enabled = !isRestoring
 
-    Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+    Column(modifier = modifier
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())) {
         ScreenHeader(title = stringResource(R.string.account_overview), subtitle = user.email)
 
         // quick actions first: they are the first thing focused when the app opens
@@ -191,7 +195,9 @@ private fun UserOverview(
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(24.dp)) {
@@ -274,16 +280,18 @@ private fun UserOverview(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        val copied = stringResource(R.string.copy_referral)
-                        TvActionButton(
-                            enabled = enabled,
-                            text = stringResource(R.string.copy_referral),
-                            icon = R.drawable.ic_copy,
-                            onClick = {
-                                setClipboardText(context, user.userReferral)
-                                messenger.show(copied)
-                            },
-                        )
+                        if (false) {
+                            val copied = stringResource(R.string.copy_referral)
+                            TvActionButton(
+                                enabled = enabled,
+                                text = stringResource(R.string.copy_referral),
+                                icon = R.drawable.ic_copy,
+                                onClick = {
+                                    setClipboardText(context, user.userReferral)
+                                    messenger.show(copied)
+                                },
+                            )
+                        }
                         if (referralPreference != null) {
                             TvActionButton(
                                 enabled = enabled,
