@@ -1,6 +1,7 @@
 package com.github.livingwithhippos.nullseek.ui.lists.torrent
 
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.nullseek.core.R
@@ -26,6 +27,7 @@ import com.github.livingwithhippos.nullseek.data.model.ExternalServiceCategory
 import com.github.livingwithhippos.nullseek.data.repository.DownloadZipMode
 import com.github.livingwithhippos.nullseek.data.repository.ExternalServicesRepository
 import com.github.livingwithhippos.nullseek.data.repository.PreferencesRepository
+import com.github.livingwithhippos.nullseek.ui.lists.PLAYLIST_MIME_TYPE
 import com.github.livingwithhippos.nullseek.ui.lists.UnlockedFile
 import com.github.livingwithhippos.nullseek.ui.lists.buildM3u8Playlist
 import com.github.livingwithhippos.nullseek.ui.lists.mediaFiles
@@ -73,6 +75,12 @@ data class PendingDownload(
 sealed interface TorrentDetailEvent {
     data class ShowMessage(
         val message: String,
+    ) : TorrentDetailEvent
+
+    /** a playlist was saved, [uri] is set when it can be opened by another app */
+    data class PlaylistSaved(
+        val message: String,
+        val uri: Uri?,
     ) : TorrentDetailEvent
 
     data object Deleted : TorrentDetailEvent
@@ -600,14 +608,20 @@ class TorrentDetailViewModel(
                         context = context,
                         fileName = playlistFileName(item.name),
                         bytes = playlist.toByteArray(Charsets.UTF_8),
-                        mimeType = "application/vnd.apple.mpegurl",
+                        mimeType = PLAYLIST_MIME_TYPE,
                         extension = "m3u8",
                     )
                 }
             _events.emit(
-                TorrentDetailEvent.ShowMessage(
-                    context.getString(if (saved != null) R.string.playlist_saved else R.string.playlist_save_failed),
-                ),
+                if (saved != null) {
+                    // only content uris can be shared with other apps
+                    TorrentDetailEvent.PlaylistSaved(
+                        message = context.getString(R.string.playlist_saved),
+                        uri = saved.takeIf { it.scheme == "content" },
+                    )
+                } else {
+                    TorrentDetailEvent.ShowMessage(context.getString(R.string.playlist_save_failed))
+                },
             )
         }
     }

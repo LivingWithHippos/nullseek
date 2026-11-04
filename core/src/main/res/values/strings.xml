@@ -606,4 +606,6 @@
     <string name="playlist_sort_summary">Order the files of saved M3U8 playlists by name, numbers in order (useful for series)</string>
     <string name="playlist_saved">Playlist saved to Downloads</string>
     <string name="playlist_save_failed">Failed to save the playlist</string>
+    <string name="playlist_no_app">No app can open the playlist</string>
+    <string name="show_more_files">Show %1$d more (%2$d left)</string>
 </resources>

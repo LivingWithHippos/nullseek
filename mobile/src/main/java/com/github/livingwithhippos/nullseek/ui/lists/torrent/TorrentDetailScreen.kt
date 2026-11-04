@@ -1,6 +1,9 @@
 package com.github.livingwithhippos.nullseek.ui.lists.torrent
 
 import android.content.Context
+import com.github.livingwithhippos.nullseek.utils.FileTypeCategory
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.Immutable
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
@@ -39,6 +42,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import com.github.livingwithhippos.nullseek.ui.lists.PLAYLIST_MIME_TYPE
+import com.github.livingwithhippos.nullseek.utils.openSavedFile
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -140,6 +147,7 @@ fun TorrentDetailScreen(
     val capabilities by viewModel.capabilities.collectAsStateWithLifecycle()
     val currentItem = uiState.torrent ?: item
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -147,6 +155,24 @@ fun TorrentDetailScreen(
                 is TorrentDetailEvent.ShowMessage -> {
                     // don't wait for the snackbar, or Deleted would be handled only after it hides
                     launch { snackbarHostState.showSnackbar(event.message) }
+                }
+
+                is TorrentDetailEvent.PlaylistSaved -> {
+                    launch {
+                        val uri = event.uri
+                        val result =
+                            snackbarHostState.showSnackbar(
+                                message = event.message,
+                                actionLabel = uri?.let { context.getString(R.string.action_open) },
+                                withDismissAction = true,
+                                duration = SnackbarDuration.Long,
+                            )
+                        if (result == SnackbarResult.ActionPerformed && uri != null &&
+                            !openSavedFile(context, uri, PLAYLIST_MIME_TYPE)
+                        ) {
+                            snackbarHostState.showSnackbar(context.getString(R.string.playlist_no_app))
+                        }
+                    }
                 }
 
                 TorrentDetailEvent.Deleted -> {
@@ -307,8 +333,19 @@ private fun TorrentDetailScreen(
             }
 
             // Real-Debrid torrents with a link for each file
+            // show the unlocked files as soon as the first one arrives
+            val unlockedRequester = remember { BringIntoViewRequester() }
+            val isUnlocking = uiState.unlockProgress != null
+            val hasUnlocked = uiState.unlockedFiles.isNotEmpty()
+            LaunchedEffect(isUnlocking, hasUnlocked) {
+                if (isUnlocking && hasUnlocked) {
+                    withFrameNanos { }
+                    unlockedRequester.bringIntoView()
+                }
+            }
             if (uiState.unlockedFiles.isNotEmpty()) {
                 UnlockedFilesCard(
+                    modifier = Modifier.bringIntoViewRequester(unlockedRequester),
                     files = uiState.unlockedFiles,
                     defaultPlayer = defaultPlayer,
                     onPlay = playUrl,
@@ -1186,6 +1223,112 @@ private fun DebridFile.isAudio(): Boolean = isAudioFile(name, mimetype)
 
 private fun DebridFile.isSubtitle(): Boolean = isSubtitleFile(name)
 
+// how many file rows are drawn at a time
+private const val FILE_ROWS_STEP = 100
+
+/** The texts shown for a file, computed once. */
+@Immutable
+private data class FileRowData(
+    val file: DebridFile,
+    val displayName: String,
+    val path: String,
+    val sizeText: String,
+    val fileType: FileTypeCategory?,
+    val downloadName: String,
+)
+
+private fun DebridFile.toRowData() =
+    FileRowData(
+        file = this,
+        displayName = formatFileNameDisplay(name, shortName),
+        path = formatFilePathDisplay(name, shortName),
+        sizeText = convertToSize(size),
+        fileType = detectFileTypeCategory(name, mimetype),
+        downloadName = shortName.ifBlank { name.substringAfterLast('/').substringAfterLast('\\') },
+    )
+
+/** A file of the list, redrawn only when its own state changes. */
+@Composable
+private fun TorrentFileRow(
+    row: FileRowData,
+    inSelection: Boolean,
+    checked: Boolean,
+    canDownload: Boolean,
+    onToggle: (Int) -> Unit,
+    onDownload: (Int, String) -> Unit,
+) {
+    val file = row.file
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .alpha(if (file.selected) 1f else 0.5f)
+                .then(if (inSelection) Modifier.clickable { onToggle(file.id) } else Modifier),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (inSelection) {
+            Checkbox(checked = checked, onCheckedChange = null)
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = row.displayName,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = row.sizeText,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (!file.selected) {
+                    Text(
+                        text = stringResource(id = R.string.file_not_selected),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                row.fileType?.let { category ->
+                    FileTypeBadge(category = category)
+                }
+            }
+            Text(
+                text = row.path,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 5,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        if (canDownload) {
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = { onDownload(file.id, row.downloadName) },
+                modifier = Modifier.size(36.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_download),
+                    contentDescription = "Download ${file.name}",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun TorrentFilesCard(
     files: List<DebridFile>,
@@ -1203,13 +1346,30 @@ private fun TorrentFilesCard(
     var selectionMode by rememberSaveable(files) { mutableStateOf(false) }
     var selected by rememberSaveable(files) { mutableStateOf(emptySet<Int>()) }
     val canSelect = isCached && onUnlockFiles != null
+    val isUnlocking = unlockProgress != null
+    // turning on the selection mode waits a frame, so the button can show it's working
+    var switchingMode by remember { mutableStateOf(false) }
+    LaunchedEffect(switchingMode) {
+        if (switchingMode) {
+            withFrameNanos { }
+            selectionMode = true
+            switchingMode = false
+        }
+    }
+    // the text of each row, computed once per file list instead of at every redraw
+    val rows = remember(files) { files.map { it.toRowData() } }
+    val toggleFile: (Int) -> Unit =
+        remember {
+            { id -> selected = if (id in selected) selected - id else selected + id }
+        }
     var filterAudio by rememberSaveable { mutableStateOf(false) }
     var filterSubtitles by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
     val filteredFiles =
-        remember(files, searchQuery, filterFilesFullPath, filterVideo, filterAudio, filterSubtitles) {
-            files.filter { file ->
+        remember(rows, searchQuery, filterFilesFullPath, filterVideo, filterAudio, filterSubtitles) {
+            rows.filter { row ->
+                val file = row.file
                 val fileNameOnly =
                     file.shortName.ifBlank {
                         file.name.substringAfterLast('/').substringAfterLast('\\')
@@ -1229,6 +1389,10 @@ private fun TorrentFilesCard(
                 matchesSearch && matchesType
             }
         }
+    // long lists are drawn in steps, drawing thousands of rows at once freezes the screen
+    var shownCount by rememberSaveable(files, searchQuery, filterVideo, filterAudio, filterSubtitles) {
+        mutableIntStateOf(FILE_ROWS_STEP)
+    }
 
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
@@ -1264,11 +1428,19 @@ private fun TorrentFilesCard(
                 if (canSelect) {
                     TextButton(
                         onClick = {
-                            selectionMode = !selectionMode
-                            if (!selectionMode) selected = emptySet()
+                            if (selectionMode) {
+                                selectionMode = false
+                                selected = emptySet()
+                            } else {
+                                switchingMode = true
+                            }
                         },
+                        enabled = !isUnlocking && !switchingMode,
                     ) {
-                        if (!selectionMode) {
+                        if (switchingMode) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                        } else if (!selectionMode) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_check),
                                 contentDescription = null,
@@ -1365,10 +1537,13 @@ private fun TorrentFilesCard(
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.weight(1f),
                     )
-                    TextButton(onClick = { selected = selected + filteredFiles.filter { it.selected }.map { it.id } }) {
+                    TextButton(
+                        onClick = { selected = selected + filteredFiles.filter { it.file.selected }.map { it.file.id } },
+                        enabled = !isUnlocking,
+                    ) {
                         Text(text = stringResource(id = R.string.select_shown))
                     }
-                    TextButton(onClick = { selected = emptySet() }, enabled = selected.isNotEmpty()) {
+                    TextButton(onClick = { selected = emptySet() }, enabled = selected.isNotEmpty() && !isUnlocking) {
                         Text(text = stringResource(id = R.string.clear_selection))
                     }
                 }
@@ -1412,97 +1587,27 @@ private fun TorrentFilesCard(
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
             } else {
-                filteredFiles.forEachIndexed { index, file ->
+                filteredFiles.take(shownCount).forEachIndexed { index, row ->
                     if (index > 0) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
-
-                    val inSelection = canSelect && selectionMode && file.selected
-                    val isChecked = file.id in selected
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .alpha(if (file.selected) 1f else 0.5f)
-                                .then(
-                                    if (inSelection) {
-                                        Modifier.clickable {
-                                            selected = if (isChecked) selected - file.id else selected + file.id
-                                        }
-                                    } else {
-                                        Modifier
-                                    },
-                                ),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                    val inSelection = canSelect && selectionMode && row.file.selected
+                    TorrentFileRow(
+                        row = row,
+                        inSelection = inSelection,
+                        checked = inSelection && row.file.id in selected,
+                        canDownload = isCached && !inSelection && row.file.selected && !isUnlocking,
+                        onToggle = toggleFile,
+                        onDownload = onDownloadFile,
+                    )
+                }
+                val hidden = filteredFiles.size - shownCount
+                if (hidden > 0) {
+                    TextButton(
+                        onClick = { shownCount += FILE_ROWS_STEP },
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
-                        if (inSelection) {
-                            Checkbox(checked = isChecked, onCheckedChange = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Text(
-                                text = formatFileNameDisplay(file.name, file.shortName),
-                                style = MaterialTheme.typography.bodyMedium,
-                                maxLines = 3,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(
-                                    text = convertToSize(file.size),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                if (!file.selected) {
-                                    Text(
-                                        text = stringResource(id = R.string.file_not_selected),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.error,
-                                    )
-                                }
-                                detectFileTypeCategory(file.name, file.mimetype)?.let { category ->
-                                    FileTypeBadge(category = category)
-                                }
-                            }
-                            Text(
-                                text = formatFilePathDisplay(file.name, file.shortName),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 5,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-
-                        if (isCached && !inSelection && file.selected) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            IconButton(
-                                onClick = {
-                                    onDownloadFile(
-                                        file.id,
-                                        file.shortName.ifBlank {
-                                            file.name.substringAfterLast('/')
-                                                .substringAfterLast('\\')
-                                        },
-                                    )
-                                },
-                                modifier = Modifier.size(36.dp),
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_download),
-                                    contentDescription = "Download ${file.name}",
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
+                        Text(text = stringResource(id = R.string.show_more_files, minOf(hidden, FILE_ROWS_STEP), hidden))
                     }
                 }
             }

@@ -54,6 +54,7 @@ fun TvUsenetDetailScreen(
             when (event) {
                 is UsenetDetailEvent.ShowMessage -> messenger.show(event.message)
                 UsenetDetailEvent.Deleted -> onDeleted()
+                is UsenetDetailEvent.PlaylistSaved -> messenger.show(event.message)
             }
         }
     }
@@ -128,6 +129,7 @@ fun TvUsenetDetailScreen(
                 onClick = { viewModel.showDeleteConfirmDialog(true) },
             )
         },
+        scrollToExtras = uiState.unlockProgress != null && uiState.unlockedFiles.isNotEmpty(),
         extraSections = {
             unlockedFilesSection(
                 files = uiState.unlockedFiles,

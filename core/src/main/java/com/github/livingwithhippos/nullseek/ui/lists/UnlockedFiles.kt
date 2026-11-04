@@ -1,5 +1,6 @@
 package com.github.livingwithhippos.nullseek.ui.lists
 
+import androidx.compose.runtime.Immutable
 import com.github.livingwithhippos.nullseek.core.domain.DebridFile
 import com.github.livingwithhippos.nullseek.core.domain.DebridLink
 import com.github.livingwithhippos.nullseek.core.domain.DebridResult
@@ -10,6 +11,7 @@ import com.github.livingwithhippos.nullseek.utils.isAudioFile
 import com.github.livingwithhippos.nullseek.utils.isVideoFile
 
 /** A file of a download, unlocked with its own link. */
+@Immutable
 data class UnlockedFile(
     val name: String,
     val size: Long?,
@@ -143,6 +145,9 @@ val naturalNameOrder: Comparator<String> =
         }
         (a.length - i) - (b.length - j)
     }
+
+/** The type of the saved playlists. */
+const val PLAYLIST_MIME_TYPE = "application/vnd.apple.mpegurl"
 
 /** An M3U8 playlist with the links that worked, in list order or sorted by name. */
 fun buildM3u8Playlist(

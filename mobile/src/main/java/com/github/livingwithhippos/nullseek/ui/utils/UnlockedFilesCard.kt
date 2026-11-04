@@ -44,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -132,6 +133,7 @@ fun UnlockedFilesCard(
     var query by rememberSaveable { mutableStateOf("") }
     // only one file shows its actions, so long lists stay short
     var expandedUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    var shownCount by rememberSaveable(query) { mutableIntStateOf(UNLOCKED_ROWS_STEP) }
     val shown =
         remember(files, query) {
             val clean = query.trim()
@@ -226,85 +228,117 @@ fun UnlockedFilesCard(
                 )
             }
 
-            shown.forEachIndexed { index, file ->
+            val toggleExpanded: (String) -> Unit = remember { { url -> expandedUrl = if (expandedUrl == url) null else url } }
+            shown.take(shownCount).forEachIndexed { index, file ->
                 if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                val fileError = file.error
-                if (fileError != null) {
-                    // the provider refused this file, show why
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = file.name,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_warning),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(16.dp),
-                            )
-                            Text(
-                                text = fileError,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
-                    }
-                    return@forEachIndexed
+                UnlockedFileRow(
+                    file = file,
+                    expanded = expandedUrl == file.url,
+                    onToggleExpand = toggleExpanded,
+                    defaultPlayer = defaultPlayer,
+                    onPlay = onPlay,
+                    context = context,
+                )
+            }
+            val hidden = shown.size - shownCount
+            if (hidden > 0) {
+                TextButton(
+                    onClick = { shownCount += UNLOCKED_ROWS_STEP },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(text = stringResource(id = R.string.show_more_files, minOf(hidden, UNLOCKED_ROWS_STEP), hidden))
                 }
-                val expanded = expandedUrl == file.url
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { expandedUrl = if (expanded) null else file.url },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = file.name,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            file.size?.let { size ->
-                                Text(
-                                    text = convertToSize(size),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                        Icon(
-                            painter =
-                                painterResource(
-                                    id = if (expanded) R.drawable.ic_arrow_drop_up else R.drawable.ic_arrow_drop_down,
-                                ),
-                            contentDescription = null,
-                        )
-                    }
-                    AnimatedVisibility(visible = expanded) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            DownloadLinkTypeRow(isZipped = false, fileType = file.fileType)
-                            DownloadLinkActions(
-                                url = file.url,
-                                title = file.name,
-                                streamingPageUrl = file.streamingPageUrl,
-                                defaultPlayer = defaultPlayer,
-                                onPlay = { onPlay(file.url) },
-                                context = context,
-                            )
-                        }
-                    }
+            }
+        }
+    }
+}
+
+// how many unlocked rows are drawn at a time
+private const val UNLOCKED_ROWS_STEP = 100
+
+/** An unlocked file, redrawn only when its own state changes. */
+@Composable
+private fun UnlockedFileRow(
+    file: UnlockedFile,
+    expanded: Boolean,
+    onToggleExpand: (String) -> Unit,
+    defaultPlayer: ExternalService?,
+    onPlay: (String) -> Unit,
+    context: Context,
+) {
+    val fileError = file.error
+    if (fileError != null) {
+        // the provider refused this file, show why
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = file.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_warning),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    text = fileError,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
+        return
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggleExpand(file.url) },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = file.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                file.size?.let { size ->
+                    Text(
+                        text = convertToSize(size),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
+            }
+            Icon(
+                painter =
+                    painterResource(
+                        id = if (expanded) R.drawable.ic_arrow_drop_up else R.drawable.ic_arrow_drop_down,
+                    ),
+                contentDescription = null,
+            )
+        }
+        AnimatedVisibility(visible = expanded) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                DownloadLinkTypeRow(isZipped = false, fileType = file.fileType)
+                DownloadLinkActions(
+                    url = file.url,
+                    title = file.name,
+                    streamingPageUrl = file.streamingPageUrl,
+                    defaultPlayer = defaultPlayer,
+                    onPlay = { onPlay(file.url) },
+                    context = context,
+                )
             }
         }
     }

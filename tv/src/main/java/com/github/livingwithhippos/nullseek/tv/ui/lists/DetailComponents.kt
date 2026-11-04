@@ -175,6 +175,8 @@ fun TvDetailPane(
     extraSections: LazyListScope.() -> Unit = {},
     // set when single files can be picked and unlocked together (TorBox)
     fileSelection: TvFileSelection? = null,
+    // scrolls to the extra sections when it turns true, e.g. while files are unlocked
+    scrollToExtras: Boolean = false,
 ) {
     var query by rememberSaveable(overview.name) { mutableStateOf("") }
     var filterVideo by rememberSaveable { mutableStateOf(false) }
@@ -216,6 +218,13 @@ fun TvDetailPane(
     // the link section is item 2, after the header and the overview: show it when a new link arrives
     LaunchedEffect(linkResult) {
         if (linkResult != null) listState.animateScrollToItem(2)
+    }
+    // header, overview, the optional link and the actions come before the extra sections
+    LaunchedEffect(scrollToExtras) {
+        if (scrollToExtras) {
+            withFrameNanos { }
+            listState.animateScrollToItem(3 + if (linkResult != null) 1 else 0)
+        }
     }
 
     LazyColumn(

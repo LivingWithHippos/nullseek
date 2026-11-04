@@ -54,6 +54,7 @@ fun TvWebDownloadDetailScreen(
             when (event) {
                 is WebDownloadDetailEvent.ShowMessage -> messenger.show(event.message)
                 WebDownloadDetailEvent.Deleted -> onDeleted()
+                is WebDownloadDetailEvent.PlaylistSaved -> messenger.show(event.message)
             }
         }
     }
@@ -128,6 +129,7 @@ fun TvWebDownloadDetailScreen(
                 onClick = { viewModel.showDeleteConfirmDialog(true) },
             )
         },
+        scrollToExtras = uiState.unlockProgress != null && uiState.unlockedFiles.isNotEmpty(),
         extraSections = {
             unlockedFilesSection(
                 files = uiState.unlockedFiles,

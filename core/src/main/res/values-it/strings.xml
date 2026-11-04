@@ -594,4 +594,6 @@
     <string name="playlist_sort_summary">Ordina per nome i file delle playlist M3U8 salvate, con i numeri in ordine (utile per le serie)</string>
     <string name="playlist_saved">Playlist salvata in Download</string>
     <string name="playlist_save_failed">Impossibile salvare la playlist</string>
+    <string name="playlist_no_app">Nessuna app può aprire la playlist</string>
+    <string name="show_more_files">Mostra altri %1$d (%2$d rimanenti)</string>
 </resources>

@@ -596,4 +596,6 @@
     <string name="playlist_sort_summary">Trie par nom les fichiers des playlists M3U8 enregistrées, avec les numéros dans l\'ordre (utile pour les séries)</string>
     <string name="playlist_saved">Playlist enregistrée dans Téléchargements</string>
     <string name="playlist_save_failed">Impossible d\'enregistrer la playlist</string>
+    <string name="playlist_no_app">Aucune application ne peut ouvrir la playlist</string>
+    <string name="show_more_files">Afficher %1$d de plus (%2$d restants)</string>
 </resources>

@@ -72,6 +72,7 @@ fun TvTorrentDetailScreen(
             when (event) {
                 is TorrentDetailEvent.ShowMessage -> messenger.show(event.message)
                 TorrentDetailEvent.Deleted -> onDeleted()
+                is TorrentDetailEvent.PlaylistSaved -> messenger.show(event.message)
                 is TorrentDetailEvent.OpenTorrent -> onOpenTorrent(event.torrent)
             }
         }
@@ -227,6 +228,7 @@ fun TvTorrentDetailScreen(
             } else {
                 null
             },
+        scrollToExtras = uiState.unlockProgress != null && uiState.unlockedFiles.isNotEmpty(),
         extraSections = {
             // the files unlocked one by one, each with its own link
             unlockedFilesSection(

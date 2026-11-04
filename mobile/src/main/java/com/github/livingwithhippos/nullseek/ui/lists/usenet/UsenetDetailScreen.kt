@@ -42,6 +42,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import com.github.livingwithhippos.nullseek.ui.lists.PLAYLIST_MIME_TYPE
+import com.github.livingwithhippos.nullseek.utils.openSavedFile
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -130,6 +134,7 @@ fun UsenetDetailScreen(
     val capabilities by viewModel.capabilities.collectAsStateWithLifecycle()
     val currentItem = uiState.usenet ?: item
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -137,6 +142,24 @@ fun UsenetDetailScreen(
                 is UsenetDetailEvent.ShowMessage -> {
                     // don't wait for the snackbar, or Deleted would be handled only after it hides
                     launch { snackbarHostState.showSnackbar(event.message) }
+                }
+
+                is UsenetDetailEvent.PlaylistSaved -> {
+                    launch {
+                        val uri = event.uri
+                        val result =
+                            snackbarHostState.showSnackbar(
+                                message = event.message,
+                                actionLabel = uri?.let { context.getString(R.string.action_open) },
+                                withDismissAction = true,
+                                duration = SnackbarDuration.Long,
+                            )
+                        if (result == SnackbarResult.ActionPerformed && uri != null &&
+                            !openSavedFile(context, uri, PLAYLIST_MIME_TYPE)
+                        ) {
+                            snackbarHostState.showSnackbar(context.getString(R.string.playlist_no_app))
+                        }
+                    }
                 }
 
                 is UsenetDetailEvent.Deleted -> {
@@ -271,8 +294,19 @@ private fun UsenetDetailScreen(
             }
 
             // a direct link for each media file
+            // show the unlocked files as soon as the first one arrives
+            val unlockedRequester = remember { BringIntoViewRequester() }
+            val isUnlocking = uiState.unlockProgress != null
+            val hasUnlocked = uiState.unlockedFiles.isNotEmpty()
+            LaunchedEffect(isUnlocking, hasUnlocked) {
+                if (isUnlocking && hasUnlocked) {
+                    withFrameNanos { }
+                    unlockedRequester.bringIntoView()
+                }
+            }
             if (uiState.unlockedFiles.isNotEmpty()) {
                 UnlockedFilesCard(
+                    modifier = Modifier.bringIntoViewRequester(unlockedRequester),
                     files = uiState.unlockedFiles,
                     defaultPlayer = defaultPlayer,
                     onPlay = playUrl,
