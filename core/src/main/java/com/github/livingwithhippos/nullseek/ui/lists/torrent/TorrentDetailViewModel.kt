@@ -16,6 +16,7 @@ import com.github.livingwithhippos.nullseek.core.domain.awaitConversion
 import com.github.livingwithhippos.nullseek.core.domain.awaitSelectionApplied
 import com.github.livingwithhippos.nullseek.core.domain.describe
 import com.github.livingwithhippos.nullseek.core.domain.magnetFromHash
+import com.github.livingwithhippos.nullseek.core.domain.reason
 import com.github.livingwithhippos.nullseek.core.domain.requeuePreselection
 import com.github.livingwithhippos.nullseek.core.domain.selectionMismatch
 import com.github.livingwithhippos.nullseek.core.domain.selectionToRequest
@@ -92,7 +93,11 @@ data class UnlockedFile(
     val fileType: FileTypeCategory?,
     /** the torrent file it comes from, when the provider unlocks single files (TorBox) */
     val fileId: Int? = null,
-)
+    /** why the provider refused to unlock it, the url is empty then */
+    val error: String? = null,
+) {
+    val failed: Boolean get() = error != null
+}
 
 data class TorrentDetailUiState(
     val torrent: DebridTorrent? = null,
@@ -479,7 +484,9 @@ class TorrentDetailViewModel(
                 return@launch
             }
             _uiState.value = _uiState.value.copy(unlockedFiles = emptyList(), unlockProgress = 0 to links.size)
-            var failures = 0
+            val failures = mutableListOf<String>()
+            // links follow the selected files, used to name the ones that fail
+            val linkNames = loaded.files.filter { it.linkIndex != null }.associate { it.linkIndex to it.shortName }
             links.forEachIndexed { index, hosterLink ->
                 val result =
                     unlockedLinks[hosterLink]?.let { DebridResult.Ok(it) }
@@ -505,22 +512,27 @@ class TorrentDetailViewModel(
                     }
 
                     is DebridResult.Err -> {
-                        failures++
+                        val reason = result.error.reason()
+                        failures.add(reason)
+                        _uiState.value =
+                            _uiState.value.copy(
+                                unlockedFiles =
+                                    _uiState.value.unlockedFiles +
+                                        UnlockedFile(
+                                            name = linkNames[index]?.takeIf { it.isNotBlank() } ?: "File ${index + 1}",
+                                            size = null,
+                                            url = "",
+                                            streamingPageUrl = null,
+                                            fileType = null,
+                                            error = reason,
+                                        ),
+                            )
                     }
                 }
                 _uiState.value = _uiState.value.copy(unlockProgress = index + 1 to links.size)
             }
             _uiState.value = _uiState.value.copy(unlockProgress = null)
-            val unlocked = _uiState.value.unlockedFiles.size
-            _events.emit(
-                TorrentDetailEvent.ShowMessage(
-                    when {
-                        unlocked == 0 -> "Failed to unlock the files"
-                        failures > 0 -> "Unlocked $unlocked files, $failures failed"
-                        else -> "Unlocked $unlocked files"
-                    },
-                ),
-            )
+            _events.emit(TorrentDetailEvent.ShowMessage(unlockSummary(links.size - failures.size, failures)))
         }
     }
 
@@ -532,8 +544,10 @@ class TorrentDetailViewModel(
         val torrent = _uiState.value.torrent ?: return
         if (!torrent.cached || fileIds.isEmpty() || _uiState.value.unlockProgress != null) return
         val accountId = _uiState.value.accountId
+        // files that failed before are tried again
         val alreadyUnlocked =
             _uiState.value.unlockedFiles
+                .filter { !it.failed }
                 .mapNotNull { it.fileId }
                 .toSet()
         val targets = torrent.files.filter { it.id in fileIds && it.id !in alreadyUnlocked }
@@ -542,9 +556,14 @@ class TorrentDetailViewModel(
             return
         }
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(unlockProgress = 0 to targets.size)
+            val retried = targets.map { it.id }.toSet()
+            _uiState.value =
+                _uiState.value.copy(
+                    unlockProgress = 0 to targets.size,
+                    unlockedFiles = _uiState.value.unlockedFiles.filterNot { it.failed && it.fileId in retried },
+                )
             var unlocked = 0
-            var failures = 0
+            val failures = mutableListOf<String>()
             targets.forEachIndexed { index, file ->
                 val key = torrent.id to file.id
                 val result =
@@ -573,21 +592,43 @@ class TorrentDetailViewModel(
                     }
 
                     is DebridResult.Err -> {
-                        failures++
+                        val reason = result.error.reason()
+                        failures.add(reason)
+                        _uiState.value =
+                            _uiState.value.copy(
+                                unlockedFiles =
+                                    _uiState.value.unlockedFiles +
+                                        UnlockedFile(
+                                            name = file.shortName.ifBlank { file.name.substringAfterLast('/') },
+                                            size = file.size,
+                                            url = "",
+                                            streamingPageUrl = null,
+                                            fileType = detectFileTypeCategory(file.name, file.mimetype),
+                                            fileId = file.id,
+                                            error = reason,
+                                        ),
+                            )
                     }
                 }
                 _uiState.value = _uiState.value.copy(unlockProgress = index + 1 to targets.size)
             }
             _uiState.value = _uiState.value.copy(unlockProgress = null)
-            _events.emit(
-                TorrentDetailEvent.ShowMessage(
-                    when {
-                        unlocked == 0 -> "Failed to unlock the files"
-                        failures > 0 -> "Unlocked $unlocked files, $failures failed"
-                        else -> "Unlocked $unlocked files"
-                    },
-                ),
-            )
+            _events.emit(TorrentDetailEvent.ShowMessage(unlockSummary(unlocked, failures)))
+        }
+    }
+
+    /** The final message of an unlock, naming the reason when all the failures share it. */
+    private fun unlockSummary(
+        unlocked: Int,
+        failures: List<String>,
+    ): String {
+        val reason = failures.distinct().singleOrNull()
+        return when {
+            failures.isEmpty() -> "Unlocked $unlocked files"
+            unlocked == 0 && reason != null -> "Failed to unlock the files: $reason"
+            unlocked == 0 -> "Failed to unlock the files, see the list for the reasons"
+            reason != null -> "Unlocked $unlocked files, ${failures.size} failed: $reason"
+            else -> "Unlocked $unlocked files, ${failures.size} failed, see the list for the reasons"
         }
     }
 
@@ -598,7 +639,10 @@ class TorrentDetailViewModel(
 
     /** Copies the links of the unlocked files, one per line. */
     fun copyUnlockedLinks(context: Context) {
-        val links = _uiState.value.unlockedFiles.map { it.url }
+        val links =
+            _uiState.value.unlockedFiles
+                .filter { !it.failed }
+                .map { it.url }
         if (links.isEmpty()) return
         setClipboardText(context, links.joinToString("\n"))
         viewModelScope.launch { _events.emit(TorrentDetailEvent.ShowMessage("Copied ${links.size} links to the clipboard")) }

@@ -574,7 +574,7 @@
     <string name="providers_edit">Modifica</string>
     <string name="providers_token_keep_hint">Lascia vuoto per mantenere il token attuale</string>
     <string name="file_selection_no_match">Nessun file corrisponde al filtro</string>
-    <string name="requeue_choose_files">Scegli altri files</string>
+    <string name="requeue_choose_files">Modifica files inclusi</string>
     <string name="action_stream_browser">Guarda nel browser</string>
     <string name="unlock_all_files">Sblocca tutti i files</string>
     <string name="unlock_again">Sblocca di nuovo</string>
@@ -587,4 +587,5 @@
     <string name="unlock_selected">Sblocca selezionati (%1$d)</string>
     <string name="torrent_id">ID torrent</string>
     <string name="file_not_selected">Non selezionato</string>
+    <string name="unlock_failed_count">%1$d non riusciti</string>
 </resources>

@@ -224,9 +224,16 @@ fun TvTorrentDetailScreen(
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            stringResource(R.string.unlocked_files_title, unlocked.size),
+                            stringResource(R.string.unlocked_files_title, unlocked.count { !it.failed }),
                             style = MaterialTheme.typography.titleMedium,
                         )
+                        val failedCount = unlocked.count { it.failed }
+                        if (failedCount > 0) {
+                            Text(
+                                stringResource(R.string.unlock_failed_count, failedCount),
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
                         TvActionButton(
                             text = stringResource(R.string.copy_all_links),
                             icon = R.drawable.ic_copy,
@@ -251,7 +258,15 @@ fun TvTorrentDetailScreen(
                 }
                 val clean = unlockedQuery.trim()
                 val shown = if (clean.isEmpty()) unlocked else unlocked.filter { it.name.contains(clean, ignoreCase = true) }
-                items(shown, key = { it.url }) { file ->
+                items(shown) { file ->
+                    val fileError = file.error
+                    if (fileError != null) {
+                        // the provider refused this file, show why
+                        SectionCard(title = file.name, icon = R.drawable.ic_warning) {
+                            Text(fileError, color = MaterialTheme.colorScheme.error)
+                        }
+                        return@items
+                    }
                     DownloadLinkSection(
                         result =
                             LinkResult(

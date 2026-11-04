@@ -755,12 +755,21 @@ private fun UnlockedFilesCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = stringResource(id = R.string.unlocked_files_title, files.size),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(id = R.string.unlocked_files_title, files.count { !it.failed }),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    val failedCount = files.count { it.failed }
+                    if (failedCount > 0) {
+                        Text(
+                            text = stringResource(id = R.string.unlock_failed_count, failedCount),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
                 IconButton(onClick = onCopyAll) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_copy),
@@ -812,6 +821,36 @@ private fun UnlockedFilesCard(
 
             shown.forEachIndexed { index, file ->
                 if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                val fileError = file.error
+                if (fileError != null) {
+                    // the provider refused this file, show why
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = file.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_warning),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Text(
+                                text = fileError,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                    return@forEachIndexed
+                }
                 val expanded = expandedUrl == file.url
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(

@@ -207,6 +207,61 @@ private inline fun <T, R> DebridResult<T>.mapOk(transform: (T) -> R): DebridResu
         is DebridResult.Err -> this
     }
 
+// texts from the "List of numeric error codes" in the Real-Debrid documentation
+private val REAL_DEBRID_ERROR_MESSAGES =
+    mapOf(
+        -1 to "Internal error",
+        1 to "Missing parameter",
+        2 to "Bad parameter value",
+        3 to "Unknown method",
+        4 to "Method not allowed",
+        5 to "Slow down",
+        6 to "Resource unreachable",
+        7 to "Resource not found",
+        8 to "Bad token",
+        9 to "Permission denied",
+        10 to "Two-Factor authentication needed",
+        11 to "Two-Factor authentication pending",
+        12 to "Invalid login",
+        13 to "Invalid password",
+        14 to "Account locked",
+        15 to "Account not activated",
+        16 to "Unsupported hoster",
+        17 to "Hoster in maintenance",
+        18 to "Hoster limit reached",
+        19 to "Hoster temporarily unavailable",
+        20 to "Hoster not available for free users",
+        21 to "Too many active downloads",
+        22 to "IP Address not allowed",
+        23 to "Traffic exhausted",
+        24 to "File unavailable",
+        25 to "Service unavailable",
+        26 to "Upload too big",
+        27 to "Upload error",
+        28 to "File not allowed",
+        29 to "Torrent too big",
+        30 to "Torrent file invalid",
+        31 to "Action already done",
+        32 to "Image resolution error",
+        33 to "Torrent already active",
+        34 to "Too many requests",
+        35 to "Infringing file",
+        36 to "Fair Usage Limit",
+        37 to "Disabled endpoint",
+    )
+
+/** A readable text for a Real-Debrid error, from its code or from its error name. */
+internal fun realDebridErrorMessage(
+    code: Int?,
+    error: String,
+    details: String? = null,
+): String {
+    val base =
+        code?.let { REAL_DEBRID_ERROR_MESSAGES[it] }
+            ?: error.replace('_', ' ').replaceFirstChar { it.uppercase() }
+    return if (details.isNullOrBlank() || details == error) base else "$base: $details"
+}
+
 internal fun RdApiResult.Failure.toDebridError(): DebridError =
     when (this) {
         is RdApiResult.Failure.Api -> {
@@ -215,41 +270,36 @@ internal fun RdApiResult.Failure.toDebridError(): DebridError =
                     DebridError.InvalidToken
                 }
 
-                RealDebridErrorCode.PERMISSION_DENIED -> {
-                    DebridError.PermissionDenied
-                }
-
-                RealDebridErrorCode.ACCOUNT_LOCKED -> {
-                    DebridError.AccountLocked
-                }
-
                 RealDebridErrorCode.TOO_MANY_REQUESTS, RealDebridErrorCode.SLOW_DOWN -> {
                     DebridError.RateLimited
                 }
 
-                RealDebridErrorCode.FAIR_USAGE_LIMIT -> {
-                    DebridError.FairUsage
-                }
-
-                RealDebridErrorCode.RESOURCE_NOT_FOUND, RealDebridErrorCode.UNKNOWN_METHOD -> {
+                RealDebridErrorCode.RESOURCE_NOT_FOUND -> {
                     DebridError.NotFound
                 }
 
-                RealDebridErrorCode.UNSUPPORTED_HOSTER,
-                RealDebridErrorCode.HOSTER_IN_MAINTENANCE,
-                RealDebridErrorCode.HOSTER_LIMIT_REACHED,
-                RealDebridErrorCode.HOSTER_TEMPORARILY_UNAVAILABLE,
-                RealDebridErrorCode.HOSTER_NOT_AVAILABLE_FOR_FREE_USERS,
-                -> {
-                    DebridError.HosterProblem(error.error)
+                null -> {
+                    when (httpCode) {
+                        401 -> {
+                            DebridError.InvalidToken
+                        }
+
+                        429 -> {
+                            DebridError.RateLimited
+                        }
+
+                        else -> {
+                            error.errorCode?.let { code ->
+                                // a code this library doesn't know yet
+                                DebridError.Provider(code, realDebridErrorMessage(code, error.error, error.errorDetails))
+                            } ?: DebridError.Server(httpCode, error.errorDetails ?: error.error)
+                        }
+                    }
                 }
 
                 else -> {
-                    when (httpCode) {
-                        401 -> DebridError.InvalidToken
-                        429 -> DebridError.RateLimited
-                        else -> DebridError.Server(httpCode, error.errorDetails ?: error.error)
-                    }
+                    // keep the provider explanation, e.g. "Infringing file (error 35)"
+                    DebridError.Provider(error.errorCode, realDebridErrorMessage(error.errorCode, error.error, error.errorDetails))
                 }
             }
         }

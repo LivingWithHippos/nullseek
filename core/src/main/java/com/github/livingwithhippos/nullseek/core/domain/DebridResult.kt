@@ -43,10 +43,17 @@ sealed interface DebridError {
     data class Serialization(
         val cause: Throwable,
     ) : DebridError
+
+    /** An error the provider explained, with its own text and code. */
+    data class Provider(
+        val code: Int?,
+        val message: String,
+    ) : DebridError
 }
 
 fun DebridError.describe(subject: String): String =
     when (this) {
+        is DebridError.Provider -> "$subject: ${reason()}"
         DebridError.InvalidToken -> "$subject: Invalid or expired token"
         DebridError.PermissionDenied -> "$subject: Permission denied (premium needed?)"
         DebridError.AccountLocked -> "$subject: Account locked"
@@ -58,6 +65,13 @@ fun DebridError.describe(subject: String): String =
         is DebridError.Network -> "$subject: Network Error - $cause"
         is DebridError.Server -> "$subject: Server Error${code?.let { " $it" } ?: ""}${message?.let { " - $it" } ?: ""}"
         is DebridError.Serialization -> "$subject: Serialization Error - $cause"
+    }
+
+/** The error text without a subject, e.g. for a row in a list. */
+fun DebridError.reason(): String =
+    when (this) {
+        is DebridError.Provider -> if (code != null) "$message (error $code)" else message
+        else -> describe("").removePrefix(": ")
     }
 
 inline fun <T, R> DebridResult<T>.map(transform: (T) -> R): DebridResult<R> =

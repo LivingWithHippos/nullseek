@@ -59,6 +59,17 @@ class RealDebridMappingTest {
     }
 
     @Test
+    fun providerErrorsKeepTextAndCode() {
+        val infringing = ApiResult.Failure.Api(451, RealDebridErrorDto("infringing_file", errorCode = 35)).toDebridError()
+        assertEquals(DebridError.Provider(35, "Infringing file"), infringing)
+        assertEquals("Unlock: Infringing file (error 35)", infringing.describe("Unlock"))
+        assertEquals("Infringing file (error 35)", infringing.reason())
+
+        val unknown = ApiResult.Failure.Api(400, RealDebridErrorDto("some_new_error", errorCode = 99)).toDebridError()
+        assertEquals("Some new error (error 99)", unknown.reason())
+    }
+
+    @Test
     fun statusesAreMapped() {
         assertEquals(DownloadStatus.CONVERTING, realDebridStatus("magnet_conversion"))
         assertEquals(DownloadStatus.AWAITING_FILE_SELECTION, realDebridStatus("waiting_files_selection"))
@@ -148,12 +159,12 @@ class RealDebridMappingTest {
             ApiResult.Failure.Api(429, RealDebridErrorDto("too_many_requests", errorCode = 34)).toDebridError(),
         )
         assertEquals(
-            DebridError.PermissionDenied,
+            DebridError.Provider(9, "Permission denied"),
             ApiResult.Failure.Api(403, RealDebridErrorDto("permission_denied", errorCode = 9)).toDebridError(),
         )
-        assertTrue(
-            ApiResult.Failure.Api(503, RealDebridErrorDto("hoster_unavailable", errorCode = 19)).toDebridError()
-                is DebridError.HosterProblem,
+        assertEquals(
+            DebridError.Provider(19, "Hoster temporarily unavailable"),
+            ApiResult.Failure.Api(503, RealDebridErrorDto("hoster_unavailable", errorCode = 19)).toDebridError(),
         )
         assertEquals(DebridError.InvalidToken, ApiResult.Failure.Http(401, null).toDebridError())
         assertEquals(DebridError.NotFound, ApiResult.Failure.Http(404, null).toDebridError())
