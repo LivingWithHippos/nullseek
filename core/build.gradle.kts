@@ -10,10 +10,22 @@ plugins {
 
 android {
     namespace = "com.github.livingwithhippos.nullseek.core"
+    /* todo: restore after minor version is not needed anymore
     compileSdk =
         libs.versions.compileSdk
             .get()
             .toInt()
+     */
+
+    compileSdk {
+        version = release(libs.versions.compileSdk
+            .get()
+            .toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor
+                .get()
+                .toInt()
+        }
+    }
 
     defaultConfig {
         minSdk =

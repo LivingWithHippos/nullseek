@@ -7,10 +7,16 @@ plugins {
 
 android {
     namespace = "com.github.livingwithhippos.nullseek"
-    compileSdk =
-        libs.versions.compileSdk
+
+    compileSdk {
+        version = release(libs.versions.compileSdk
             .get()
-            .toInt()
+            .toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor
+                .get()
+                .toInt()
+        }
+    }
 
     defaultConfig {
         applicationId = "com.github.livingwithhippos.nullseek"
