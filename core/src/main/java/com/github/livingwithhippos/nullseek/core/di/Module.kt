@@ -59,6 +59,7 @@ import com.github.livingwithhippos.torbox.client.TorboxClient
 import com.github.livingwithhippos.torbox.network.TorboxAuthState
 import com.github.livingwithhippos.torbox.network.TorboxClientConfig
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.dsl.module
 import org.koin.plugin.module.dsl.create
 import org.koin.plugin.module.dsl.viewModel
@@ -193,14 +194,22 @@ private val storageModule =
         }
     }
 
-private val repositoryModule =
+private fun repositoryModule(debug: Boolean = false) =
     module {
         single {
             OkHttpClient
                 .Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(15, TimeUnit.SECONDS)
-                .build()
+                .apply {
+                    if (debug) {
+                        addNetworkInterceptor(
+                            HttpLoggingInterceptor().apply {
+                                level = HttpLoggingInterceptor.Level.BODY
+                            },
+                        )
+                    }
+                }.build()
         }
         single { NetworkMonitor(get()) }
         single { KodiRemoteClient(get()) }
@@ -236,6 +245,6 @@ fun appModule(debug: Boolean) =
     module {
         includes(networkModule(logLevel = if (debug) "body" else "none"))
         includes(storageModule)
-        includes(repositoryModule)
+        includes(repositoryModule(debug))
         includes(viewModelModule)
     }

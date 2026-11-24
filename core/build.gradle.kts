@@ -66,7 +66,10 @@ dependencies {
     implementation(libs.kotlin.serialization.json)
 
     implementation(libs.jsoup)
+
+    implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)

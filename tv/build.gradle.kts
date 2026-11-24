@@ -124,7 +124,10 @@ dependencies {
     implementation(libs.kotlinx.datetime)
 
     implementation(libs.square.logcat)
+
+    implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)
+
     implementation(libs.torbox.client)
 
     implementation(platform(libs.koin.bom))
